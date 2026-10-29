@@ -41,7 +41,7 @@ try{
  let duration=Number(execFileSync('ffprobe',['-v','error','-show_entries','format=duration','-of','default=noprint_wrappers=1:nokey=1',target],{encoding:'utf8'}).trim());
  // WebM produzido pelo MediaRecorder pode não trazer duração no cabeçalho; validar pelos timestamps reais dos pacotes.
  if(!Number.isFinite(duration)){
-   const lines=execFileSync('ffprobe',['-v','error','-select_streams','v:0','-show_entries','packet=pts_time,duration_time','-of','csv=p=0',target],{encoding:'utf8'}).trim().split('\\n');
+   const lines=execFileSync('ffprobe',['-v','error','-select_streams','v:0','-show_entries','packet=pts_time,duration_time','-of','csv=p=0',target],{encoding:'utf8'}).trim().split('\n');
    const times=lines.map(line=>{const [pts,dt]=line.split(',').map(Number);return Number.isFinite(pts)?pts+(Number.isFinite(dt)?dt:0):NaN}).filter(Number.isFinite);
    duration=times.length?Math.max(...times):NaN;
  }
