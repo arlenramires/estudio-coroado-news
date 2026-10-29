@@ -31,6 +31,20 @@ if(process.env.STUDIO_TEST_CODEC_FALLBACK==='1'){
    window.MediaRecorder=RecorderWithRejectedMP4;
  });
 }
+if(process.env.STUDIO_TEST_CODEC_START_FALLBACK==='1'){
+ await page.addInitScript(()=>{
+   const Native=window.MediaRecorder;
+   window.__rejectedMp4Starts=0;
+   function RecorderWithRejectedStart(stream,options){
+     if(options?.mimeType?.startsWith('video/mp4')){
+       return {mimeType:options.mimeType,state:'inactive',start(){window.__rejectedMp4Starts++;throw new DOMException('MP4 recusado ao iniciar','NotSupportedError')}};
+     }
+     return new Native(stream,options);
+   }
+   RecorderWithRejectedStart.isTypeSupported=mime=>mime.startsWith('video/mp4')||Native.isTypeSupported(mime);
+   window.MediaRecorder=RecorderWithRejectedStart;
+ });
+}
 try{
  await page.goto(process.env.STUDIO_URL || 'http://127.0.0.1:8765/index.html');
  await page.waitForFunction(()=>document.querySelectorAll('.tile').length===22);
@@ -85,6 +99,11 @@ try{
  await page.waitForFunction(()=>!document.querySelector('#media').disabled && !document.querySelector('#editorial').disabled && !document.querySelector('#savePNG').disabled && [...document.querySelectorAll('#gallery .tile')].every(b=>!b.disabled));
  const wake=await page.evaluate(()=>window.__wakeLockTest);
  if(wake.requests!==1||wake.releases!==1)throw Error('Wake Lock não foi solicitado e liberado corretamente: '+JSON.stringify(wake));
+ if(process.env.STUDIO_TEST_CODEC_START_FALLBACK==='1'){
+   const rejected=await page.evaluate(()=>window.__rejectedMp4Starts);
+   if(!rejected||!d.suggestedFilename().endsWith('.webm'))throw Error('Fallback após falha no start do MP4 não ocorreu: '+rejected+' / '+d.suggestedFilename());
+   console.log('Fallback aprovado: MP4 anunciado, recusado no start, WebM exportado.');
+ }
  const name=d.suggestedFilename();await d.saveAs('test-output-'+name);
  const target='test-output-'+name;
  const streams=JSON.parse(execFileSync('ffprobe',['-v','error','-show_entries','stream=codec_type','-of','json',target],{encoding:'utf8'})).streams;
