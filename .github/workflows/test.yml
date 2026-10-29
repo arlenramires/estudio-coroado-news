@@ -26,10 +26,16 @@ jobs:
       - name: Testar navegador e PNG
         run: node scripts/smoke.mjs
 
+      - name: Testar interface móvel, toque, PNG e offline
+        run: node scripts/mobile-smoke.mjs
+
       - name: Instalar FFmpeg para validação de áudio
         run: if ! command -v ffmpeg >/dev/null || ! command -v ffprobe >/dev/null; then sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg; fi
       - name: Testar exportação de vídeo com áudio
         run: node scripts/video-smoke.mjs
+
+      - name: Testar fallback MP4 recusado para WebM com áudio
+        run: STUDIO_TEST_CODEC_FALLBACK=1 node scripts/video-smoke.mjs
 
       - name: Gerar HTML offline único com 22 molduras
         run: node scripts/build-offline.mjs
