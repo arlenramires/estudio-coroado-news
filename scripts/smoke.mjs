@@ -7,7 +7,7 @@ const browser=await chromium.launch({headless:true,executablePath:exe,args:['--n
 const page=await browser.newPage({acceptDownloads:true,viewport:{width:1300,height:900}});
 const errors=[];page.on('pageerror',e=>errors.push(e.message));
 try{
- await page.goto('file://'+path.resolve('index.html'));
+ await page.goto(process.env.STUDIO_URL || 'http://127.0.0.1:8765/index.html');
  await page.waitForFunction(()=>document.querySelectorAll('#gallery .tile').length===11,{timeout:25000});
  await page.selectOption('#editorial','2');
  const png64=await page.evaluate(()=>{const t=document.createElement('canvas');t.width=t.height=32;const g=t.getContext('2d');g.fillStyle='#f00';g.fillRect(0,0,32,32);return t.toDataURL('image/png').split(',')[1]});
