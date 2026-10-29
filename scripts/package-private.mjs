@@ -28,12 +28,10 @@ echo Python nao encontrado. Abra Estudio_Coroado_Offline.html para usar sem inst
 pause
 exit /b 1
 :py
-start "" "http://127.0.0.1:8765/index.html"
-py -3 -m http.server 8765 --bind 127.0.0.1
+py -3 -c "import http.server,webbrowser; s=http.server.ThreadingHTTPServer(('127.0.0.1',8765),http.server.SimpleHTTPRequestHandler); print('Servidor privado ativo em http://127.0.0.1:8765/ - mantenha esta janela aberta'); webbrowser.open('http://127.0.0.1:8765/index.html'); s.serve_forever()"
 goto end
 :python
-start "" "http://127.0.0.1:8765/index.html"
-python -m http.server 8765 --bind 127.0.0.1
+python -c "import http.server,webbrowser; s=http.server.ThreadingHTTPServer(('127.0.0.1',8765),http.server.SimpleHTTPRequestHandler); print('Servidor privado ativo em http://127.0.0.1:8765/ - mantenha esta janela aberta'); webbrowser.open('http://127.0.0.1:8765/index.html'); s.serve_forever()"
 :end
 `;
 const android=String.raw`#!/data/data/com.termux/files/usr/bin/sh
@@ -57,7 +55,7 @@ O arquivo unico inclui as 22 molduras. Ele NAO e um PWA instalavel.
 
 PWA NO WINDOWS (INSTALACAO PELO NAVEGADOR):
 1. Extraia o ZIP inteiro (nao abra arquivos de dentro do ZIP).
-2. Com Python instalado, execute Iniciar-PC-Windows.cmd.
+2. Com Python instalado, execute Iniciar-PC-Windows.cmd e mantenha a janela aberta.\n   O navegador so sera aberto depois de o servidor iniciar.
 3. No Chrome ou Edge, acesse http://127.0.0.1:8765/index.html
 4. Aguarde carregar as 22 molduras e use o menu > Instalar aplicativo.
 5. Depois do primeiro carregamento, o cache do PWA pode operar offline.
@@ -65,16 +63,16 @@ PWA NO WINDOWS (INSTALACAO PELO NAVEGADOR):
 
 PWA NO ANDROID (SEM HOSPEDAGEM PUBLICA):
 1. Instale Termux de fonte confiavel e instale Python: pkg install python.
-2. Extraia todo o ZIP em uma pasta acessivel ao Termux.
-3. No Termux, entre na pasta e execute sh Iniciar-Android-Termux.sh
-4. No Chrome do proprio Android, abra http://127.0.0.1:8765/index.html
-5. Aguarde as 22 molduras; menu > Instalar app/Adicionar a tela inicial.
-6. Se o Chrome nao oferecer instalacao, use o HTML offline como alternativa.
+2. Execute termux-setup-storage e autorize acesso aos arquivos, se usar Downloads.\n3. Extraia todo o ZIP em uma pasta acessivel ao Termux.
+4. No Termux, entre na pasta e execute sh Iniciar-Android-Termux.sh
+5. No Chrome do proprio Android, abra http://127.0.0.1:8765/index.html
+6. Aguarde as 22 molduras; menu > Instalar app/Adicionar a tela inicial.
+7. Se o Chrome nao oferecer instalacao, use o HTML offline como alternativa.
 
 IMPORTANTE: nenhum arquivo e enviado a um servidor externo pelo editor.
 MP4 so se o navegador suportar MediaRecorder MP4; caso contrario, WebM.
 Teste exportacao com audio no seu aparelho antes de publicar.
 Nao e APK; a instalacao Android fisica ainda precisa de validacao.
-Nao use IP HTTP do PC para instalar PWA no Android.
+Nao use IP HTTP do PC para instalar PWA no Android.\nSe o Termux nao encontrar a pasta Downloads, execute termux-setup-storage, autorize e use ~/storage/downloads.\nSe o PWA nao abrir offline, acesse-o com servidor ativo uma vez e aguarde o aviso de cache pronto.
 `);
 console.log('Pacote privado gerado:',dest,'com',required.length,'arquivos do PWA + HTML offline e iniciadores.');
