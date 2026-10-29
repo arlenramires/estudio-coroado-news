@@ -55,7 +55,7 @@ try{
    const original=Blob.prototype.arrayBuffer;
    window.__restoreHeaderRead=()=>{Blob.prototype.arrayBuffer=original};
    Blob.prototype.arrayBuffer=function(...args){
-     if(this.size<=16 && this.type.startsWith('video/') && !window.__headerHeld){
+     if(this.size===16 && !window.__headerHeld){
        window.__headerHeld=true;
        return new Promise((resolve,reject)=>{window.__releaseHeaderRead=()=>original.apply(this,args).then(resolve,reject)});
      }
