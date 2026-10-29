@@ -1,0 +1,20 @@
+{
+  "id": "./",
+  "name": "Estúdio Coroado News 24H",
+  "short_name": "Estúdio Coroado",
+  "description": "Editor particular de fotos e vídeos com 22 molduras aprovadas",
+  "lang": "pt-BR",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#061225",
+  "theme_color": "#09275c",
+  "icons": [
+    {
+      "src": "icons/studio.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
