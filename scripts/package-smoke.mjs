@@ -15,6 +15,11 @@ for(const file of assets){
 }
 for(const file of ['Estudio_Coroado_Offline.html','Iniciar-PC-Windows.cmd','Iniciar-Android-Termux.sh','LEIA-ME-PRIMEIRO.txt'])
   if(!fs.existsSync(path.join(dir,file)))throw Error('Instalação incompleta: '+file);
+const windowsLauncher=fs.readFileSync(path.join(dir,'Iniciar-PC-Windows.cmd'),'utf8');
+if(!windowsLauncher.includes('ThreadingHTTPServer')||!windowsLauncher.includes('webbrowser.open'))throw Error('Inicializador Windows não espera servidor antes de abrir o navegador');
+if(windowsLauncher.includes('start "" "http://127.0.0.1:8765'))throw Error('Inicializador Windows abre navegador antes do servidor');
+const androidInstructions=fs.readFileSync(path.join(dir,'LEIA-ME-PRIMEIRO.txt'),'utf8');
+if(!androidInstructions.includes('termux-setup-storage')||!androidInstructions.includes('mantenha a janela aberta'))throw Error('Instruções de instalação local incompletas');
 const offline=fs.readFileSync(path.join(dir,'Estudio_Coroado_Offline.html'),'utf8');
 if((offline.match(/"src":"data:image\/webp;base64,/g)||[]).length!==22)throw Error('HTML offline sem as 22 molduras incorporadas');
 const manifest=JSON.parse(fs.readFileSync(path.join(dir,'manifest.webmanifest'),'utf8'));
