@@ -36,6 +36,22 @@ try{
     return {had,incomplete,complete};
   });
   if(!cacheCheck.had||cacheCheck.incomplete||!cacheCheck.complete)throw Error('Diagnóstico de cache incompleto incorreto: '+JSON.stringify(cacheCheck));
+  // O PWA privado não deve armazenar arquivos arbitrários do servidor local.
+  const cachePrivacy=await page.evaluate(async()=>{
+    const name=(await caches.keys()).find(k=>k.startsWith('estudio-coroado-offline-'));
+    const cache=await caches.open(name);
+    const readme=await fetch('./README.md');
+    const queried=await fetch('./manifest.webmanifest?nao-armazenar=1');
+    const urls=(await cache.keys()).map(request=>request.url);
+    return {
+      readmeOk:readme.ok,queriedOk:queried.ok,
+      readmeCached:urls.some(url=>url.endsWith('/README.md')),
+      queryCached:urls.some(url=>url.includes('nao-armazenar=1'))
+    };
+  });
+  if(!cachePrivacy.readmeOk||!cachePrivacy.queriedOk||cachePrivacy.readmeCached||cachePrivacy.queryCached)
+    throw Error('Cache PWA armazenou arquivo ou URL fora da lista autorizada: '+JSON.stringify(cachePrivacy));
+  console.log('Privacidade do PWA aprovada: arquivos extras e URLs com parâmetros não entram no cache.');
   const codec=await page.locator('#videoCapability').textContent();
   if(!codec.includes('Gravação'))throw Error('Diagnóstico de gravação não apareceu: '+codec);
   await page.reload();
