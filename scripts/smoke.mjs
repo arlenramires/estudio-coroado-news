@@ -20,5 +20,14 @@ try{
  const target=path.resolve('smoke-output.png');await file.saveAs(target);
  if(fs.statSync(target).size<10000)throw Error('PNG exportado inválido');
  console.log('Teste visual aprovado: 22 molduras, foto vermelha visível, manchete e PNG exportado. Bytes:',fs.statSync(target).size);
+ // Confirmar que a versão privada continua utilizável sem conexão após o primeiro carregamento.
+ await page.evaluate(()=>navigator.serviceWorker.ready);
+ await page.reload();
+ await page.waitForFunction(()=>!!navigator.serviceWorker.controller,{timeout:15000});
+ await page.context().setOffline(true);
+ await page.reload({waitUntil:'domcontentloaded'});
+ await page.waitForFunction(()=>document.querySelectorAll('#gallery .tile').length===22,{timeout:15000});
+ console.log('PWA offline aprovado: 22 molduras carregadas sem rede.');
+ await page.context().setOffline(false);
  if(errors.length)throw Error('Erros de navegador: '+errors.join(' | '));
 }finally{await browser.close();}
