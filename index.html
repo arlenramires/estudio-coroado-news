@@ -10,6 +10,7 @@
 <button id="installApp" class="secondary" type="button" hidden style="width:100%;margin-top:12px">Instalar Estúdio neste dispositivo</button><div class="actions"><button id="savePNG" type="button">Salvar PNG</button><button id="saveVideo" type="button">Exportar vídeo</button></div><button id="stopVideo" class="secondary" type="button" style="display:none;width:100%;margin-top:8px">Parar exportação</button>
 <p id="status" role="status">Escolha a moldura e uma foto ou vídeo.</p><a id="download" download>⬇ BAIXAR ARQUIVO</a><video id="videoPreview" controls playsinline></video>
 <small>MP4 com áudio quando o navegador oferece gravação MP4 nativa. Em outros navegadores, o arquivo será WebM com a extensão correta. Mantenha a tela ligada durante a exportação.</small>
+<p style="margin:9px 0 4px"><small id="offlineReady" role="status">Verificando disponibilidade offline…</small></p><p style="margin:4px 0"><small id="videoCapability">Verificando gravação de vídeo…</small></p>
 </section><section class="panel"><h2 style="margin:0 0 10px;font-size:18px">Prévia da publicação</h2><canvas id="canvas" width="1080" height="1350"></canvas><h3>22 molduras disponíveis</h3><div id="gallery" class="gallery"></div></section></main>
 <script>
 'use strict';
@@ -21,8 +22,25 @@ let installPrompt=null;
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installPrompt=e;$('installApp').hidden=false});
 $('installApp').onclick=async()=>{if(!installPrompt)return;const prompt=installPrompt;installPrompt=null;$('installApp').hidden=true;await prompt.prompt();};
 window.addEventListener('appinstalled',()=>{$('installApp').hidden=true;installPrompt=null});
-if('serviceWorker' in navigator && (location.protocol==='https:' || location.hostname==='localhost' || location.hostname==='127.0.0.1')){
-  window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(e=>console.warn('Cache offline indisponível:',e)));
+// Diagnóstico local: informa quando o pré-cache terminou e quais formatos o aparelho anuncia.
+const offlineReady=$('offlineReady'),videoCapability=$('videoCapability');
+const canRecord=mime=>typeof MediaRecorder!=='undefined'&&typeof MediaRecorder.isTypeSupported==='function'&&MediaRecorder.isTypeSupported(mime);
+const hasMp4=['video/mp4;codecs=avc1.42E01E,mp4a.40.2','video/mp4'].some(canRecord);
+const hasWebm=['video/webm;codecs=vp8,opus','video/webm'].some(canRecord);
+videoCapability.textContent=!window.MediaRecorder?'Gravação de vídeo indisponível neste navegador.':hasMp4?'Gravação: MP4 anunciado pelo navegador (confirme o áudio após exportar).':hasWebm?'Gravação: WebM disponível; MP4 não é oferecido por este navegador.':'Gravação de vídeo não suportada neste aparelho.';
+if(location.protocol==='file:'){
+  offlineReady.textContent=DATA.every(f=>f.src.startsWith('data:'))?'Arquivo único pronto para uso offline; não é PWA instalável.':'Arquivo local sem molduras incorporadas. Use o HTML offline do pacote.';
+}else if('serviceWorker' in navigator && (location.protocol==='https:' || location.hostname==='localhost' || location.hostname==='127.0.0.1')){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('./sw.js').then(()=>navigator.serviceWorker.ready).then(()=>{
+      offlineReady.textContent='Cache offline preparado: 22 molduras disponíveis sem internet neste navegador.';
+    }).catch(e=>{
+      offlineReady.textContent='Cache offline indisponível. Use o HTML offline do pacote.';
+      console.warn('Cache offline indisponível:',e);
+    });
+  });
+}else{
+  offlineReady.textContent='Instalação PWA exige localhost ou HTTPS. Use o HTML offline do pacote.';
 }
 function load(src){return new Promise((resolve,reject)=>{const im=new Image();im.onload=()=>resolve(im);im.onerror=reject;im.src=src})}
 function dims(s){return [s.videoWidth||s.naturalWidth||s.width,s.videoHeight||s.naturalHeight||s.height]}
