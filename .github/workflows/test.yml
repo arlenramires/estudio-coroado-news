@@ -15,3 +15,8 @@ jobs:
           node-version: '22'
       - name: Validar editor e arquivos originais
         run: node scripts/check-editor.mjs
+
+      - name: Instalar Playwright Core
+        run: npm install --no-save playwright-core@1.56.1
+      - name: Testar navegador e PNG
+        run: node scripts/smoke.mjs
