@@ -4,7 +4,9 @@ import {execFileSync,spawnSync} from 'node:child_process';
 const exe=['/usr/bin/google-chrome','/usr/bin/chromium'].find(p=>fs.existsSync(p));if(!exe)throw Error('Chrome não instalado');
 execFileSync('ffmpeg',['-hide_banner','-loglevel','error','-y','-f','lavfi','-i','color=c=red:s=320x240:r=15','-f','lavfi','-i','sine=frequency=880:sample_rate=48000','-t','2.5','-c:v','libx264','-pix_fmt','yuv420p','-c:a','aac','-shortest','test-input.mp4']);
 const browser=await chromium.launch({headless:true,executablePath:exe,args:['--no-sandbox','--autoplay-policy=no-user-gesture-required']});
-const page=await browser.newPage({acceptDownloads:true});
+const mobile=process.env.STUDIO_TEST_MOBILE==='1';
+const context=await browser.newContext(mobile?{acceptDownloads:true,viewport:{width:390,height:844},isMobile:true,hasTouch:true,deviceScaleFactor:2}:{acceptDownloads:true});
+const page=await context.newPage();
 const errors=[];page.on('pageerror',e=>errors.push(e.message));
 if(process.env.STUDIO_TEST_CODEC_FALLBACK==='1'){
  await page.addInitScript(()=>{
