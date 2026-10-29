@@ -80,6 +80,27 @@ try{
  const videoState=await page.evaluate(()=>({hasVideo:!!video,photoWidth:photo?.naturalWidth,tools:document.querySelector('#videoTools').style.display,status:document.querySelector('#status').textContent}));
  if(videoState.hasVideo||videoState.photoWidth!==64||videoState.tools!=='none'||!videoState.status.includes('Foto encaixada'))throw Error('Vídeo anterior reativado após trocar por foto: '+JSON.stringify(videoState));
  console.log('Troca rápida de mídia aprovada: callbacks antigos de foto/vídeo ignorados.');
+ // Android pode fornecer MIME vazio ou genérico ao escolher um vídeo.
+ const mobileMime=await page.evaluate(async(png64)=>{
+   const input=document.querySelector('#media');
+   const choose=(name,type,bytes)=>{
+     const dt=new DataTransfer();
+     dt.items.add(new File([bytes],name,{type}));
+     input.files=dt.files;
+     input.dispatchEvent(new Event('change',{bubbles:true}));
+   };
+   choose('gravacao-celular.MP4','application/octet-stream',new Uint8Array([0,1,2]));
+   const videoTools=document.querySelector('#videoTools').style.display;
+   choose('imagem-sem-mime.png','',Uint8Array.from(atob(png64),c=>c.charCodeAt(0)));
+   await new Promise((resolve,reject)=>{
+     const timeout=setTimeout(()=>reject(Error('Imagem sem MIME não carregou')),5000);
+     const check=()=>{if(photo?.naturalWidth===32){clearTimeout(timeout);resolve()}else setTimeout(check,40)};
+     check();
+   });
+   return {videoTools,photoWidth:photo?.naturalWidth,finalTools:document.querySelector('#videoTools').style.display};
+ },png64);
+ if(mobileMime.videoTools!=='block'||mobileMime.photoWidth!==32||mobileMime.finalTools!=='none')throw Error('Detecção de mídia Android com MIME genérico falhou: '+JSON.stringify(mobileMime));
+ console.log('Mídia Android aprovada: MP4 com MIME genérico e PNG sem MIME reconhecidos.');
  // Confirmar que a versão privada continua utilizável sem conexão após o primeiro carregamento.
  await page.evaluate(()=>navigator.serviceWorker.ready);
  await page.reload();
