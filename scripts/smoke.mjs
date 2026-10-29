@@ -21,6 +21,26 @@ try{
  if(fs.statSync(target).size<10000)throw Error('PNG exportado inválido');
  console.log('Teste visual aprovado: 22 molduras, foto vermelha visível, manchete e PNG exportado. Bytes:',fs.statSync(target).size);
 
+ // Regressão: callback assíncrono de PNG não pode baixar uma arte obsoleta.
+ let stalePngDownloads=0;
+ page.on('download',()=>{stalePngDownloads++});
+ await page.evaluate(()=>{
+   const original=canvas.toBlob.bind(canvas);
+   window.__restorePng=()=>{canvas.toBlob=original};
+   canvas.toBlob=(callback,...args)=>original(blob=>{window.__releasePng=()=>callback(blob)},...args);
+ });
+ await page.click('#savePNG');
+ await page.waitForFunction(()=>typeof window.__releasePng==='function');
+ await page.fill('#headline','MANCHETE ALTERADA DURANTE EXPORTACAO');
+ await page.evaluate(()=>window.__releasePng());
+ await page.waitForTimeout(250);
+ if(stalePngDownloads)throw Error('PNG obsoleto foi entregue após edição');
+ await page.evaluate(()=>window.__restorePng());
+ const freshPng=page.waitForEvent('download',{timeout:15000});
+ await page.click('#savePNG');
+ const freshFile=await freshPng;
+ if(!freshFile.suggestedFilename().endsWith('.png'))throw Error('Novo PNG não foi exportado');
+ console.log('PNG assíncrono aprovado: edição invalida download antigo e permite nova exportação.');
  // Regressão: uma foto lenta não pode substituir uma foto escolhida depois.
  await page.evaluate(()=>{
    const originalLoad=load;let delayed=false;
