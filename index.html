@@ -68,6 +68,15 @@ for(const event of ['pointerup','pointercancel','lostpointercapture'])c.addEvent
 $('emojiPick').addEventListener('change',()=>{$('emojiCustom').value='';$('stickerMode').value='emoji';$('stickerEnabled').checked=true;refresh()});
 $('emojiCustom').addEventListener('input',()=>{$('stickerMode').value='emoji';$('stickerEnabled').checked=true;refresh()});
 
+function overlayFor(f){
+ if(f.overlay)return f.overlay;
+ const iw=f.img.naturalWidth,ih=f.img.naturalHeight;
+ const t=document.createElement('canvas');t.width=iw;t.height=ih;
+ const g=t.getContext('2d');g.drawImage(f.img,0,0,iw,ih);
+ const b=f.box,p=g.getImageData(b[0],b[1],b[2],b[3]),v=p.data;
+ for(let i=0;i<v.length;i+=4){const light=Math.max(v[i],v[i+1],v[i+2]);if(light<72)v[i+3]=0;else if(light<96)v[i+3]=Math.round((light-72)*255/24)}
+ g.putImageData(p,b[0],b[1]);f.overlay=t;return t;
+}
 function render(){
  const W=1080,H=$('format').value==='reels'?1920:1350;
  if(c.width!==W||c.height!==H){c.width=W;c.height=H}
@@ -84,11 +93,8 @@ function render(){
   const z=Number($('zoom').value)/100,px=Number($('px').value)/100,py=Number($('py').value)/100;
   if($('fit').value==='contain'){ctx.save();ctx.filter='blur(28px) brightness(.55)';fit(ctx,source,b,'cover',1,px,py);ctx.restore()}
   fit(ctx,source,b,$('fit').value,z,px,py);ctx.restore();
-  // Preserva o Coroadinho original em primeiro plano, sem recriar o personagem.
-  ctx.save();ctx.beginPath();
-  if(f.native)ctx.rect(0,970,340,530);
-  else ctx.rect(0,Math.floor(ih*.545),Math.floor(iw*.42),Math.floor(ih*.35));
-  ctx.clip();ctx.drawImage(f.img,0,0,iw,ih);ctx.restore();
+  // Mantém as partes coloridas do Coroadinho e do contorno sobre a mídia.
+  ctx.drawImage(overlayFor(f),0,0,iw,ih);
  }
  drawSticker(ctx,b);
  const txt=$('headline').value.trim().toUpperCase();
