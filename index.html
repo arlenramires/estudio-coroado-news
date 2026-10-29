@@ -8,7 +8,7 @@
 <details><summary>⚙️ Ajustes de enquadramento e texto</summary><label>Foto/vídeo</label><select id="fit"><option value="cover">Preencher a janela</option><option value="contain">Mostrar inteiro</option></select><label>Zoom <output id="zoomValue">100%</output></label><input type="range" id="zoom" min="100" max="250" value="100"><label>Posição horizontal</label><input type="range" id="px" min="0" max="100" value="50"><label>Posição vertical</label><input type="range" id="py" min="0" max="100" value="50"><div class="grid2"><div><label>Fonte</label><select id="font"><option>Arial</option><option>Impact</option><option>Verdana</option><option>Georgia</option></select></div><div><label>Cor</label><select id="color"><option value="#ffffff">Branca</option><option value="#ffe500">Amarela</option></select></div></div><label>Tamanho do título</label><input type="range" id="size" min="22" max="100" value="65"></details>
 <div id="videoTools"><label>Trecho do vídeo (segundos)</label><div class="grid2"><div><small>Início</small><input id="trimStart" type="number" min="0" step="0.1" value="0"></div><div><small>Fim</small><input id="trimEnd" type="number" min="0" step="0.1" value="0"></div></div><label style="font-weight:500"><input type="checkbox" id="audio" checked> Manter áudio original</label><button id="play" class="secondary" type="button">▶ Prévia do vídeo</button></div>
 <button id="installApp" class="secondary" type="button" hidden style="width:100%;margin-top:12px">Instalar Estúdio neste dispositivo</button><div class="actions"><button id="savePNG" type="button">Salvar PNG</button><button id="saveVideo" type="button">Exportar vídeo</button></div><button id="stopVideo" class="secondary" type="button" style="display:none;width:100%;margin-top:8px">Parar exportação</button>
-<p id="status" role="status">Escolha a moldura e uma foto ou vídeo.</p><a id="download" download>⬇ BAIXAR ARQUIVO</a><video id="videoPreview" controls playsinline></video>
+<p id="status" role="status">Escolha a moldura e uma foto ou vídeo.</p><a id="download" download>⬇ BAIXAR ARQUIVO</a><video id="videoPreview" controls playsinline aria-label="Prévia do vídeo exportado"></video>
 <small>MP4 com áudio quando o navegador oferece gravação MP4 nativa. Em outros navegadores, o arquivo será WebM com a extensão correta. Mantenha a tela ligada durante a exportação.</small>
 <p style="margin:9px 0 4px"><small id="offlineReady" role="status">Verificando disponibilidade offline…</small></p><p style="margin:4px 0"><small id="videoCapability">Verificando gravação de vídeo…</small></p>
 </section><section class="panel"><h2 style="margin:0 0 10px;font-size:18px">Prévia da publicação</h2><canvas id="canvas" width="1080" height="1350"></canvas><h3>22 molduras disponíveis</h3><div id="gallery" class="gallery"></div></section></main>
@@ -92,7 +92,25 @@ function setExportBusy(busy){
  document.querySelectorAll('#gallery .tile').forEach(button=>button.disabled=busy);
  $('stopVideo').style.display=busy?'block':'none';
 }
-function deliver(blob,name){if(!blob||!blob.size){status('Arquivo vazio. Tente novamente.');return}if(downloadURL)URL.revokeObjectURL(downloadURL);downloadURL=URL.createObjectURL(blob);const a=$('download');a.href=downloadURL;a.download=name;a.style.display='block';a.textContent='⬇ BAIXAR '+name.toUpperCase();a.click();status('Arquivo gerado: '+name+'. Se não baixar automaticamente, toque no botão verde.')}
+function deliver(blob,name){
+ if(!blob||!blob.size){status('Arquivo vazio. Tente novamente.');return}
+ // Libera a prévia anterior antes de revogar o URL do arquivo anterior.
+ const preview=$('videoPreview');
+ preview.pause();
+ if(preview.hasAttribute('src')){preview.removeAttribute('src');preview.load()}
+ preview.style.display='none';
+ if(downloadURL)URL.revokeObjectURL(downloadURL);
+ downloadURL=URL.createObjectURL(blob);
+ if(/\.(mp4|webm)$/i.test(name)){
+   preview.src=downloadURL;
+   preview.style.display='block';
+   preview.load();
+ }
+ const a=$('download');
+ a.href=downloadURL;a.download=name;a.style.display='block';
+ a.textContent='⬇ BAIXAR '+name.toUpperCase();a.click();
+ status('Arquivo gerado: '+name+'. Se não baixar automaticamente, toque no botão verde.');
+}
 $('savePNG').onclick=()=>{draw();canvas.toBlob(b=>deliver(b,'Coroado_'+(selected+1)+'_arte.png'),'image/png')};
 $('saveVideo').onclick=async()=>{if(!video){status('Escolha um vídeo antes de exportar.');return}if(recording){status('Já existe uma exportação em andamento.');return}if(!window.MediaRecorder||!canvas.captureStream){status('Seu navegador não permite exportar vídeo.');return}if($('audio').checked&&!audioDest){status('Não foi possível capturar o áudio deste vídeo. Desmarque Manter áudio original para exportar sem som.');return}
  let start=Math.max(0,+$('trimStart').value||0),end=Math.min(video.duration,+$('trimEnd').value||video.duration);if(!(end>start+.3)){status('Escolha um trecho válido de pelo menos 0,3 segundo.');return}
