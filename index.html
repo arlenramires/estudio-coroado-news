@@ -27,7 +27,7 @@ const offlineReady=$('offlineReady'),videoCapability=$('videoCapability');
 // Confere os arquivos de verdade: serviceWorker.ready sozinho não garante pré-cache completo.
 async function verifyOfflineCache(){
   if(!('caches' in window))return false;
-  const required=['./index.html',...DATA.map(f=>'./'+f.src)].map(p=>new URL(p,location.href).href);
+  const required=['./index.html','./manifest.webmanifest','./icons/studio.svg','./icons/studio-192.png','./icons/studio-512.png',...DATA.map(f=>'./'+f.src)].map(p=>new URL(p,location.href).href);
   const names=(await caches.keys()).filter(name=>name.startsWith('estudio-coroado-offline-'));
   for(const name of names){
     const cache=await caches.open(name);
