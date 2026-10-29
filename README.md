@@ -37,9 +37,9 @@ Na execução bem-sucedida de **Actions → Testar Estúdio**, baixe o artefato 
 
 **Uso imediato:** extraia o ZIP e abra `Estudio_Coroado_Offline.html` no Chrome/Edge do PC ou no navegador do Android via gerenciador de arquivos. As fotos e os vídeos selecionados ficam no dispositivo. Esse HTML **não** é um PWA instalável.
 
-**Instalação PWA privada no PC:** extraia tudo, instale Python se necessário, execute `Iniciar-PC-Windows.cmd`, acesse `http://127.0.0.1:8765/index.html` no Chrome/Edge e escolha **Instalar aplicativo** quando disponível.
+**Instalação PWA privada no PC:** extraia tudo, instale Python se necessário, execute `Iniciar-PC-Windows.cmd` e mantenha a janela do servidor aberta. O navegador abre **após** o servidor iniciar, evitando erro de conexão na primeira abertura. Acesse `http://127.0.0.1:8765/index.html` no Chrome/Edge e escolha **Instalar aplicativo** quando disponível.
 
-**Instalação PWA privada no Android:** use Termux com Python, extraia o ZIP em uma pasta acessível ao Termux, execute `sh Iniciar-Android-Termux.sh`, abra `http://127.0.0.1:8765/index.html` no Chrome do próprio telefone e use **Instalar app** quando disponível. A instalação e exportação com áudio **ainda precisam de validação em Android físico**; testes automatizados simulam uma tela móvel, mas não são um aparelho real.
+**Instalação PWA privada no Android:** use Termux com Python, execute `termux-setup-storage` e autorize acesso se usar Downloads, extraia o ZIP em uma pasta acessível ao Termux (por exemplo `~/storage/downloads/`), execute `sh Iniciar-Android-Termux.sh`, abra `http://127.0.0.1:8765/index.html` no Chrome do próprio telefone e use **Instalar app** quando disponível. A instalação e exportação com áudio **ainda precisam de validação em Android físico**; testes automatizados simulam uma tela móvel, mas não são um aparelho real.
 
 O código-fonte no GitHub **continua público** enquanto o proprietário não alterar a visibilidade do repositório. A entrega não ativa GitHub Pages, não fornece APK e não hospeda dados pessoais. MP4 depende de suporte nativo do navegador; WebM é a alternativa quando não houver MP4.
 
