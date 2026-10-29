@@ -7,7 +7,7 @@ const browser=await chromium.launch({headless:true,executablePath:exe,args:['--n
 const page=await browser.newPage({acceptDownloads:true});
 const errors=[];page.on('pageerror',e=>errors.push(e.message));
 try{
- await page.goto('http://127.0.0.1:8765/index.html');
+ await page.goto(process.env.STUDIO_URL || 'http://127.0.0.1:8765/index.html');
  await page.waitForFunction(()=>document.querySelectorAll('.tile').length===22);
  await page.locator('#media').setInputFiles('test-input.mp4');
  await page.waitForFunction(()=>document.querySelector('#videoTools').style.display==='block' && document.querySelector('#trimEnd').value!=='0',{timeout:15000});
