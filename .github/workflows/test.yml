@@ -43,10 +43,14 @@ jobs:
         run: node scripts/offline-smoke.mjs
       - name: Testar exportação de vídeo com áudio no arquivo offline
         run: STUDIO_URL="file://$GITHUB_WORKSPACE/dist/Estudio_Coroado_Offline.html" node scripts/video-smoke.mjs
+      - name: Montar pacote privado PWA + HTML offline para PC e Android
+        run: node scripts/package-private.mjs
+      - name: Validar pacote instalável em localhost, offline e tela móvel
+        run: node scripts/package-smoke.mjs
       - name: Disponibilizar pacote privado de instalação
         uses: actions/upload-artifact@v4
         with:
-          name: Estudio-Coroado-Offline-PC-Celular
-          path: dist/Estudio_Coroado_Offline.html
+          name: Estudio-Coroado-Privado-PC-Android
+          path: dist/Estudio-Coroado-Privado/
           retention-days: 30
           if-no-files-found: error
