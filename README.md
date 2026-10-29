@@ -6,7 +6,7 @@ Editor independente, exclusivo deste repositório. Nenhum arquivo do portal de n
 As **22 molduras aprovadas** estão publicadas em `molduras/original_01.webp` até `original_22.webp`. São versões WebP otimizadas das imagens recuperadas do acervo, mantendo composição e mascote, sem redesenho. O catálogo com nomes e dimensões está em `molduras/catalogo-22.json`.
 
 ## Usar
-Abra `index.html` em um servidor HTTP (ou GitHub Pages quando habilitado), selecione a moldura, adicione foto ou vídeo, ajuste manchete e exporte PNG ou vídeo. A exportação grava MP4 somente quando o navegador oferece MP4 nativo; caso contrário salva WebM com extensão correta. A presença de áudio depende da compatibilidade do navegador. Mantenha a aba ativa durante a exportação em tempo real.
+Abra `index.html` em um servidor HTTP **local** (`127.0.0.1`, sem GitHub Pages), selecione a moldura, adicione foto ou vídeo, ajuste manchete e exporte PNG ou vídeo. Após exportar um vídeo, use a prévia com controles dentro do editor para conferir o resultado antes de publicar; o botão de download permanece disponível. A exportação grava MP4 somente quando o navegador oferece MP4 nativo; caso contrário salva WebM com extensão correta. A presença de áudio depende da compatibilidade do navegador. Mantenha a aba ativa durante a exportação em tempo real.
 
 ## Testes
 `node scripts/check-editor.mjs` valida a sintaxe e os arquivos. Os workflows de Actions executam testes de navegador, PNG e vídeo com áudio via FFmpeg/ffprobe. Testes em Android devem ser feitos no próprio dispositivo.
