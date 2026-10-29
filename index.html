@@ -1,254 +1,66 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Estúdio Coroado News 24H — versão 32</title><style>
-*{box-sizing:border-box}body{margin:0;background:#061225;color:#f5f8ff;font:15px system-ui,Arial}.wrap{max-width:1350px;margin:auto;padding:18px}h1{font-size:25px;margin:8px 0}h2{font-size:18px}p{color:#b8cce9;line-height:1.5}.layout{display:grid;grid-template-columns:minmax(260px,310px) minmax(280px,1fr);gap:18px}.panel{background:#10264a;border:1px solid #39649a;border-radius:15px;padding:16px;margin-bottom:16px}label{display:grid;gap:6px;margin:0 0 12px;font-weight:650}input,select,textarea,button{width:100%;font:inherit;border:1px solid #597ba8;border-radius:9px;padding:10px;background:#071832;color:white}input[type=color]{height:42px;padding:3px}button{background:#2469b6;font-weight:750;cursor:pointer;margin-bottom:8px}button:disabled{opacity:.5}.preview{display:flex;justify-content:center;background:#061126;border-radius:12px;padding:12px}canvas{width:min(100%,480px);height:auto;box-shadow:0 10px 28px #0009}.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:9px}.tile{padding:5px;border:2px solid #3466a4;background:#0b2141}.tile.active{border-color:#ffce34}.tile img{width:100%;aspect-ratio:4/5;object-fit:contain}.tile span{display:block;font-size:12px}.status{color:#ffdf8a}.small{font-size:12px}@media(max-width:760px){.layout{grid-template-columns:1fr}.wrap{padding:10px}.panel{padding:12px}.gallery{grid-template-columns:repeat(3,minmax(0,1fr))}}
- .quick-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}.quick-actions button{background:#d51f32;border:1px solid #ff6476;font-size:15px;min-height:54px}.quick-actions button:nth-child(2){background:#2469b6}@media(max-width:520px){.quick-actions{grid-template-columns:1fr}.quick-actions button{min-height:58px}} .move-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}.position-controls{padding:12px;border:1px solid #426da1;border-radius:10px;margin:10px 0}.position-controls button{min-height:44px}</style></head><body><div class="wrap"><h1>Estúdio de Criação — Coroado News 24H · 34</h1><p>17 molduras anteriores + 5 novas molduras 3D recebidas, preservadas como camada superior. Foto ou vídeo são encaixados na janela escura; o Coroadinho e os detalhes da arte ficam à frente.</p><div class="layout"><aside><div class="panel"><label>Editorial<select id="editorial"></select></label><label>Adicionar foto ou vídeo<input type="file" id="media" accept="image/*,video/*"></label><label>Formato<select id="format"><option value="feed">Feed 4:5 (1080 × 1350)</option><option value="reels" selected>Reels / Stories 9:16 (1080 × 1920)</option></select></label><label>Enquadramento<select id="fit"><option value="contain">Foto inteira + fundo desfocado</option><option value="cover">Preencher janela proporcionalmente</option></select></label><div id="videoTools" class="panel" style="display:none;background:#0b1c38;padding:12px"><strong>Editar vídeo</strong><label>Início do corte (segundos)<input id="trimStart" type="number" min="0" step="0.1" value="0"></label><label>Fim do corte (segundos)<input id="trimEnd" type="number" min="0" step="0.1" value="0"></label><label>Prévia do trecho<input id="scrub" type="range" min="0" max="100" value="0" step="0.1"></label><label style="display:flex;align-items:center;gap:8px"><input id="audio" type="checkbox" checked style="width:auto">Incluir áudio original na exportação</label><button type="button" id="previewClip">Reproduzir trecho selecionado</button><p class="small" id="clipInfo">Escolha um vídeo para editar.</p></div><div class="panel" style="background:#0b1c38;padding:12px"><strong>Cobrir logotipo ou marca no vídeo</strong><p class="small">Adicione uma figura sua (PNG/JPG), ou use uma tarja de cor. A cobertura fica dentro do vídeo e atrás da moldura e do Coroadinho.</p><label>Figura de cobertura<input type="file" id="stickerFile" accept="image/*"></label><label>Tipo de cobertura<select id="stickerMode"><option value="image">Figura enviada</option><option value="solid">Tarja de cor</option><option value="emoji">Emoji</option></select></label><label>Escolher emoji<select id="emojiPick"><option>😀</option><option>😂</option><option>🤣</option><option>😮</option><option>❤️</option><option>🔥</option><option>⭐</option><option>🚨</option><option>📢</option><option>🎥</option><option>🎬</option><option>👍</option><option>👀</option><option>❗</option><option>🎉</option><option>💬</option></select></label><label>Ou digite outro emoji<input id="emojiCustom" placeholder="Ex.: 😎 🎤 🐟" maxlength="12"></label><p class="small">Toque na figura ou em qualquer ponto da janela para posicionar; arraste com o dedo para mover. Use os controles para redimensionar.</p><label>Cor da tarja<input type="color" id="stickerColor" value="#092b60"></label><label>Posição horizontal (%)<input type="range" id="stickerX" min="0" max="100" value="75"></label><label>Posição vertical (%)<input type="range" id="stickerY" min="0" max="100" value="85"></label><div class="position-controls"><strong>Movimentação precisa da figura / tarja</strong><p class="small">Ajuste esquerda/direita e cima/baixo separadamente, ou arraste na prévia.</p><label>Horizontal — esquerda ↔ direita (%)<input type="number" id="stickerXNumber" min="0" max="100" step="1" value="75"></label><div class="move-row"><button type="button" id="moveLeft">◀ Esquerda</button><button type="button" id="moveRight">Direita ▶</button></div><label>Vertical — cima ↕ baixo (%)<input type="number" id="stickerYNumber" min="0" max="100" step="1" value="85"></label><div class="move-row"><button type="button" id="moveUp">▲ Subir</button><button type="button" id="moveDown">▼ Descer</button></div><button type="button" id="moveCenter">Centralizar figura / tarja</button></div><label>Largura (%)<input type="range" id="stickerW" min="5" max="100" value="25"></label><label>Altura (%)<input type="range" id="stickerH" min="3" max="100" value="12"></label><label>Mostrar figura a partir de (segundos)<input type="number" id="stickerStart" min="0" step="0.1" value="0"></label><label>Ocultar figura após (segundos; 0 = até o fim)<input type="number" id="stickerEnd" min="0" step="0.1" value="0"></label><button id="stickerFull" type="button">Mostrar durante todo o vídeo</button><label>Opacidade (%)<input type="range" id="stickerOpacity" min="10" max="100" value="100"></label><label style="display:flex;align-items:center;gap:8px"><input id="stickerEnabled" type="checkbox" style="width:auto"> Ativar cobertura</label><button id="stickerRemove" type="button">Remover cobertura</button></div><label>Manchete<textarea id="headline" rows="3" placeholder="Escreva a manchete aqui"></textarea></label><label>Fonte<select id="font"><option value="Arial Black,Arial,sans-serif">Arial Black</option><option value="Impact,Arial,sans-serif">Impact</option><option value="Arial,sans-serif">Arial</option><option value="Georgia,serif">Georgia (serifada)</option><option value="Courier New,monospace">Máquina de escrever</option><option value="Trebuchet MS,Arial,sans-serif">Trebuchet</option></select></label><label>Cor<input id="color" type="color" value="#ffffff"></label><label>Tamanho da manchete: <output id="sizeValue">95</output> / 300<input id="size" type="range" min="25" max="300" value="95"></label><label>Alinhamento da manchete<select id="alignText"><option value="center">Centralizar</option><option value="left">Esquerda</option><option value="right">Direita</option><option value="justify">Justificar</option></select></label><label>Zoom<input id="zoom" type="range" min="100" max="250" value="100"></label><label>Posição horizontal<input id="px" type="range" min="0" max="100" value="50"></label><label>Posição vertical<input id="py" type="range" min="0" max="100" value="50"></label><button id="autoText" type="button">Ajustar manchete automaticamente</button><button id="auto" type="button">Restaurar enquadramento da foto</button><button id="png">Salvar imagem PNG</button><button id="record">Salvar MP4</button><button id="stop" disabled>Parar gravação</button><p class="status" id="status">Preparando as molduras…</p><p class="small">Para evitar falhas na gravação, mantenha a tela ligada e esta aba em primeiro plano. O MP4 depende do codificador nativo do navegador. Se indisponível, a exportação é bloqueada sem criar WebM. O áudio original depende do suporte do navegador. Cortes disponíveis no início e no fim do vídeo.</p></div></aside><main><section class="panel"><h2>Prévia</h2><div class="preview"><canvas id="canvas" width="1080" height="1350"></canvas></div><div class="quick-actions"><button type="button" id="quickVideo">⬇ SALVAR VÍDEO EDITADO</button><button type="button" id="quickImage">⬇ SALVAR IMAGEM PNG</button></div><p class="small">Para vídeo, selecione um arquivo e toque em SALVAR VÍDEO EDITADO. A exportação só inicia se o aparelho oferecer MP4 nativo.</p></section><section class="panel"><h2>22 molduras disponíveis</h2><div id="gallery" class="gallery"></div></section></main></div></div>
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Estúdio Coroado News 24H — 22 molduras</title><style>
+*{box-sizing:border-box}body{background:#061225;color:#f7faff;font:15px system-ui,Arial;margin:0}header{background:#09275c;border-bottom:3px solid #f32045;padding:14px 20px}header h1{font-size:22px;margin:0}header p{margin:4px 0;color:#c9dbf4}.layout{max-width:1450px;margin:auto;padding:14px;display:grid;grid-template-columns:minmax(290px,355px) minmax(320px,1fr);gap:15px}.panel{background:#102548;border:1px solid #32578a;border-radius:12px;padding:14px;min-width:0}label{display:block;font-weight:700;margin:13px 0 6px}input,select,textarea,button{font:inherit}input[type=file],select,textarea,input[type=number]{width:100%;background:#08172e;color:white;border:1px solid #6485b2;border-radius:8px;padding:10px}textarea{min-height:74px}input[type=range]{width:100%;accent-color:#f32a49}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}button{background:#d71939;border:0;border-radius:8px;padding:12px 14px;color:#fff;font-weight:800;cursor:pointer}button.secondary{background:#235383}button:disabled{opacity:.45;cursor:not-allowed}#canvas{display:block;width:100%;max-height:78vh;object-fit:contain;margin:auto;background:#020916;border-radius:8px;border:1px solid #3c5981}.actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}.gallery{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:7px;margin-top:12px}.tile{background:#152e57;border:2px solid transparent;padding:5px;border-radius:7px;color:#fff;font-size:11px;font-weight:500}.tile.active{border-color:#ffd329}.tile img{display:block;width:100%;height:110px;object-fit:contain}.tile span{display:block;margin-top:5px}#status{color:#cce5ff;min-height:2em;line-height:1.4}small{color:#b4c8e5}#videoTools{display:none}#download{display:none;margin-top:8px;text-align:center;padding:14px;background:#087d48;color:white;border-radius:9px;text-decoration:none;font-weight:800}#videoPreview{display:none;width:100%;max-height:300px;margin-top:8px}details{margin-top:10px}@media(max-width:850px){.layout{display:block}.panel{margin-bottom:12px}.gallery{grid-template-columns:repeat(3,1fr)}.tile img{height:90px}}@media(max-width:450px){header h1{font-size:19px}.layout{padding:8px}.panel{padding:11px}.actions button{font-size:13px;padding:12px 5px}}
+</style></head><body><header><h1>🎬 COROADO NEWS 24H — ESTÚDIO</h1><p>22 molduras originais preservadas • Fotos, manchetes e vídeos</p></header><main class="layout"><section class="panel">
+<label for="editorial">1. Escolha a moldura</label><select id="editorial"></select>
+<label for="media">2. Adicione foto ou vídeo</label><input type="file" id="media" accept="image/*,video/*">
+<label for="headline">3. Escreva a manchete</label><textarea id="headline" placeholder="Digite a manchete da notícia"></textarea>
+<label for="format">4. Formato de publicação</label><select id="format"><option value="original">Original da moldura</option><option value="feed">Feed 1080 × 1350 (4:5)</option><option value="reels">Reels 1080 × 1920 (9:16)</option><option value="story">Story 1080 × 1920 (9:16)</option><option value="square">Quadrado 1080 × 1080</option></select>
+<details><summary>⚙️ Ajustes de enquadramento e texto</summary><label>Foto/vídeo</label><select id="fit"><option value="cover">Preencher a janela</option><option value="contain">Mostrar inteiro</option></select><label>Zoom <output id="zoomValue">100%</output></label><input type="range" id="zoom" min="100" max="250" value="100"><label>Posição horizontal</label><input type="range" id="px" min="0" max="100" value="50"><label>Posição vertical</label><input type="range" id="py" min="0" max="100" value="50"><div class="grid2"><div><label>Fonte</label><select id="font"><option>Arial</option><option>Impact</option><option>Verdana</option><option>Georgia</option></select></div><div><label>Cor</label><select id="color"><option value="#ffffff">Branca</option><option value="#ffe500">Amarela</option></select></div></div><label>Tamanho do título</label><input type="range" id="size" min="22" max="100" value="65"></details>
+<div id="videoTools"><label>Trecho do vídeo (segundos)</label><div class="grid2"><div><small>Início</small><input id="trimStart" type="number" min="0" step="0.1" value="0"></div><div><small>Fim</small><input id="trimEnd" type="number" min="0" step="0.1" value="0"></div></div><label style="font-weight:500"><input type="checkbox" id="audio" checked> Manter áudio original</label><button id="play" class="secondary" type="button">▶ Prévia do vídeo</button></div>
+<div class="actions"><button id="savePNG" type="button">Salvar PNG</button><button id="saveVideo" type="button">Exportar vídeo</button></div><button id="stopVideo" class="secondary" type="button" style="display:none;width:100%;margin-top:8px">Parar exportação</button>
+<p id="status" role="status">Escolha a moldura e uma foto ou vídeo.</p><a id="download" download>⬇ BAIXAR ARQUIVO</a><video id="videoPreview" controls playsinline></video>
+<small>MP4 com áudio quando o navegador oferece gravação MP4 nativa. Em outros navegadores, o arquivo será WebM com a extensão correta. Mantenha a tela ligada durante a exportação.</small>
+</section><section class="panel"><h2 style="margin:0 0 10px;font-size:18px">Prévia da publicação</h2><canvas id="canvas" width="1080" height="1350"></canvas><h3>22 molduras disponíveis</h3><div id="gallery" class="gallery"></div></section></main>
 <script>
 'use strict';
-const DATA=[{"name":"Notícias — Reels","data":"molduras/noticias-original.png","native":true},{"name":"Jornalística — Reels","data":"molduras/jornalistica-original.png","native":true},{"name":"Política","data":"molduras/moldura_15.webp"},{"name":"Manaus","data":"molduras/moldura_13.webp"},{"name":"Amazonas","data":"molduras/moldura_14.webp"},{"name":"Brasil e Mundo","data":"molduras/moldura_12.webp"},{"name":"Esportes","data":"molduras/moldura_11.webp"},{"name":"Polícia","data":"molduras/moldura_17.webp"},{"name":"Saúde","data":"molduras/moldura_10.webp"},{"name":"Entretenimento","data":"molduras/moldura_09.webp"},{"name":"Fofoca","data":"molduras/moldura_08.webp"}];
-const $=id=>document.getElementById(id), c=$('canvas'),ctx=c.getContext('2d');
-let selected=0,photo=null,video=null,mediaURL=null,recorder=null,raf=0,frames=[],recordTimer=null;
-let audioCtx=null,audioSource=null,audioDestination=null,recordStream=null,recordStopHandler=null;
-function clipBounds(){let d=video?.duration||0;let a=Math.min(Math.max(0,Number($('trimStart').value)||0),Math.max(0,d-.1));let b=Math.min(Math.max(a+.1,Number($('trimEnd').value)||d),d);return [a,b]}
-function updateClip(){if(!video)return;let [a,b]=clipBounds();$('trimStart').value=a.toFixed(1);$('trimEnd').value=b.toFixed(1);$('scrub').min=a;$('scrub').max=b;$('scrub').value=Math.min(b,Math.max(a,video.currentTime||a));$('clipInfo').textContent=`Trecho: ${a.toFixed(1)}s até ${b.toFixed(1)}s (${(b-a).toFixed(1)}s)`;}
-function setupAudio(v){try{audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();audioSource=audioCtx.createMediaElementSource(v);audioDestination=audioCtx.createMediaStreamDestination();audioSource.connect(audioDestination);audioSource.connect(audioCtx.destination);v.muted=false;v.volume=1;}catch(e){audioSource=null;audioDestination=null;status('Prévia disponível; áudio de exportação indisponível: '+e.message)}}
-
-function status(t){$('status').textContent=t}
-function load(src){return new Promise((ok,no)=>{let i=new Image;i.onload=()=>ok(i);i.onerror=no;i.src=src})}
-function sourceDims(s){return [s.videoWidth||s.naturalWidth||s.width,s.videoHeight||s.naturalHeight||s.height]}
-function fit(g,s,b,mode,zoom=1,px=.5,py=.5){const [sw,sh]=sourceDims(s);if(!sw||!sh)return;let sc=(mode==='cover'?Math.max:Math.min)(b.w/sw,b.h/sh)*zoom,dw=sw*sc,dh=sh*sc;g.drawImage(s,b.x+(b.w-dw)*px,b.y+(b.h-dh)*py,dw,dh)}
-function lines(text,max){let out=[],line='';for(let word of text.split(/\s+/)){let test=line?line+' '+word:word;if(ctx.measureText(test).width>max&&line){out.push(line);line=word}else line=test}if(line)out.push(line);return out}
-let stickerImage=null;
-function drawSticker(g,b){
- if(!$('stickerEnabled').checked)return;
- if(video){const t=video.currentTime||0,a=Number($('stickerStart').value)||0,z=Number($('stickerEnd').value)||0;if(t<a||(z>0&&t>=z))return;}
- const w=b.w*Number($('stickerW').value)/100,h=b.h*Number($('stickerH').value)/100;
- const x=b.x+(b.w-w)*Number($('stickerX').value)/100,y=b.y+(b.h-h)*Number($('stickerY').value)/100;
- g.save();g.beginPath();g.rect(b.x,b.y,b.w,b.h);g.clip();g.globalAlpha=Number($('stickerOpacity').value)/100;
- if($('stickerMode').value==='image'&&stickerImage){g.drawImage(stickerImage,x,y,w,h)}
- else if($('stickerMode').value==='emoji'){g.textAlign='center';g.textBaseline='middle';g.font=Math.floor(Math.min(w,h)*.9)+'px Arial,sans-serif';g.fillText(($('emojiCustom').value.trim()||$('emojiPick').value),x+w/2,y+h/2,Math.max(1,w));}
- else {g.fillStyle=$('stickerColor').value;g.fillRect(x,y,w,h)}
- g.restore();
-}
-$('stickerFile').addEventListener('change',async e=>{const f=e.target.files[0];if(!f)return;const url=URL.createObjectURL(f);try{stickerImage=await load(url);$('stickerMode').value='image';$('stickerEnabled').checked=true;status('Figura adicionada. Toque no local desejado dentro do vídeo e arraste para ajustar.');refresh()}catch{status('Não foi possível abrir a figura.')}finally{URL.revokeObjectURL(url)}});
-for(const id of ['emojiPick','emojiCustom','stickerMode','stickerColor','stickerX','stickerY','stickerW','stickerH','stickerOpacity','stickerEnabled','stickerStart','stickerEnd'])$(id).addEventListener('input',refresh);
-$('stickerFull').onclick=()=>{$('stickerStart').value=0;$('stickerEnd').value=0;refresh();status('Figura visível durante todo o vídeo.')};
-$('stickerRemove').onclick=()=>{stickerImage=null;$('stickerEnabled').checked=false;$('stickerFile').value='';refresh()};
-// Drag the selected sticker directly on the preview, on touch screens and desktop.
-// Coordinates are converted from the displayed canvas to the frame's native coordinate system.
-let draggingSticker=false,dragOffset={x:0,y:0};
-function stickerGeometry(){
- const f=frames[selected];if(!f)return null;
- const W=1080,H=$('format').value==='reels'?1920:1350;
- const iw=f.img.naturalWidth,ih=f.img.naturalHeight,scale=Math.min(W/iw,H/ih);
- return {b:{x:f.box[0],y:f.box[1],w:f.box[2],h:f.box[3]},dx:(W-iw*scale)/2,dy:(H-ih*scale)/2,sx:scale,sy:scale};
-}
-
-function canvasPoint(e){let r=c.getBoundingClientRect();return {x:(e.clientX-r.left)*c.width/r.width,y:(e.clientY-r.top)*c.height/r.height}}
-function stickerPoint(e){const g=stickerGeometry();if(!g)return null;let p=canvasPoint(e);return {x:(p.x-g.dx)/g.sx,y:(p.y-g.dy)/g.sy,b:g.b}}
-function currentStickerRect(b){let w=b.w*Number($('stickerW').value)/100,h=b.h*Number($('stickerH').value)/100;return {x:b.x+(b.w-w)*Number($('stickerX').value)/100,y:b.y+(b.h-h)*Number($('stickerY').value)/100,w,h}}
-c.style.touchAction='none';
-c.addEventListener('pointerdown',e=>{
- if(!$('stickerEnabled').checked)return;
- const p=stickerPoint(e);if(!p)return;
- if(p.x<p.b.x||p.x>p.b.x+p.b.w||p.y<p.b.y||p.y>p.b.y+p.b.h)return;
- const q=currentStickerRect(p.b),inside=p.x>=q.x&&p.x<=q.x+q.w&&p.y>=q.y&&p.y<=q.y+q.h;
- // Touch the sticker to drag it; touch empty video area to reposition it there.
- dragOffset=inside?{x:p.x-q.x,y:p.y-q.y}:{x:q.w/2,y:q.h/2};
- draggingSticker=true;c.setPointerCapture(e.pointerId);e.preventDefault();moveSticker(e);
-});
-function moveSticker(e){if(!draggingSticker)return;const p=stickerPoint(e);if(!p)return;
- const q=currentStickerRect(p.b);
- const x=Math.max(p.b.x,Math.min(p.b.x+p.b.w-q.w,p.x-dragOffset.x));
- const y=Math.max(p.b.y,Math.min(p.b.y+p.b.h-q.h,p.y-dragOffset.y));
- $('stickerX').value=Math.round(100*(x-p.b.x)/Math.max(1,p.b.w-q.w));
- $('stickerY').value=Math.round(100*(y-p.b.y)/Math.max(1,p.b.h-q.h));
- refresh();e.preventDefault();
-}
-c.addEventListener('pointermove',moveSticker);
-for(const event of ['pointerup','pointercancel','lostpointercapture'])c.addEventListener(event,()=>{draggingSticker=false});
-$('emojiPick').addEventListener('change',()=>{$('emojiCustom').value='';$('stickerMode').value='emoji';$('stickerEnabled').checked=true;refresh()});
-$('emojiCustom').addEventListener('input',()=>{$('stickerMode').value='emoji';$('stickerEnabled').checked=true;refresh()});
-
-function overlayFor(f){
- if(f.overlay)return f.overlay;
- const iw=f.img.naturalWidth,ih=f.img.naturalHeight;
- const t=document.createElement('canvas');t.width=iw;t.height=ih;
- const g=t.getContext('2d');g.drawImage(f.img,0,0,iw,ih);
- const b=f.box,p=g.getImageData(b[0],b[1],b[2],b[3]),v=p.data;
- for(let i=0;i<v.length;i+=4){const light=Math.max(v[i],v[i+1],v[i+2]);if(light<72)v[i+3]=0;else if(light<96)v[i+3]=Math.round((light-72)*255/24)}
- g.putImageData(p,b[0],b[1]);f.overlay=t;return t;
-}
-function render(){
- const W=1080,H=$('format').value==='reels'?1920:1350;
- if(c.width!==W||c.height!==H){c.width=W;c.height=H}
- const f=frames[selected];ctx.fillStyle='#06152e';ctx.fillRect(0,0,W,H);if(!f)return;
- const iw=f.img.naturalWidth,ih=f.img.naturalHeight,scale=Math.min(W/iw,H/ih);
- const dw=iw*scale,dh=ih*scale,dx=(W-dw)/2,dy=(H-dh)/2;
- ctx.save();ctx.filter='blur(32px) brightness(.4)';const bg=Math.max(W/iw,H/ih);
- ctx.drawImage(f.img,(W-iw*bg)/2,(H-ih*bg)/2,iw*bg,ih*bg);ctx.restore();
- ctx.save();ctx.translate(dx,dy);ctx.scale(scale,scale);
- // A arte original permanece como base. A mídia é colocada apenas na janela preta.
- ctx.drawImage(f.img,0,0,iw,ih);
- const b={x:f.box[0],y:f.box[1],w:f.box[2],h:f.box[3]},source=video||photo;
- if(source){ctx.save();ctx.beginPath();ctx.rect(b.x,b.y,b.w,b.h);ctx.clip();
-  const z=Number($('zoom').value)/100,px=Number($('px').value)/100,py=Number($('py').value)/100;
-  if($('fit').value==='contain'){ctx.save();ctx.filter='blur(28px) brightness(.55)';fit(ctx,source,b,'cover',1,px,py);ctx.restore()}
-  fit(ctx,source,b,$('fit').value,z,px,py);ctx.restore();
-  // Mantém as partes coloridas do Coroadinho e do contorno sobre a mídia.
-  ctx.drawImage(overlayFor(f),0,0,iw,ih);
- }
- drawSticker(ctx,b);
- const txt=$('headline').value.trim().toUpperCase();
- if(txt){
-  const a=f.headline,x=a[0],y=a[1],w=a[2],h=a[3],font=$('font').value;
-  ctx.save();ctx.beginPath();ctx.rect(x,y,w,h);ctx.clip();
-  const grad=ctx.createLinearGradient(x,y,x+w,y);grad.addColorStop(0,'#9c0315');grad.addColorStop(1,'#ed1530');
-  ctx.fillStyle=grad;ctx.fillRect(x,y,w,h);
-  const words=txt.split(/\s+/).filter(Boolean),maxRows=f.native?3:2;
-  let best=null;
-  for(let fs=Math.min(Number($('size').value)||80,f.native?105:30);fs>=9&&!best;fs--){
-   ctx.font='900 '+fs+'px '+font;
-   let rows=[],line='';
-   for(const word of words){let test=line?line+' '+word:word;
-    if(ctx.measureText(test).width>w-12&&line){rows.push(line);line=word}else line=test}
-   if(line)rows.push(line);
-   if(rows.length<=maxRows&&rows.length*fs*1.13<=h-4)best={fs,rows};
-  }
-  if(!best)best={fs:Math.max(9,Math.min(18,h/maxRows/1.2)),rows:[txt]};
-  ctx.textBaseline='middle';ctx.textAlign='center';ctx.lineJoin='round';
-  ctx.font='900 '+best.fs+'px '+font;ctx.lineWidth=Math.max(1,best.fs*.09);ctx.strokeStyle='#46030b';ctx.fillStyle=$('color').value;
-  best.rows.forEach((line,i)=>{let yy=y+h/2+(i-(best.rows.length-1)/2)*best.fs*1.15;
-   ctx.strokeText(line,x+w/2,yy,w-8);ctx.fillText(line,x+w/2,yy,w-8)});
-  ctx.restore();
- }
- ctx.restore();
-}
-
-function loop(){raf=0;if(recorder&&recorder.state==='recording')return;if(video&&video.readyState>=2){const [a,b]=clipBounds();if(video.currentTime>=b-.025&&!recorder){video.currentTime=a;video.play().catch(()=>{})}}render();if(video&&!video.paused||recorder&&recorder.state==='recording')if(!raf)raf=requestAnimationFrame(loop)}
-function refresh(){render()}
-async function init(){
- const select=$('editorial'),gallery=$('gallery');
- async function addFrame(f,img){
-  const k=frames.length,iw=img.naturalWidth,ih=img.naturalHeight;
-  const box=f.native?[35,253,855,875]:[Math.round(iw*.18),Math.round(ih*.415),Math.round(iw*.77),Math.round(ih*.286)];
-  const headline=f.native?[320,1165,575,250]:[Math.round(iw*(iw<300?.46:.40)),Math.round(ih*.713),Math.round(iw*(iw<300?.50:.55)),Math.round(ih*.12)];
-  frames.push({...f,img,box,headline});
-  let opt=document.createElement('option');opt.value=k;opt.textContent=f.name;select.append(opt);
-  let btn=document.createElement('button');btn.className='tile';
-  let thumb=document.createElement('img');thumb.src=img.src;thumb.alt=f.name;
-  let span=document.createElement('span');span.textContent=f.name;btn.append(thumb,span);
-  btn.onclick=()=>{selected=k;select.value=k;$('format').value=f.native?'reels':'feed';updateTiles();refresh()};
-  gallery.append(btn);
- }
- let failed=[];
- for(const f of DATA){try{await addFrame(f,await load(f.data))}catch(e){failed.push(f.name)}}
- if(!frames.length)throw Error('Nenhuma moldura carregou.');
- const picker=document.createElement('input');picker.type='file';picker.accept='image/png,image/jpeg,image/webp';
- picker.style='display:block;width:100%;margin:12px 0;padding:10px';
- const label=document.createElement('label');label.textContent='Adicionar outra moldura original (PNG, JPG ou WebP)';
- label.append(picker);gallery.before(label);
- picker.onchange=async()=>{const file=picker.files[0];if(!file)return;
-  const url=URL.createObjectURL(file);
-  try{const img=await load(url);const vertical=img.naturalHeight>img.naturalWidth*1.35;
-   await addFrame({name:file.name,native:vertical},img);
-   selected=frames.length-1;select.value=selected;$('format').value=vertical?'reels':'feed';updateTiles();refresh();
-   status('Moldura pessoal carregada. Ajuste o recorte conforme a área central da arte.');
-  }catch(e){status('Não foi possível abrir a moldura.')}};
- selected=0;select.value=0;$('format').value='reels';updateTiles();refresh();
- status(frames.length+' molduras originais disponíveis. '+(failed.length?'Falharam: '+failed.join(', '):'Insira foto ou vídeo para começar.'));
-}
-
-function updateTiles(){document.querySelectorAll('.tile').forEach((b,i)=>b.classList.toggle('active',i===selected))}
-$('editorial').onchange=e=>{selected=+e.target.value;$('format').value=frames[selected].native?'reels':'feed';updateTiles();refresh()};
-$('media').onchange=async e=>{let file=e.target.files[0];if(!file)return;if(video){video.pause();video=null;audioSource?.disconnect();audioSource=null;audioDestination=null}if(mediaURL)URL.revokeObjectURL(mediaURL);mediaURL=URL.createObjectURL(file);photo=null;$('videoTools').style.display=file.type.startsWith('video/')?'block':'none';
-if(file.type.startsWith('video/')){let v=document.createElement('video');v.src=mediaURL;v.loop=false;v.muted=false;v.playsInline=true;v.onloadedmetadata=()=>{video=v;$('trimStart').value='0';$('trimEnd').value=v.duration.toFixed(1);updateClip();setupAudio(v)};v.onloadeddata=()=>{video=v;v.play().then(()=>{status('Vídeo enquadrado dentro da janela, com prévia de áudio.');loop()}).catch(()=>{status('Toque na prévia para iniciar o vídeo.');refresh()})};v.onerror=()=>status('Este formato de vídeo não é suportado no navegador.')}
-else{try{photo=await load(mediaURL);status('Foto encaixada na janela.');refresh()}catch{status('Não foi possível ler esta foto.')}}};
-c.onclick=()=>{if(video&&video.paused)video.play().then(loop).catch(()=>{})};
-for(const id of ['trimStart','trimEnd'])$(id).addEventListener('change',()=>{if(!video)return;updateClip();video.currentTime=clipBounds()[0];refresh()});
-$('scrub').addEventListener('input',()=>{if(video){video.currentTime=Number($('scrub').value);refresh()}});
-$('previewClip').onclick=async()=>{if(!video)return;await audioCtx?.resume();video.currentTime=clipBounds()[0];video.play().then(loop).catch(e=>status(e.message))};
-
-for(let id of ['format','fit','headline','font','color','size','alignText','zoom','px','py'])$(id).addEventListener('input',()=>{if(id==='size')$('sizeValue').textContent=$('size').value;refresh()});
-$('autoText').onclick=()=>{refresh();status('Manchete reajustada ao espaço vermelho, sem sobrepor o Coroadinho.');};
-$('auto').onclick=()=>{for(let id of ['zoom','px','py'])$(id).value=id==='zoom'?100:50;$('fit').value='contain';refresh();status('Enquadramento automático restaurado.')};
-function download(blob,name){let url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),30000)}
-$('png').onclick=()=>{render();c.toBlob(b=>b?download(b,'coroado-'+frames[selected].name.toLowerCase().replace(/[^a-z0-9]+/g,'-')+'.png'):status('Erro ao gerar PNG.'),'image/png')};
-$('record').onclick=async()=>{
- if(!video){status('Selecione um vídeo para exportar com o áudio.');return}
- if(!c.captureStream||typeof MediaRecorder==='undefined'){status('Este navegador não permite exportação de vídeo nesta página.');return}
- try{
-  const [start,end]=clipBounds();if(end-start<1){status('O trecho selecionado é menor que 1 segundo. Confira o início e o fim.');return}status('Preparando exportação do trecho completo: '+(end-start).toFixed(1)+' segundos.');await audioCtx?.resume();video.pause();video.currentTime=start;
-  await new Promise(resolve=>{if(Math.abs(video.currentTime-start)<.08)return resolve();video.addEventListener('seeked',resolve,{once:true});setTimeout(resolve,500)});
-  // Export canvas independent of the high-resolution preview: reduces mobile GPU load.
-  const exportCanvas=document.createElement('canvas');
-  exportCanvas.width=540;exportCanvas.height=$('format').value==='reels'?960:675;
-  const exportCtx=exportCanvas.getContext('2d',{alpha:false});
-  render();exportCtx.drawImage(c,0,0,exportCanvas.width,exportCanvas.height);
-  recordStream=exportCanvas.captureStream(0);
-  const exportTrack=recordStream.getVideoTracks()[0];
-  // Sincroniza os quadros com o vídeo original em vez de usar um timer concorrente.
-  // Evita repetir frames enquanto o decodificador não avançou.
-  let exportActive=true, lastMediaTime=-1, frameCallbackId=null;
-  const paintFrame=(_now,metadata)=>{
-    if(!exportActive || !recorder || recorder.state!=='recording')return;
-    const t=metadata?.mediaTime ?? video.currentTime;
-    if(t>lastMediaTime+0.001){
-      lastMediaTime=t;
-      render();exportCtx.drawImage(c,0,0,exportCanvas.width,exportCanvas.height);
-      exportTrack.requestFrame?.();
-    }
-    if(video.requestVideoFrameCallback)frameCallbackId=video.requestVideoFrameCallback(paintFrame);
-  };
-  if(video.requestVideoFrameCallback)frameCallbackId=video.requestVideoFrameCallback(paintFrame);
-  else {
-    const exportInterval=setInterval(()=>{
-      if(!exportActive||!recorder||recorder.state!=='recording')return;
-      if(video.currentTime>lastMediaTime+.012){lastMediaTime=video.currentTime;render();exportCtx.drawImage(c,0,0,exportCanvas.width,exportCanvas.height);exportTrack.requestFrame?.()}
-    },33);
-    window.__coroadoExportInterval=exportInterval;
-  }
-  window.__coroadoStopFrames=()=>{exportActive=false;if(frameCallbackId!==null)video.cancelVideoFrameCallback?.(frameCallbackId);clearInterval(window.__coroadoExportInterval)};
-  if($('audio').checked&&audioDestination){for(const track of audioDestination.stream.getAudioTracks())recordStream.addTrack(track)}
-  let mime=['video/mp4;codecs=avc1.42E01E,mp4a.40.2','video/mp4;codecs=avc1.42E01E','video/mp4','video/webm;codecs=vp8,opus','video/webm'].find(t=>MediaRecorder.isTypeSupported(t));
-  if(!mime)throw Error('O navegador não disponibiliza gravação de vídeo.');
-  let chunks=[];const ext='mp4';
-  recorder=new MediaRecorder(recordStream,{mimeType:mime,videoBitsPerSecond:2200000,audioBitsPerSecond:96000});
-  recorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};
-  recorder.onstop=async()=>{window.__coroadoStopFrames?.();video.removeEventListener('timeupdate',recordStopHandler);if(chunks.length){const blob=new Blob(chunks,{type:mime});const head=new Uint8Array(await blob.slice(0,16).arrayBuffer());const realMP4=head.length>8&&String.fromCharCode(...head.slice(4,8))==='ftyp';const realWebM=head.length>4&&head[0]===0x1a&&head[1]===0x45&&head[2]===0xdf&&head[3]===0xa3;const actualExt=realMP4?'mp4':realWebM?'webm':null;if(actualExt){download(blob,'coroado-'+selected+'-editado.'+actualExt);status(actualExt==='mp4'?'MP4 gerado. Confira a reprodução e o áudio antes de publicar.':'Arquivo WebM gerado: seu navegador não produziu MP4 verdadeiro. Para publicar em plataformas que exigem MP4, é necessário converter o arquivo.')}else status('O navegador produziu um arquivo de vídeo não reconhecido. Não foi salvo com extensão falsa.');}recordStream.getTracks().forEach(t=>t.stop());$('record').disabled=false;$('quickVideo').disabled=false;$('stop').disabled=true;clearTimeout(recordTimer);clearInterval(window.__coroadoExportInterval);video.pause();recorder=null};
-  recorder.start(2000);$('record').disabled=true;$('stop').disabled=false;
-  status('Exportando MP4. Mantenha a tela ligada e o aplicativo aberto. Trecho de '+(end-start).toFixed(1)+' segundos…');$('quickVideo').disabled=true;
-  recordStopHandler=()=>{if(video.currentTime>=end-.035&&recorder?.state==='recording'){video.pause();recorder.requestData();recorder.stop()}};
-  video.addEventListener('timeupdate',recordStopHandler);video.addEventListener('ended',recordStopHandler,{once:true});
-  recorder.addEventListener('stop',()=>video.removeEventListener('timeupdate',recordStopHandler),{once:true});
-  await video.play();if(!raf)raf=requestAnimationFrame(loop);recordTimer=setTimeout(()=>{if(recorder?.state==='recording'){status('Exportação interrompida: o navegador não conseguiu processar o vídeo completo.');recorder.stop()}},Math.max(30000,Math.ceil((end-start)*4000)+15000));
- }catch(err){window.__coroadoStopFrames?.();clearInterval(window.__coroadoExportInterval);status('Falha na exportação: '+err.message);if(recorder?.state==='recording')recorder.stop();$('record').disabled=false;$('quickVideo').disabled=false;$('stop').disabled=true}
+const DATA=[{"name":"Rios de Vídeos","src":"molduras/original_01.webp","box":[158,485,809,395],"title":[400,1050,640,148],"fish":[0,710,395,390],"w":1122,"h":1402},{"name":"Rios de Humor","src":"molduras/original_02.webp","box":[155,380,629,908],"title":[72,1300,800,165],"fish":[0,930,355,445],"w":941,"h":1672},{"name":"Curiosidades","src":"molduras/original_03.webp","box":[155,380,632,881],"title":[72,1300,800,165],"fish":[0,930,355,445],"w":941,"h":1672},{"name":"Flagras","src":"molduras/original_04.webp","box":[158,485,809,392],"title":[400,1050,640,148],"fish":[0,710,395,390],"w":1122,"h":1402},{"name":"Educação","src":"molduras/original_05.webp","box":[158,482,812,398],"title":[400,1050,640,148],"fish":[0,710,395,390],"w":1122,"h":1402},{"name":"Economia","src":"molduras/original_06.webp","box":[158,482,809,398],"title":[400,1050,640,148],"fish":[0,710,395,390],"w":1122,"h":1402},{"name":"Trânsito","src":"molduras/original_07.webp","box":[158,482,809,398],"title":[400,1050,640,148],"fish":[0,710,395,390],"w":1122,"h":1402},{"name":"Fofoca dos Famosos","src":"molduras/original_08.webp","box":[146,443,833,437],"title":[400,1050,640,148],"fish":[0,710,395,390],"w":1122,"h":1402},{"name":"Entretenimento","src":"molduras/original_09.webp","box":[158,482,815,395],"title":[400,1050,640,148],"fish":[0,710,395,390],"w":1122,"h":1402},{"name":"Saúde","src":"molduras/original_10.webp","box":[146,452,830,425],"title":[400,1050,640,148],"fish":[0,710,395,390],"w":1122,"h":1402},{"name":"Esportes","src":"molduras/original_11.webp","box":[149,449,827,425],"title":[400,1050,640,148],"fish":[0,710,395,390],"w":1122,"h":1402},{"name":"Brasil e Mundo","src":"molduras/original_12.webp","box":[146,395,821,488],"title":[400,1050,640,148],"fish":[0,710,395,390],"w":1122,"h":1402},{"name":"Manaus","src":"molduras/original_13.webp","box":[104,353,902,524],"title":[400,1050,640,148],"fish":[0,710,395,390],"w":1122,"h":1402},{"name":"Amazonas","src":"molduras/original_14.webp","box":[110,380,875,494],"title":[400,1050,640,148],"fish":[0,710,395,390],"w":1122,"h":1402},{"name":"Política","src":"molduras/original_15.webp","box":[107,353,899,530],"title":[400,1050,640,148],"fish":[0,710,395,390],"w":1122,"h":1402},{"name":"Notícias","src":"molduras/original_16.webp","box":[101,338,914,551],"title":[400,1050,640,148],"fish":[0,710,395,390],"w":1122,"h":1402},{"name":"Polícia","src":"molduras/original_17.webp","box":[107,341,908,530],"title":[400,1050,640,148],"fish":[0,710,395,390],"w":1122,"h":1402},{"name":"Rios de Humor — 3D","src":"molduras/original_18.webp","box":[164,383,614,899],"title":[72,1300,800,165],"fish":[0,930,355,445],"w":941,"h":1672},{"name":"Rios de Vídeos — 3D","src":"molduras/original_19.webp","box":[152,377,641,869],"title":[72,1300,800,165],"fish":[0,930,355,445],"w":941,"h":1672},{"name":"Curiosidades — 3D","src":"molduras/original_20.webp","box":[158,485,812,392],"title":[400,1050,640,148],"fish":[0,710,395,390],"w":1122,"h":1402},{"name":"Novela das Frutas","src":"molduras/original_21.webp","box":[245,371,776,599],"title":[135,1020,990,110],"fish":[0,660,390,400],"w":1254,"h":1254},{"name":"Flagras — 3D","src":"molduras/original_22.webp","box":[158,482,815,395],"title":[400,1050,640,148],"fish":[0,710,395,390],"w":1122,"h":1402}];
+const $=id=>document.getElementById(id),canvas=$('canvas'),ctx=canvas.getContext('2d',{alpha:false});
+let selected=0,frames=[],photo=null,video=null,mediaURL=null,videoFrameHandle=0,recording=false,recorder=null,recordTimer=null,audioCtx=null,audioSource=null,audioDest=null,downloadURL=null,recordCanvas=null,recordCtx=null;
+const status=t=>$('status').textContent=t;
+function load(src){return new Promise((resolve,reject)=>{const im=new Image();im.onload=()=>resolve(im);im.onerror=reject;im.src=src})}
+function dims(s){return [s.videoWidth||s.naturalWidth||s.width,s.videoHeight||s.naturalHeight||s.height]}
+function drawFit(g,s,b,mode,zoom=1,px=.5,py=.5){const [sw,sh]=dims(s);if(!sw||!sh)return;const sc=(mode==='cover'?Math.max:Math.min)(b.w/sw,b.h/sh)*zoom;const dw=sw*sc,dh=sh*sc;g.drawImage(s,b.x+(b.w-dw)*px,b.y+(b.h-dh)*py,dw,dh)}
+function canvasFormat(){const f=frames[selected];switch($('format').value){case 'feed':return [1080,1350];case 'reels':case 'story':return [1080,1920];case 'square':return [1080,1080];default:return [f.w,f.h]}}
+function overlayFor(f){if(f.overlay)return f.overlay;const t=document.createElement('canvas');t.width=f.w;t.height=f.h;const g=t.getContext('2d');g.drawImage(f.img,0,0);const b=f.box;const pixels=g.getImageData(b[0],b[1],b[2],b[3]),v=pixels.data;for(let i=0;i<v.length;i+=4){const light=Math.max(v[i],v[i+1],v[i+2]);if(light<72)v[i+3]=0;else if(light<96)v[i+3]=Math.round((light-72)*255/24)}g.putImageData(pixels,b[0],b[1]);f.overlay=t;return t}
+function draw(){const f=frames[selected];if(!f)return;const [W,H]=canvasFormat();if(canvas.width!==W||canvas.height!==H){canvas.width=W;canvas.height=H}ctx.fillStyle='#061229';ctx.fillRect(0,0,W,H);const scale=Math.min(W/f.w,H/f.h),dw=f.w*scale,dh=f.h*scale,dx=(W-dw)/2,dy=(H-dh)/2;
+ if(Math.abs(W/H-f.w/f.h)>.01){ctx.save();ctx.filter='blur(35px) brightness(.35)';const bg=Math.max(W/f.w,H/f.h);ctx.drawImage(f.img,(W-f.w*bg)/2,(H-f.h*bg)/2,f.w*bg,f.h*bg);ctx.restore()}
+ ctx.save();ctx.translate(dx,dy);ctx.scale(scale,scale);ctx.drawImage(f.img,0,0,f.w,f.h);
+ const b={x:f.box[0],y:f.box[1],w:f.box[2],h:f.box[3]},src=video||photo;
+ if(src&&dims(src)[0]){ctx.save();ctx.beginPath();ctx.rect(b.x,b.y,b.w,b.h);ctx.clip();const z=+$('zoom').value/100,px=+$('px').value/100,py=+$('py').value/100;
+ if($('fit').value==='contain'){ctx.save();ctx.filter='blur(24px) brightness(.4)';drawFit(ctx,src,b,'cover',1,px,py);ctx.restore()}
+ drawFit(ctx,src,b,$('fit').value,z,px,py);ctx.restore();
+ // A máscara transparente preserva o mascote e a moldura, retirando somente o fundo preto da janela.
+ ctx.drawImage(overlayFor(f),0,0,f.w,f.h); }
+ const text=$('headline').value.trim().toUpperCase();if(text){const a=f.title,x=a[0],y=a[1],w=a[2],h=a[3];ctx.save();ctx.beginPath();ctx.rect(x,y,w,h);ctx.clip();ctx.textAlign='center';ctx.textBaseline='middle';ctx.lineJoin='round';const words=text.split(/\s+/),maxRows=3;let best=null;
+ for(let fs=Math.min(+$('size').value,f.w>1200?65:85);fs>=14&&!best;fs--){ctx.font='900 '+fs+'px '+$('font').value;const rows=[];let line='';for(const word of words){const t=line?line+' '+word:word;if(line&&ctx.measureText(t).width>w-20){rows.push(line);line=word}else line=t}if(line)rows.push(line);if(rows.length<=maxRows&&rows.length*fs*1.15<=h-12)best={rows,fs}}
+ if(!best)best={rows:[text],fs:24};ctx.font='900 '+best.fs+'px '+$('font').value;ctx.strokeStyle='#3c0000';ctx.lineWidth=Math.max(3,best.fs*.11);ctx.fillStyle=$('color').value;
+ best.rows.forEach((line,i)=>{const yy=y+h/2+(i-(best.rows.length-1)/2)*best.fs*1.15;ctx.strokeText(line,x+w/2,yy,w-15);ctx.fillText(line,x+w/2,yy,w-15)});ctx.restore()}
+ ctx.restore();}
+function redraw(){draw()}
+function loop(){videoFrameHandle=0;if(video&&!video.paused&&!video.ended){draw();videoFrameHandle=requestAnimationFrame(loop)}else draw()}
+function choose(i){selected=i;$('editorial').value=String(i);$('format').value=frames[i].h/frames[i].w>1.5?'reels':frames[i].w===frames[i].h?'square':'feed';document.querySelectorAll('.tile').forEach((b,j)=>b.classList.toggle('active',i===j));redraw()}
+async function init(){const select=$('editorial'),gallery=$('gallery');for(let i=0;i<DATA.length;i++){const f=DATA[i];const img=await load(f.src);frames.push({...f,img});const opt=document.createElement('option');opt.value=i;opt.textContent=f.name;select.append(opt);const b=document.createElement('button');b.className='tile';b.type='button';const thumb=document.createElement('img');thumb.src=f.src;thumb.alt=f.name;const span=document.createElement('span');span.textContent=f.name;b.append(thumb,span);b.onclick=()=>choose(i);gallery.append(b)}choose(0);status('22 molduras carregadas. Escolha uma foto ou vídeo.')}
+$('editorial').onchange=e=>choose(+e.target.value);
+$('media').onchange=async e=>{const file=e.target.files[0];if(!file)return;if(video){video.pause();video=null}if(mediaURL)URL.revokeObjectURL(mediaURL);mediaURL=URL.createObjectURL(file);photo=null;const isVideo=file.type.startsWith('video/');$('videoTools').style.display=isVideo?'block':'none';
+ if(isVideo){const v=document.createElement('video');v.src=mediaURL;v.playsInline=true;v.preload='auto';v.muted=false;v.onloadedmetadata=()=>{video=v;$('trimStart').value=0;$('trimEnd').value=(v.duration||0).toFixed(1);setupAudio(v);draw();status('Vídeo carregado. Ajuste o trecho e exporte.')};v.onloadeddata=()=>{video=v;draw()};v.onerror=()=>status('Este navegador não conseguiu abrir o vídeo.')}else{try{photo=await load(mediaURL);draw();status('Foto encaixada. Edite a manchete e salve PNG.')}catch(err){status('Falha ao abrir foto: '+err.message)}}};
+function setupAudio(v){try{audioCtx=new (window.AudioContext||window.webkitAudioContext)();audioSource=audioCtx.createMediaElementSource(v);audioDest=audioCtx.createMediaStreamDestination();audioSource.connect(audioDest);audioSource.connect(audioCtx.destination)}catch(err){audioDest=null;status('Vídeo carregado, mas o áudio de exportação não está disponível: '+err.message)}}
+for(const id of ['headline','format','fit','font','color','size','zoom','px','py'])$(id).addEventListener('input',()=>{if(id==='zoom')$('zoomValue').textContent=$('zoom').value+'%';draw()});
+$('play').onclick=async()=>{if(!video)return;await audioCtx?.resume();video.currentTime=Math.max(0,+$('trimStart').value||0);try{await video.play();loop()}catch(e){status('Toque novamente para iniciar o vídeo: '+e.message)}};
+function deliver(blob,name){if(!blob||!blob.size){status('Arquivo vazio. Tente novamente.');return}if(downloadURL)URL.revokeObjectURL(downloadURL);downloadURL=URL.createObjectURL(blob);const a=$('download');a.href=downloadURL;a.download=name;a.style.display='block';a.textContent='⬇ BAIXAR '+name.toUpperCase();a.click();status('Arquivo gerado: '+name+'. Se não baixar automaticamente, toque no botão verde.')}
+$('savePNG').onclick=()=>{draw();canvas.toBlob(b=>deliver(b,'Coroado_'+(selected+1)+'_arte.png'),'image/png')};
+$('saveVideo').onclick=async()=>{if(!video){status('Escolha um vídeo antes de exportar.');return}if(recording){status('Já existe uma exportação em andamento.');return}if(!window.MediaRecorder||!canvas.captureStream){status('Seu navegador não permite exportar vídeo.');return}
+ let start=Math.max(0,+$('trimStart').value||0),end=Math.min(video.duration,+$('trimEnd').value||video.duration);if(!(end>start+.3)){status('Escolha um trecho válido de pelo menos 0,3 segundo.');return}
+ const mimes=['video/mp4;codecs=avc1.42E01E,mp4a.40.2','video/mp4;codecs=avc1.42E01E','video/mp4','video/webm;codecs=vp8,opus','video/webm'];const mime=mimes.find(x=>MediaRecorder.isTypeSupported(x));if(!mime){status('Seu navegador não suporta MP4 nem WebM.');return}
+ recording=true;$('saveVideo').disabled=true;$('stopVideo').style.display='block';let chunks=[],lastTime=-1,frameId=0,interval=0,stopRequested=false;
+ try{await audioCtx?.resume();video.pause();video.currentTime=start;await new Promise(r=>{if(Math.abs(video.currentTime-start)<.05)return r();video.addEventListener('seeked',r,{once:true});setTimeout(r,600)});
+ const [W,H]=canvasFormat();recordCanvas=document.createElement('canvas');const sc=Math.min(1,720/W);recordCanvas.width=Math.round(W*sc);recordCanvas.height=Math.round(H*sc);recordCtx=recordCanvas.getContext('2d',{alpha:false});draw();recordCtx.drawImage(canvas,0,0,recordCanvas.width,recordCanvas.height);
+ const stream=recordCanvas.captureStream(30);if($('audio').checked&&audioDest){for(const t of audioDest.stream.getAudioTracks())stream.addTrack(t)}
+ recorder=new MediaRecorder(stream,{mimeType:mime,videoBitsPerSecond:2500000,audioBitsPerSecond:128000});recorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};
+ function stop(){if(stopRequested)return;stopRequested=true;if(recorder?.state==='recording'){recorder.requestData();recorder.stop()}}
+ function paint(){if(!recording)return;draw();recordCtx.drawImage(canvas,0,0,recordCanvas.width,recordCanvas.height);if(video.currentTime>=end-.04||video.ended){video.pause();stop();return}frameId=requestAnimationFrame(paint)}
+ recorder.onstop=async()=>{recording=false;cancelAnimationFrame(frameId);clearTimeout(recordTimer);clearInterval(interval);video.pause();stream.getTracks().forEach(t=>t.stop());$('saveVideo').disabled=false;$('stopVideo').style.display='none';const blob=new Blob(chunks,{type:mime});const bytes=new Uint8Array(await blob.slice(0,16).arrayBuffer());const mp4=bytes.length>8&&String.fromCharCode(...bytes.slice(4,8))==='ftyp';const webm=bytes[0]===26&&bytes[1]===69&&bytes[2]===223&&bytes[3]===163;if(!mp4&&!webm){status('O navegador gerou um vídeo inválido.');return}const ext=mp4?'mp4':'webm';deliver(blob,'Coroado_'+(selected+1)+'_video.'+ext);if(!mp4)status('Vídeo WebM gerado com extensão correta. Para MP4, use um navegador com gravação MP4 nativa.');recorder=null};
+ recorder.onerror=e=>{status('Erro de gravação: '+(e.error?.message||'desconhecido'));stop()};recorder.start(1000);await video.play();frameId=requestAnimationFrame(paint);recordTimer=setTimeout(stop,Math.max(15000,(end-start)*4000+10000));$('stopVideo').onclick=stop;status('Exportando vídeo de '+(end-start).toFixed(1)+'s em tempo real. Mantenha a tela ligada.')
+ }catch(err){recording=false;clearTimeout(recordTimer);cancelAnimationFrame(frameId);$('saveVideo').disabled=false;$('stopVideo').style.display='none';status('Falha na exportação: '+err.message);if(recorder?.state==='recording')recorder.stop()}
 };
-$('stop').onclick=()=>{if(recorder?.state==='recording')recorder.stop()};
-$('quickVideo').onclick=()=>{if(!video){status('Escolha primeiro o vídeo no campo Adicionar foto ou vídeo.');document.getElementById('media').scrollIntoView({behavior:'smooth',block:'center'});return} $('record').click();};
-$('quickImage').onclick=()=>$('png').click();
-// Controles bidirecionais: mesma posição usada no desenho e na exportação.
-function setStickerAxis(axis,value){
- const id=axis==='x'?'stickerX':'stickerY';
- const numberId=axis==='x'?'stickerXNumber':'stickerYNumber';
- const n=Math.max(0,Math.min(100,Number(value)||0));
- $(id).value=n;$(numberId).value=n;
- $('stickerEnabled').checked=true;
- refresh();
-}
-for(const axis of ['x','y']){
- const id=axis==='x'?'stickerX':'stickerY';
- const numberId=axis==='x'?'stickerXNumber':'stickerYNumber';
- $(id).addEventListener('input',()=>setStickerAxis(axis,$(id).value));
- $(numberId).addEventListener('input',()=>setStickerAxis(axis,$(numberId).value));
-}
-for(const [button,axis,delta] of [['moveLeft','x',-2],['moveRight','x',2],['moveUp','y',-2],['moveDown','y',2]]){
- $(button).addEventListener('click',()=>setStickerAxis(axis,Number($(axis==='x'?'stickerX':'stickerY').value)+delta));
-}
-$('moveCenter').onclick=()=>{setStickerAxis('x',50);setStickerAxis('y',50)};
-// Mantém os campos numéricos atualizados depois do arraste direto no canvas.
-c.addEventListener('pointermove',()=>{
- $('stickerXNumber').value=$('stickerX').value;
- $('stickerYNumber').value=$('stickerY').value;
-});
-
-init().catch(err=>status('Erro ao carregar molduras: '+err.message));
+init().catch(e=>status('Erro ao carregar as molduras: '+e.message));
 </script></body></html>

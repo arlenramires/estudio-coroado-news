@@ -1,23 +1,17 @@
 # Estúdio Coroado News 24H
 
-Editor independente do portal. **Não altera outros repositórios.**
+Editor independente, exclusivo deste repositório. Nenhum arquivo do portal de notícias nem do Serviço Certo é modificado.
 
-## Estado verificado
-- Editor com **11 molduras originais disponíveis no GitHub**: 9 editorias e 2 molduras verticais.
-- Ajustes de enquadramento, manchetes e prévia implementados.
-- Exportação PNG testada em Chromium pela automação GitHub Actions.
-- Exportação de vídeo tenta MP4 nativo e usa WebM quando MP4 não é suportado, sem trocar falsamente a extensão.
-- Teste de vídeo e áudio disponível no workflow `Testar Estúdio`.
-- As **22 artes originais completas** foram localizadas na Biblioteca e compiladas também em uma versão HTML offline entregue na conversa, com as 22 imagens embutidas. O HTML offline ainda não está hospedado neste repositório.
+## Molduras
+As **22 molduras aprovadas** estão publicadas em `molduras/original_01.webp` até `original_22.webp`. São versões WebP otimizadas das imagens recuperadas do acervo, mantendo composição e mascote, sem redesenho. O catálogo com nomes e dimensões está em `molduras/catalogo-22.json`.
 
-## Ativar GitHub Pages (necessita proprietário)
-O GitHub Actions não conseguiu criar o site por falta de permissão: `Resource not accessible by integration`.
-Abra [Settings → Pages](https://github.com/arlenramires/estudio-coroado-news/settings/pages), selecione **Build and deployment → Source: GitHub Actions** e salve. O workflow `Publicar Estúdio no GitHub Pages` então poderá publicar o site.
-
-Endereço esperado **somente após publicação confirmada**:
-`https://arlenramires.github.io/estudio-coroado-news/`
+## Usar
+Abra `index.html` em um servidor HTTP (ou GitHub Pages quando habilitado), selecione a moldura, adicione foto ou vídeo, ajuste manchete e exporte PNG ou vídeo. A exportação grava MP4 somente quando o navegador oferece MP4 nativo; caso contrário salva WebM com extensão correta. A presença de áudio depende da compatibilidade do navegador. Mantenha a aba ativa durante a exportação em tempo real.
 
 ## Testes
-`node scripts/check-editor.mjs` valida sintaxe e assets. O workflow `Testar Estúdio` também executa testes reais no Chrome para foto, PNG e vídeo com áudio.
+`node scripts/check-editor.mjs` valida a sintaxe e os arquivos. Os workflows de Actions executam testes de navegador, PNG e vídeo com áudio via FFmpeg/ffprobe. Testes em Android devem ser feitos no próprio dispositivo.
 
-As artes não devem ser redesenhadas; são usados arquivos recuperados do acervo do proprietário.
+## Publicação GitHub Pages
+Workflow `.github/workflows/pages.yml` está pronto, mas a habilitação de Pages pode exigir a ação do proprietário. Abra [Settings → Pages](https://github.com/arlenramires/estudio-coroado-news/settings/pages) e selecione **Build and deployment → Source: GitHub Actions**.
+
+Endereço esperado **apenas quando houver publicação confirmada**: https://arlenramires.github.io/estudio-coroado-news/

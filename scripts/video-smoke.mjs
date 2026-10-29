@@ -8,12 +8,12 @@ const page=await browser.newPage({acceptDownloads:true});
 const errors=[];page.on('pageerror',e=>errors.push(e.message));
 try{
  await page.goto('http://127.0.0.1:8765/index.html');
- await page.waitForFunction(()=>document.querySelectorAll('.tile').length===11);
+ await page.waitForFunction(()=>document.querySelectorAll('.tile').length===22);
  await page.locator('#media').setInputFiles('test-input.mp4');
  await page.waitForFunction(()=>document.querySelector('#videoTools').style.display==='block' && document.querySelector('#trimEnd').value!=='0',{timeout:15000});
  await page.fill('#trimStart','0');await page.fill('#trimEnd','2');
  const promise=page.waitForEvent('download',{timeout:30000});
- await page.click('#record');
+ await page.click('#saveVideo');
  const d=await promise;const name=d.suggestedFilename();await d.saveAs('test-output-'+name);
  const target='test-output-'+name;
  const streams=JSON.parse(execFileSync('ffprobe',['-v','error','-show_entries','stream=codec_type','-of','json',target],{encoding:'utf8'})).streams;

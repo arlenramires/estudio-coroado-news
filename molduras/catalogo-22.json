@@ -1,138 +1,182 @@
 {
   "version": "2026-10-28",
-  "description": "22 molduras originais recuperadas do acervo do proprietário. A versão offline contém todas; o repositório aguarda a transferência dos 22 arquivos.",
+  "description": "22 molduras visuais recuperadas do acervo e publicadas em WebP otimizado, preservando composição, mascote e identidade visual.",
   "assets": [
     {
       "id": "01",
       "name": "Rios de Vídeos",
       "target": "molduras/original_01.webp",
-      "status": "disponivel_no_html_offline"
+      "status": "publicado",
+      "width": 1122,
+      "height": 1402
     },
     {
       "id": "02",
       "name": "Rios de Humor",
       "target": "molduras/original_02.webp",
-      "status": "disponivel_no_html_offline"
+      "status": "publicado",
+      "width": 941,
+      "height": 1672
     },
     {
       "id": "03",
       "name": "Curiosidades",
       "target": "molduras/original_03.webp",
-      "status": "disponivel_no_html_offline"
+      "status": "publicado",
+      "width": 941,
+      "height": 1672
     },
     {
       "id": "04",
       "name": "Flagras",
       "target": "molduras/original_04.webp",
-      "status": "disponivel_no_html_offline"
+      "status": "publicado",
+      "width": 1122,
+      "height": 1402
     },
     {
       "id": "05",
       "name": "Educação",
       "target": "molduras/original_05.webp",
-      "status": "disponivel_no_html_offline"
+      "status": "publicado",
+      "width": 1122,
+      "height": 1402
     },
     {
       "id": "06",
       "name": "Economia",
       "target": "molduras/original_06.webp",
-      "status": "disponivel_no_html_offline"
+      "status": "publicado",
+      "width": 1122,
+      "height": 1402
     },
     {
       "id": "07",
       "name": "Trânsito",
       "target": "molduras/original_07.webp",
-      "status": "disponivel_no_html_offline"
+      "status": "publicado",
+      "width": 1122,
+      "height": 1402
     },
     {
       "id": "08",
       "name": "Fofoca dos Famosos",
       "target": "molduras/original_08.webp",
-      "status": "disponivel_no_html_offline"
+      "status": "publicado",
+      "width": 1122,
+      "height": 1402
     },
     {
       "id": "09",
       "name": "Entretenimento",
       "target": "molduras/original_09.webp",
-      "status": "disponivel_no_html_offline"
+      "status": "publicado",
+      "width": 1122,
+      "height": 1402
     },
     {
       "id": "10",
       "name": "Saúde",
       "target": "molduras/original_10.webp",
-      "status": "disponivel_no_html_offline"
+      "status": "publicado",
+      "width": 1122,
+      "height": 1402
     },
     {
       "id": "11",
       "name": "Esportes",
       "target": "molduras/original_11.webp",
-      "status": "disponivel_no_html_offline"
+      "status": "publicado",
+      "width": 1122,
+      "height": 1402
     },
     {
       "id": "12",
       "name": "Brasil e Mundo",
       "target": "molduras/original_12.webp",
-      "status": "disponivel_no_html_offline"
+      "status": "publicado",
+      "width": 1122,
+      "height": 1402
     },
     {
       "id": "13",
       "name": "Manaus",
       "target": "molduras/original_13.webp",
-      "status": "disponivel_no_html_offline"
+      "status": "publicado",
+      "width": 1122,
+      "height": 1402
     },
     {
       "id": "14",
       "name": "Amazonas",
       "target": "molduras/original_14.webp",
-      "status": "disponivel_no_html_offline"
+      "status": "publicado",
+      "width": 1122,
+      "height": 1402
     },
     {
       "id": "15",
       "name": "Política",
       "target": "molduras/original_15.webp",
-      "status": "disponivel_no_html_offline"
+      "status": "publicado",
+      "width": 1122,
+      "height": 1402
     },
     {
       "id": "16",
       "name": "Notícias",
       "target": "molduras/original_16.webp",
-      "status": "disponivel_no_html_offline"
+      "status": "publicado",
+      "width": 1122,
+      "height": 1402
     },
     {
       "id": "17",
       "name": "Polícia",
       "target": "molduras/original_17.webp",
-      "status": "disponivel_no_html_offline"
+      "status": "publicado",
+      "width": 1122,
+      "height": 1402
     },
     {
       "id": "18",
       "name": "Rios de Humor — 3D",
       "target": "molduras/original_18.webp",
-      "status": "disponivel_no_html_offline"
+      "status": "publicado",
+      "width": 941,
+      "height": 1672
     },
     {
       "id": "19",
       "name": "Rios de Vídeos — 3D",
       "target": "molduras/original_19.webp",
-      "status": "disponivel_no_html_offline"
+      "status": "publicado",
+      "width": 941,
+      "height": 1672
     },
     {
       "id": "20",
       "name": "Curiosidades — 3D",
       "target": "molduras/original_20.webp",
-      "status": "disponivel_no_html_offline"
+      "status": "publicado",
+      "width": 1122,
+      "height": 1402
     },
     {
       "id": "21",
       "name": "Novela das Frutas",
       "target": "molduras/original_21.webp",
-      "status": "disponivel_no_html_offline"
+      "status": "publicado",
+      "width": 1254,
+      "height": 1254
     },
     {
       "id": "22",
       "name": "Flagras — 3D",
       "target": "molduras/original_22.webp",
-      "status": "disponivel_no_html_offline"
+      "status": "publicado",
+      "width": 1122,
+      "height": 1402
     }
   ]
 }
