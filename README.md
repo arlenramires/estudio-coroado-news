@@ -27,3 +27,8 @@ PNG funciona com a API Canvas. MP4 só quando `MediaRecorder` oferecer gravaçã
 
 ### Testes
 `node scripts/check-editor.mjs` verifica sintaxe, 22 molduras, manifesto, cache e ausência de workflow público. `scripts/smoke.mjs` testa o carregamento offline após o pré-cache. `scripts/video-smoke.mjs` testa vídeo com áudio no Chrome do runner, mas não substitui teste Android.
+
+## Alternativa imediata: arquivo único offline (PC e celular)
+Para usar sem servidor nem instalação, baixe o artefato **Estudio-Coroado-Offline-PC-Celular** da execução bem-sucedida de **Actions → Testar Estúdio**. Extraia o ZIP e abra `Estudio_Coroado_Offline.html` no navegador. As 22 molduras estão incorporadas ao próprio HTML; fotos e vídeos são selecionados localmente e não são enviados a servidores. No Android, abra pelo gerenciador de arquivos com Chrome ou navegador compatível. O HTML local não é PWA instalável, mas permite edição offline; a exportação MP4 depende do navegador.
+
+Para gerar em um PC com Node.js: `node scripts/build-offline.mjs`. O arquivo será criado em `dist/`.
