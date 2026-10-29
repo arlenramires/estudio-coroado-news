@@ -3,7 +3,10 @@
 const CACHE='estudio-coroado-offline-v13';
 const ASSETS=['./','./index.html','./manifest.webmanifest','./icons/studio.svg','./icons/studio-192.png','./icons/studio-512.png',
   ...Array.from({length:22},(_,i)=>'./molduras/original_'+String(i+1).padStart(2,'0')+'.webp')];
-// Somente arquivos declarados do aplicativo podem entrar no cache.\n// Requisições extras (incluindo parâmetros de URL) passam direto para a rede.\nconst OFFLINE_URLS=new Set(ASSETS.map(asset=>new URL(asset,self.registration.scope).href));\nself.addEventListener('install',event=>{
+// Somente arquivos declarados do aplicativo podem entrar no cache.
+// Requisições extras (incluindo parâmetros de URL) passam direto para a rede.
+const OFFLINE_URLS=new Set(ASSETS.map(asset=>new URL(asset,self.registration.scope).href));
+self.addEventListener('install',event=>{
   event.waitUntil((async()=>{const cache=await caches.open(CACHE);await cache.addAll(ASSETS);await self.skipWaiting()})());
 });
 self.addEventListener('activate',event=>{
