@@ -147,6 +147,27 @@ try{
  if(await page.locator('#videoPreview').getAttribute('src')===null)throw Error('Saída para segundo plano apagou a prévia anterior');
  console.log('Segundo plano aprovado: exportação descartada, prévia mantida e Wake Lock liberado.');
 
+ // Regressão: exportar novamente sem selecionar a mídia deve preservar o áudio.
+ // audioDest é compartilhado entre exportações: não encerrar seus tracks no cleanup.
+ const audioTracks=await page.evaluate(()=>audioDest?.stream.getAudioTracks().map(t=>t.readyState));
+ if(!audioTracks?.length||audioTracks.some(state=>state!=='live'))throw Error('Track de áudio encerrado após exportar: '+JSON.stringify(audioTracks));
+ const repeatPromise=page.waitForEvent('download',{timeout:30000});
+ await page.click('#saveVideo');
+ const repeat=await repeatPromise;
+ await page.waitForFunction(()=>!recording && !document.querySelector('#media').disabled,{timeout:15000});
+ const repeatTarget='test-repeat-'+repeat.suggestedFilename();
+ await repeat.saveAs(repeatTarget);
+ const repeatStreams=JSON.parse(execFileSync('ffprobe',['-v','error','-show_entries','stream=codec_type','-of','json',repeatTarget],{encoding:'utf8'})).streams;
+ const repeatTypes=repeatStreams.map(x=>x.codec_type);
+ if(!repeatTypes.includes('video')||!repeatTypes.includes('audio'))throw Error('Segunda exportação sem vídeo/áudio: '+JSON.stringify(repeatTypes));
+ const repeatVolume=spawnSync('ffmpeg',['-hide_banner','-nostats','-i',repeatTarget,'-vn','-af','volumedetect','-f','null','-'],{encoding:'utf8'});
+ const repeatMeasured=repeatVolume.stderr.match(/mean_volume:[ ]*(-?[0-9.]+) dB/);
+ if(repeatVolume.status!==0||!repeatMeasured||Number(repeatMeasured[1])< -55)throw Error('Áudio ausente ou silencioso na segunda exportação: '+(repeatMeasured?.[1]||repeatVolume.stderr.slice(-200)));
+ if(unexpectedDownloads!==1)throw Error('Quantidade inesperada de downloads após segunda exportação: '+unexpectedDownloads);
+ const wakeAfterRepeat=await page.evaluate(()=>window.__wakeLockTest);
+ if(wakeAfterRepeat.requests!==5||wakeAfterRepeat.releases!==5)throw Error('Wake Lock não liberado após segunda exportação: '+JSON.stringify(wakeAfterRepeat));
+ console.log('Exportação consecutiva aprovada: vídeo e áudio audível preservados na segunda gravação.');
+
  if(errors.length)throw Error('Erros no navegador: '+errors.join(' | '));
  console.log('Vídeo exportado com imagem e áudio:',name,fs.statSync(target).size,'bytes; streams:',types.join(','));
 }finally{await browser.close()}
