@@ -14,6 +14,7 @@ const manifest=JSON.parse(fs.readFileSync('manifest.webmanifest','utf8'));
 if(manifest.display!=='standalone'||!manifest.icons?.length)throw new Error('Manifesto PWA incompleto');
 const sw=fs.readFileSync('sw.js','utf8');new vm.Script(sw,{filename:'sw.js'});
 for(let i=1;i<=22;i++){const p='molduras/original_'+String(i).padStart(2,'0')+'.webp';if(!fs.existsSync(p))throw new Error('Moldura offline ausente: '+p)}
+for(const size of [192,512]){const b=fs.readFileSync('icons/studio-'+size+'.png');if(b.subarray(1,4).toString()!=='PNG'||b.readUInt32BE(16)!==size||b.readUInt32BE(20)!==size)throw new Error('Ícone PNG inválido: '+size)}
 if(!sw.includes('cache.addAll(ASSETS)'))throw new Error('Pré-cache offline não configurado');
 if(fs.existsSync('.github/workflows/pages.yml'))throw new Error('Publicação pública não autorizada');
 if(!html.includes('serviceWorker.register'))throw new Error('PWA não integrado ao editor');
