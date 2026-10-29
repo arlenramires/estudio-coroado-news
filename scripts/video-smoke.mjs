@@ -27,7 +27,10 @@ try{
  await page.fill('#trimStart','0');await page.fill('#trimEnd','2');
  const promise=page.waitForEvent('download',{timeout:30000});
  await page.click('#saveVideo');
- const d=await promise;const name=d.suggestedFilename();await d.saveAs('test-output-'+name);
+ // Enquanto grava, impedir troca de mídia, moldura, texto ou formato (arquivo inconsistente).
+ await page.waitForFunction(()=>document.querySelector('#media').disabled && document.querySelector('#editorial').disabled && document.querySelector('#format').disabled && document.querySelector('#headline').disabled && document.querySelector('#savePNG').disabled && [...document.querySelectorAll('#gallery .tile')].every(b=>b.disabled) && document.querySelector('#stopVideo').style.display==='block');
+ const d=await promise;
+ await page.waitForFunction(()=>!document.querySelector('#media').disabled && !document.querySelector('#editorial').disabled && !document.querySelector('#savePNG').disabled && [...document.querySelectorAll('#gallery .tile')].every(b=>!b.disabled));const name=d.suggestedFilename();await d.saveAs('test-output-'+name);
  const target='test-output-'+name;
  const streams=JSON.parse(execFileSync('ffprobe',['-v','error','-show_entries','stream=codec_type','-of','json',target],{encoding:'utf8'})).streams;
  const types=streams.map(x=>x.codec_type);
