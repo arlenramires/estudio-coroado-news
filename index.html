@@ -170,7 +170,12 @@ $('saveVideo').onclick=async()=>{if(!video){status('Escolha um vídeo antes de e
  for(const candidate of supportedMimes){try{const attempt=new MediaRecorder(stream,{mimeType:candidate,videoBitsPerSecond:2500000,audioBitsPerSecond:128000});attempt.start(1000);recorder=attempt;mime=attempt.mimeType||candidate;break}catch(err){recorder=null;console.warn('Formato de gravação indisponível ao iniciar:',candidate,err.message)}}
  if(!recorder)throw new Error('O dispositivo não conseguiu iniciar um gravador MP4 ou WebM.');
  recorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};
- function stop(reason=''){if(stopRequested)return;stopRequested=true;if(reason&&!exportErrorMessage)exportErrorMessage=reason;if(recorder?.state==='recording'){recorder.requestData();recorder.stop()}}
+ function stop(reason=''){if(stopRequested)return;stopRequested=true;if(reason&&!exportErrorMessage)exportErrorMessage=reason;if(recorder?.state==='recording'){
+  // Alguns MediaRecorder (especialmente móveis) rejeitam requestData durante a finalização.
+  // A falha desse pedido não deve impedir stop(), onstop e a liberação dos controles.
+  try{recorder.requestData()}catch(err){console.warn('Não foi possível solicitar o último bloco:',err.message)}
+  recorder.stop();
+ }}
  // Ao bloquear a tela ou trocar de aplicativo, o navegador pode suspender os quadros e o áudio.
  // Descartar a gravação evita entregar um vídeo congelado ou incompleto como finalizado.
  visibilityHandler=()=>{if(document.hidden)stop('Exportação interrompida: o Estúdio foi para segundo plano. Nenhum arquivo parcial foi entregue.')};
