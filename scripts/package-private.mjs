@@ -55,7 +55,8 @@ O arquivo unico inclui as 22 molduras. Ele NAO e um PWA instalavel.
 
 PWA NO WINDOWS (INSTALACAO PELO NAVEGADOR):
 1. Extraia o ZIP inteiro (nao abra arquivos de dentro do ZIP).
-2. Com Python instalado, execute Iniciar-PC-Windows.cmd e mantenha a janela aberta.\n   O navegador so sera aberto depois de o servidor iniciar.
+2. Com Python instalado, execute Iniciar-PC-Windows.cmd e mantenha a janela aberta.
+   O navegador so sera aberto depois de o servidor iniciar.
 3. No Chrome ou Edge, acesse http://127.0.0.1:8765/index.html
 4. Aguarde carregar as 22 molduras e use o menu > Instalar aplicativo.
 5. Depois do primeiro carregamento, o cache do PWA pode operar offline.
@@ -63,7 +64,8 @@ PWA NO WINDOWS (INSTALACAO PELO NAVEGADOR):
 
 PWA NO ANDROID (SEM HOSPEDAGEM PUBLICA):
 1. Instale Termux de fonte confiavel e instale Python: pkg install python.
-2. Execute termux-setup-storage e autorize acesso aos arquivos, se usar Downloads.\n3. Extraia todo o ZIP em uma pasta acessivel ao Termux.
+2. Execute termux-setup-storage e autorize acesso aos arquivos, se usar Downloads.
+3. Extraia todo o ZIP em uma pasta acessivel ao Termux.
 4. No Termux, entre na pasta e execute sh Iniciar-Android-Termux.sh
 5. No Chrome do proprio Android, abra http://127.0.0.1:8765/index.html
 6. Aguarde as 22 molduras; menu > Instalar app/Adicionar a tela inicial.
@@ -73,6 +75,8 @@ IMPORTANTE: nenhum arquivo e enviado a um servidor externo pelo editor.
 MP4 so se o navegador suportar MediaRecorder MP4; caso contrario, WebM.
 Teste exportacao com audio no seu aparelho antes de publicar.
 Nao e APK; a instalacao Android fisica ainda precisa de validacao.
-Nao use IP HTTP do PC para instalar PWA no Android.\nSe o Termux nao encontrar a pasta Downloads, execute termux-setup-storage, autorize e use ~/storage/downloads.\nSe o PWA nao abrir offline, acesse-o com servidor ativo uma vez e aguarde o aviso de cache pronto.
+Nao use IP HTTP do PC para instalar PWA no Android.
+Se o Termux nao encontrar a pasta Downloads, execute termux-setup-storage, autorize e use ~/storage/downloads.
+Se o PWA nao abrir offline, acesse-o com servidor ativo uma vez e aguarde o aviso de cache pronto.
 `);
 console.log('Pacote privado gerado:',dest,'com',required.length,'arquivos do PWA + HTML offline e iniciadores.');
