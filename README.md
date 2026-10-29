@@ -28,7 +28,19 @@ PNG funciona com a API Canvas. MP4 só quando `MediaRecorder` oferecer gravaçã
 ### Testes
 `node scripts/check-editor.mjs` verifica sintaxe, 22 molduras, manifesto, cache e ausência de workflow público. `scripts/smoke.mjs` testa o carregamento offline após o pré-cache. `scripts/video-smoke.mjs` testa vídeo com áudio no Chrome do runner, mas não substitui teste Android.
 
-## Alternativa imediata: arquivo único offline (PC e celular)
-Para usar sem servidor nem instalação, baixe o artefato **Estudio-Coroado-Offline-PC-Celular** da execução bem-sucedida de **Actions → Testar Estúdio**. Extraia o ZIP e abra `Estudio_Coroado_Offline.html` no navegador. As 22 molduras estão incorporadas ao próprio HTML; fotos e vídeos são selecionados localmente e não são enviados a servidores. No Android, abra pelo gerenciador de arquivos com Chrome ou navegador compatível. O HTML local não é PWA instalável, mas permite edição offline; a exportação MP4 depende do navegador.
+## Pacote privado para PC e Android (sem GitHub Pages)
+Na execução bem-sucedida de **Actions → Testar Estúdio**, baixe o artefato **Estudio-Coroado-Privado-PC-Android**. O ZIP contém:
+- `Estudio_Coroado_Offline.html`: arquivo único para usar imediatamente, offline, sem servidor e sem instalação, com as 22 molduras incorporadas.
+- `index.html`, `manifest.webmanifest`, `sw.js`, `icons/` e `molduras/`: PWA completo para instalar no navegador a partir de `localhost`.
+- `Iniciar-PC-Windows.cmd` e `Iniciar-Android-Termux.sh`: auxiliares para iniciar servidor local sem publicação pública.
+- `LEIA-ME-PRIMEIRO.txt`: instruções passo a passo, incluindo limitações reais de MP4 e Android.
 
-Para gerar em um PC com Node.js: `node scripts/build-offline.mjs`. O arquivo será criado em `dist/`.
+**Uso imediato:** extraia o ZIP e abra `Estudio_Coroado_Offline.html` no Chrome/Edge do PC ou no navegador do Android via gerenciador de arquivos. As fotos e os vídeos selecionados ficam no dispositivo. Esse HTML **não** é um PWA instalável.
+
+**Instalação PWA privada no PC:** extraia tudo, instale Python se necessário, execute `Iniciar-PC-Windows.cmd`, acesse `http://127.0.0.1:8765/index.html` no Chrome/Edge e escolha **Instalar aplicativo** quando disponível.
+
+**Instalação PWA privada no Android:** use Termux com Python, extraia o ZIP em uma pasta acessível ao Termux, execute `sh Iniciar-Android-Termux.sh`, abra `http://127.0.0.1:8765/index.html` no Chrome do próprio telefone e use **Instalar app** quando disponível. A instalação e exportação com áudio **ainda precisam de validação em Android físico**; testes automatizados simulam uma tela móvel, mas não são um aparelho real.
+
+O código-fonte no GitHub **continua público** enquanto o proprietário não alterar a visibilidade do repositório. A entrega não ativa GitHub Pages, não fornece APK e não hospeda dados pessoais. MP4 depende de suporte nativo do navegador; WebM é a alternativa quando não houver MP4.
+
+Para gerar localmente com Node.js: `node scripts/build-offline.mjs && node scripts/package-private.mjs`. O pacote será criado em `dist/Estudio-Coroado-Privado/`.
