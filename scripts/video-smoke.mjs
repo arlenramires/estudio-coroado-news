@@ -33,7 +33,7 @@ try{
  if(!types.includes('audio'))throw Error('Arquivo exportado sem áudio: '+JSON.stringify(streams));
  const volume=spawnSync('ffmpeg',['-hide_banner','-nostats','-i',target,'-vn','-af','volumedetect','-f','null','-'],{encoding:'utf8'});
  if(volume.status!==0)throw Error('Não foi possível decodificar áudio exportado: '+volume.stderr.slice(-500));
- const measured=volume.stderr.match(/mean_volume:\\s*(-?[0-9.]+) dB/);
+ const measured=volume.stderr.match(/mean_volume:\s*(-?[0-9.]+) dB/);
  if(!measured||Number(measured[1])< -55)throw Error('Áudio exportado está silencioso ou inaudível: '+(measured?.[1]||'sem medição'));
 
  const frames=Number(execFileSync('ffprobe',['-v','error','-count_frames','-select_streams','v:0','-show_entries','stream=nb_read_frames','-of','default=noprint_wrappers=1:nokey=1',target],{encoding:'utf8'}).trim());
