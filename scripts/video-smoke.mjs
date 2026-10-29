@@ -96,6 +96,19 @@ try{
  const wakeAfterError=await page.evaluate(()=>window.__wakeLockTest);
  if(wakeAfterError.requests!==2||wakeAfterError.releases!==2)throw Error('Wake Lock não liberado após erro de gravação: '+JSON.stringify(wakeAfterError));
  console.log('Erro simulado do gravador: sem download parcial, controles e Wake Lock liberados.');
+
+ // Cancelamento manual também precisa descartar o arquivo parcial, sem substituir a prévia anterior.
+ await page.click('#saveVideo');
+ await page.waitForFunction(()=>recorder?.state==='recording',{timeout:15000});
+ await page.click('#stopVideo');
+ await page.waitForFunction(()=>!document.querySelector('#media').disabled && document.querySelector('#status').textContent.includes('Exportação cancelada.'),{timeout:15000});
+ await page.waitForTimeout(300);
+ if(unexpectedDownloads)throw Error('Cancelamento manual entregou arquivo parcial');
+ const wakeAfterCancel=await page.evaluate(()=>window.__wakeLockTest);
+ if(wakeAfterCancel.requests!==3||wakeAfterCancel.releases!==3)throw Error('Wake Lock não liberado após cancelamento: '+JSON.stringify(wakeAfterCancel));
+ if(await page.locator('#videoPreview').getAttribute('src')===null)throw Error('Cancelamento apagou a prévia válida anterior');
+ console.log('Cancelamento manual aprovado: nenhum arquivo parcial, prévia preservada e controles liberados.');
+
  if(errors.length)throw Error('Erros no navegador: '+errors.join(' | '));
  console.log('Vídeo exportado com imagem e áudio:',name,fs.statSync(target).size,'bytes; streams:',types.join(','));
 }finally{await browser.close()}
