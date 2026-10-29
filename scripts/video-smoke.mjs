@@ -50,10 +50,32 @@ try{
  await page.locator('#media').setInputFiles('test-input.mp4');
  await page.waitForFunction(()=>document.querySelector('#videoTools').style.display==='block' && document.querySelector('#trimEnd').value!=='0',{timeout:15000});
  await page.fill('#trimStart','0');await page.fill('#trimEnd','2');
+ // Simula verificação lenta do cabeçalho: o editor não pode ser liberado antes da entrega.
+ await page.evaluate(()=>{
+   const original=Blob.prototype.arrayBuffer;
+   window.__restoreHeaderRead=()=>{Blob.prototype.arrayBuffer=original};
+   Blob.prototype.arrayBuffer=function(...args){
+     if(this.size<=16 && this.type.startsWith('video/') && !window.__headerHeld){
+       window.__headerHeld=true;
+       return new Promise((resolve,reject)=>{window.__releaseHeaderRead=()=>original.apply(this,args).then(resolve,reject)});
+     }
+     return original.apply(this,args);
+   };
+ });
  const promise=page.waitForEvent('download',{timeout:30000});
  await page.click('#saveVideo');
  // Enquanto grava, impedir troca de mídia, moldura, texto ou formato (arquivo inconsistente).
  await page.waitForFunction(()=>document.querySelector('#media').disabled && document.querySelector('#editorial').disabled && document.querySelector('#format').disabled && document.querySelector('#headline').disabled && document.querySelector('#savePNG').disabled && [...document.querySelectorAll('#gallery .tile')].every(b=>b.disabled) && document.querySelector('#stopVideo').style.display==='block');
+ await page.waitForFunction(()=>typeof window.__releaseHeaderRead==='function',{timeout:20000});
+ const held=await page.evaluate(()=>({
+   recording,mediaDisabled:document.querySelector('#media').disabled,
+   headlineDisabled:document.querySelector('#headline').disabled,
+   exportDisabled:document.querySelector('#saveVideo').disabled,
+   cancelVisible:document.querySelector('#stopVideo').style.display==='block'
+ }));
+ if(!held.recording||!held.mediaDisabled||!held.headlineDisabled||!held.exportDisabled||!held.cancelVisible)
+   throw Error('Editor liberado antes de validar o vídeo: '+JSON.stringify(held));
+ await page.evaluate(()=>{window.__releaseHeaderRead();window.__restoreHeaderRead()});
  const d=await promise;
  // A prévia do vídeo final deve ficar disponível no próprio Estúdio, além do download.
  await page.waitForFunction(()=>{
