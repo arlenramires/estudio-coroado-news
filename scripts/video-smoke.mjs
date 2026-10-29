@@ -7,6 +7,18 @@ const browser=await chromium.launch({headless:true,executablePath:exe,args:['--n
 const mobile=process.env.STUDIO_TEST_MOBILE==='1';
 const context=await browser.newContext(mobile?{acceptDownloads:true,viewport:{width:390,height:844},isMobile:true,hasTouch:true,deviceScaleFactor:2}:{acceptDownloads:true});
 const page=await context.newPage();
+// Simula Wake Lock mesmo no Chrome do runner: deve ser solicitado e liberado
+// tanto em exportação normal quanto no fallback e no arquivo HTML offline.
+await page.addInitScript(()=>{
+  window.__wakeLockTest={requests:0,releases:0};
+  Object.defineProperty(navigator,'wakeLock',{configurable:true,value:{
+    request:async(type)=>{
+      if(type!=='screen')throw Error('Tipo de Wake Lock inesperado: '+type);
+      window.__wakeLockTest.requests++;
+      return {release:async()=>{window.__wakeLockTest.releases++}};
+    }
+  }});
+});
 const errors=[];page.on('pageerror',e=>errors.push(e.message));
 if(process.env.STUDIO_TEST_CODEC_FALLBACK==='1'){
  await page.addInitScript(()=>{
@@ -35,7 +47,10 @@ try{
    const preview=document.querySelector('#videoPreview');
    return preview.style.display==='block' && preview.src.startsWith('blob:') && preview.controls;
  },{timeout:10000});
- await page.waitForFunction(()=>!document.querySelector('#media').disabled && !document.querySelector('#editorial').disabled && !document.querySelector('#savePNG').disabled && [...document.querySelectorAll('#gallery .tile')].every(b=>!b.disabled));const name=d.suggestedFilename();await d.saveAs('test-output-'+name);
+ await page.waitForFunction(()=>!document.querySelector('#media').disabled && !document.querySelector('#editorial').disabled && !document.querySelector('#savePNG').disabled && [...document.querySelectorAll('#gallery .tile')].every(b=>!b.disabled));
+ const wake=await page.evaluate(()=>window.__wakeLockTest);
+ if(wake.requests!==1||wake.releases!==1)throw Error('Wake Lock não foi solicitado e liberado corretamente: '+JSON.stringify(wake));
+ const name=d.suggestedFilename();await d.saveAs('test-output-'+name);
  const target='test-output-'+name;
  const streams=JSON.parse(execFileSync('ffprobe',['-v','error','-show_entries','stream=codec_type','-of','json',target],{encoding:'utf8'})).streams;
  const types=streams.map(x=>x.codec_type);
