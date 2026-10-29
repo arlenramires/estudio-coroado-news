@@ -18,4 +18,5 @@ for(const size of [192,512]){const b=fs.readFileSync('icons/studio-'+size+'.png'
 if(!sw.includes('cache.addAll(ASSETS)'))throw new Error('Pré-cache offline não configurado');
 if(fs.existsSync('.github/workflows/pages.yml'))throw new Error('Publicação pública não autorizada');
 if(!html.includes('serviceWorker.register'))throw new Error('PWA não integrado ao editor');
+if(!html.includes('id="offlineReady"')||!html.includes('id="videoCapability"'))throw new Error('Diagnóstico de offline/codec ausente');
 console.log('Editor: JavaScript válido, '+new Set(sources).size+' molduras presentes, exportação implementada.');
