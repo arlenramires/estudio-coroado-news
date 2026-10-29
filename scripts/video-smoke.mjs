@@ -187,6 +187,23 @@ try{
  if(wakeAfterRepeat.requests!==5||wakeAfterRepeat.releases!==5)throw Error('Wake Lock não liberado após segunda exportação: '+JSON.stringify(wakeAfterRepeat));
  console.log('Exportação consecutiva aprovada: vídeo e áudio audível preservados na segunda gravação.');
 
+ // Regressão móvel: requestData() pode falhar durante o cancelamento.
+ // Mesmo assim stop() deve ocorrer e liberar o editor, sem entregar um arquivo parcial.
+ await page.click('#saveVideo');
+ await page.waitForFunction(()=>recorder?.state==='recording',{timeout:15000});
+ await page.evaluate(()=>{
+   recorder.requestData=()=>{throw new DOMException('Bloco de mídia indisponível','InvalidStateError')};
+ });
+ await page.click('#stopVideo');
+ await page.waitForFunction(()=>!recording && !document.querySelector('#media').disabled && document.querySelector('#status').textContent.includes('Exportação cancelada.'),{timeout:15000});
+ await page.waitForTimeout(300);
+ if(unexpectedDownloads!==1)throw Error('Falha de requestData entregou arquivo parcial: '+unexpectedDownloads);
+ if(await page.locator('#videoPreview').getAttribute('src')===null)throw Error('Falha de requestData apagou prévia válida');
+ const wakeAfterRequestFailure=await page.evaluate(()=>window.__wakeLockTest);
+ if(wakeAfterRequestFailure.requests!==6||wakeAfterRequestFailure.releases!==6)
+   throw Error('Falha de requestData não liberou Wake Lock: '+JSON.stringify(wakeAfterRequestFailure));
+ console.log('Falha simulada de requestData: stop executado, sem arquivo parcial, controles e Wake Lock liberados.');
+
  if(errors.length)throw Error('Erros no navegador: '+errors.join(' | '));
  console.log('Vídeo exportado com imagem e áudio:',name,fs.statSync(target).size,'bytes; streams:',types.join(','));
 }finally{await browser.close()}
