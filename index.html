@@ -123,12 +123,36 @@ function deliver(blob,name){
  a.textContent='⬇ BAIXAR '+name.toUpperCase();a.click();
  status('Arquivo gerado: '+name+'. Se não baixar automaticamente, toque no botão verde.');
 }
+// Espera o quadro do ponto de início ficar decodificado antes de gravar.
+ // currentTime muda imediatamente, mas o seek do vídeo pode continuar pendente no Android.
+async function seekForExport(v,seconds){
+ if(!v.seeking && v.readyState>=2 && Math.abs(v.currentTime-seconds)<.03)return;
+ await new Promise((resolve,reject)=>{
+   let timer;
+   const cleanup=()=>{
+     clearTimeout(timer);
+     v.removeEventListener('seeked',check);
+     v.removeEventListener('loadeddata',check);
+     v.removeEventListener('error',failed);
+   };
+   const check=()=>{
+     if(v.seeking||v.readyState<2||Math.abs(v.currentTime-seconds)>.15)return;
+     cleanup();resolve();
+   };
+   const failed=()=>{cleanup();reject(new Error('Falha ao decodificar o início do vídeo.'))};
+   v.addEventListener('seeked',check);
+   v.addEventListener('loadeddata',check);
+   v.addEventListener('error',failed);
+   timer=setTimeout(()=>{cleanup();reject(new Error('Tempo esgotado ao posicionar o vídeo. Tente novamente.'))},10000);
+   try{v.currentTime=seconds;check()}catch(err){cleanup();reject(err)}
+ });
+}
 $('savePNG').onclick=()=>{draw();canvas.toBlob(b=>deliver(b,'Coroado_'+(selected+1)+'_arte.png'),'image/png')};
 $('saveVideo').onclick=async()=>{if(!video){status('Escolha um vídeo antes de exportar.');return}if(recording){status('Já existe uma exportação em andamento.');return}if(!window.MediaRecorder||!canvas.captureStream){status('Seu navegador não permite exportar vídeo.');return}if($('audio').checked&&!audioDest){status('Não foi possível capturar o áudio deste vídeo. Desmarque Manter áudio original para exportar sem som.');return}
  let start=Math.max(0,+$('trimStart').value||0),end=Math.min(video.duration,+$('trimEnd').value||video.duration);if(!(end>start+.3)){status('Escolha um trecho válido de pelo menos 0,3 segundo.');return}
  const mimes=['video/mp4;codecs=avc1.42E01E,mp4a.40.2','video/mp4;codecs=avc1.42E01E','video/mp4','video/webm;codecs=vp8,opus','video/webm'];const supportedMimes=mimes.filter(x=>MediaRecorder.isTypeSupported(x));if(!supportedMimes.length){status('Seu navegador não suporta MP4 nem WebM.');return}
  recording=true;setExportBusy(true);let chunks=[],lastTime=-1,frameId=0,videoFrameId=0,interval=0,stopRequested=false,stream=null,mime='';
- try{await acquireExportWakeLock();await audioCtx?.resume();video.pause();video.currentTime=start;await new Promise(r=>{if(Math.abs(video.currentTime-start)<.05)return r();video.addEventListener('seeked',r,{once:true});setTimeout(r,600)});
+ try{await acquireExportWakeLock();await audioCtx?.resume();video.pause();await seekForExport(video,start);
  const [W,H]=canvasFormat();recordCanvas=document.createElement('canvas');const sc=Math.min(1,720/W);recordCanvas.width=Math.round(W*sc);recordCanvas.height=Math.round(H*sc);recordCtx=recordCanvas.getContext('2d',{alpha:false});draw();recordCtx.drawImage(canvas,0,0,recordCanvas.width,recordCanvas.height);
  stream=recordCanvas.captureStream(0);let frameTrack=stream.getVideoTracks()[0];const manualFrame=typeof frameTrack.requestFrame==='function';if(!manualFrame){stream.getTracks().forEach(t=>t.stop());stream=recordCanvas.captureStream(30);frameTrack=stream.getVideoTracks()[0]}if($('audio').checked&&audioDest){for(const t of audioDest.stream.getAudioTracks())stream.addTrack(t)}
  // Alguns navegadores anunciam MP4, mas rejeitam o codec ao construir o gravador. Tentar o próximo formato evita falha total.
