@@ -109,6 +109,22 @@ try{
  if(await page.locator('#videoPreview').getAttribute('src')===null)throw Error('Cancelamento apagou a prévia válida anterior');
  console.log('Cancelamento manual aprovado: nenhum arquivo parcial, prévia preservada e controles liberados.');
 
+ // Regressão Android: bloquear a tela ou trocar de app não pode gerar um vídeo congelado.
+ await page.click('#saveVideo');
+ await page.waitForFunction(()=>recorder?.state==='recording',{timeout:15000});
+ await page.evaluate(()=>{
+   Object.defineProperty(document,'hidden',{configurable:true,value:true});
+   document.dispatchEvent(new Event('visibilitychange'));
+   delete document.hidden;
+ });
+ await page.waitForFunction(()=>!document.querySelector('#media').disabled && document.querySelector('#status').textContent.includes('segundo plano'),{timeout:15000});
+ await page.waitForTimeout(300);
+ if(unexpectedDownloads)throw Error('Exportação em segundo plano entregou vídeo parcial');
+ const wakeAfterHidden=await page.evaluate(()=>window.__wakeLockTest);
+ if(wakeAfterHidden.requests!==4||wakeAfterHidden.releases!==4)throw Error('Wake Lock não liberado ao sair do Estúdio: '+JSON.stringify(wakeAfterHidden));
+ if(await page.locator('#videoPreview').getAttribute('src')===null)throw Error('Saída para segundo plano apagou a prévia anterior');
+ console.log('Segundo plano aprovado: exportação descartada, prévia mantida e Wake Lock liberado.');
+
  if(errors.length)throw Error('Erros no navegador: '+errors.join(' | '));
  console.log('Vídeo exportado com imagem e áudio:',name,fs.statSync(target).size,'bytes; streams:',types.join(','));
 }finally{await browser.close()}
