@@ -6,6 +6,17 @@ execFileSync('ffmpeg',['-hide_banner','-loglevel','error','-y','-f','lavfi','-i'
 const browser=await chromium.launch({headless:true,executablePath:exe,args:['--no-sandbox','--autoplay-policy=no-user-gesture-required']});
 const page=await browser.newPage({acceptDownloads:true});
 const errors=[];page.on('pageerror',e=>errors.push(e.message));
+if(process.env.STUDIO_TEST_CODEC_FALLBACK==='1'){
+ await page.addInitScript(()=>{
+   const Native=window.MediaRecorder;
+   function RecorderWithRejectedMP4(stream,options){
+     if(options?.mimeType?.startsWith('video/mp4'))throw new DOMException('MP4 recusado pelo dispositivo','NotSupportedError');
+     return new Native(stream,options);
+   }
+   RecorderWithRejectedMP4.isTypeSupported=Native.isTypeSupported.bind(Native);
+   window.MediaRecorder=RecorderWithRejectedMP4;
+ });
+}
 try{
  await page.goto(process.env.STUDIO_URL || 'http://127.0.0.1:8765/index.html');
  await page.waitForFunction(()=>document.querySelectorAll('.tile').length===22);
