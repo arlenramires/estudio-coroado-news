@@ -23,6 +23,19 @@ try{
   if(!file.suggestedFilename().endsWith('.png'))throw Error('Exportação móvel não retornou PNG');
   await page.evaluate(()=>navigator.serviceWorker.ready);
   await page.waitForFunction(()=>document.querySelector('#offlineReady').textContent.includes('Cache offline preparado'),{timeout:15000});
+  // Uma moldura ausente não pode ser anunciada como disponível offline.
+  const cacheCheck=await page.evaluate(async()=>{
+    const keys=(await caches.keys()).filter(name=>name.startsWith('estudio-coroado-offline-'));
+    if(keys.length!==1)throw Error('Cache do Estúdio não encontrado ou duplicado');
+    const cache=await caches.open(keys[0]),asset='./molduras/original_22.webp';
+    const had=!!(await cache.match(asset));
+    await cache.delete(asset);
+    const incomplete=await verifyOfflineCache();
+    await cache.add(asset);
+    const complete=await verifyOfflineCache();
+    return {had,incomplete,complete};
+  });
+  if(!cacheCheck.had||cacheCheck.incomplete||!cacheCheck.complete)throw Error('Diagnóstico de cache incompleto incorreto: '+JSON.stringify(cacheCheck));
   const codec=await page.locator('#videoCapability').textContent();
   if(!codec.includes('Gravação'))throw Error('Diagnóstico de gravação não apareceu: '+codec);
   await page.reload();
