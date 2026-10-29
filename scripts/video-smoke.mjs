@@ -84,6 +84,18 @@ try{
    duration=times.length?Math.max(...times):NaN;
  }
  if(!Number.isFinite(duration)||duration<1.2)throw Error('Vídeo exportado curto demais: '+duration);
+ // Regressão: um erro do MediaRecorder não pode disponibilizar um arquivo parcial.
+ let unexpectedDownloads=0;
+ page.on('download',()=>{unexpectedDownloads++});
+ await page.click('#saveVideo');
+ await page.waitForFunction(()=>recorder?.state==='recording',{timeout:15000});
+ await page.evaluate(()=>recorder.onerror({error:new Error('erro simulado de gravação')}));
+ await page.waitForFunction(()=>!document.querySelector('#media').disabled && document.querySelector('#status').textContent.includes('Nenhum arquivo parcial foi entregue.'),{timeout:15000});
+ await page.waitForTimeout(300);
+ if(unexpectedDownloads)throw Error('Gravação com erro entregou arquivo parcial');
+ const wakeAfterError=await page.evaluate(()=>window.__wakeLockTest);
+ if(wakeAfterError.requests!==2||wakeAfterError.releases!==2)throw Error('Wake Lock não liberado após erro de gravação: '+JSON.stringify(wakeAfterError));
+ console.log('Erro simulado do gravador: sem download parcial, controles e Wake Lock liberados.');
  if(errors.length)throw Error('Erros no navegador: '+errors.join(' | '));
  console.log('Vídeo exportado com imagem e áudio:',name,fs.statSync(target).size,'bytes; streams:',types.join(','));
 }finally{await browser.close()}
