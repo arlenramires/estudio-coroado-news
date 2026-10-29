@@ -36,6 +36,8 @@ try{
     return {had,incomplete,complete};
   });
   if(!cacheCheck.had||cacheCheck.incomplete||!cacheCheck.complete)throw Error('Diagnóstico de cache incompleto incorreto: '+JSON.stringify(cacheCheck));
+  await page.reload();
+  await page.waitForFunction(()=>!!navigator.serviceWorker.controller,{timeout:15000});
   // O PWA privado não deve armazenar arquivos arbitrários do servidor local.
   const cachePrivacy=await page.evaluate(async()=>{
     const name=(await caches.keys()).find(k=>k.startsWith('estudio-coroado-offline-'));
