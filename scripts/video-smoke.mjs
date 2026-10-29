@@ -34,6 +34,19 @@ if(process.env.STUDIO_TEST_CODEC_FALLBACK==='1'){
 try{
  await page.goto(process.env.STUDIO_URL || 'http://127.0.0.1:8765/index.html');
  await page.waitForFunction(()=>document.querySelectorAll('.tile').length===22);
+ // Regressão Android: currentTime já reflete o destino, mas a decodificação ainda não terminou.
+ const seekResult=await page.evaluate(async()=>{
+   const fake=new EventTarget();fake.readyState=2;fake.seeking=false;
+   let time=0,settled=false;
+   Object.defineProperty(fake,'currentTime',{get:()=>time,set:value=>{time=value;fake.seeking=true}});
+   const pending=seekForExport(fake,.75).then(()=>{settled=true});
+   await new Promise(resolve=>setTimeout(resolve,40));
+   const premature=settled;
+   fake.seeking=false;fake.dispatchEvent(new Event('seeked'));
+   await pending;
+   return {premature,settled};
+ });
+ if(seekResult.premature||!seekResult.settled)throw Error('Exportação não aguardou o quadro decodificado: '+JSON.stringify(seekResult));
  await page.locator('#media').setInputFiles('test-input.mp4');
  await page.waitForFunction(()=>document.querySelector('#videoTools').style.display==='block' && document.querySelector('#trimEnd').value!=='0',{timeout:15000});
  await page.fill('#trimStart','0');await page.fill('#trimEnd','2');
