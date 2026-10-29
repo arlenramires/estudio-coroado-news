@@ -22,6 +22,9 @@ try{
   const file=await download;
   if(!file.suggestedFilename().endsWith('.png'))throw Error('Exportação móvel não retornou PNG');
   await page.evaluate(()=>navigator.serviceWorker.ready);
+  await page.waitForFunction(()=>document.querySelector('#offlineReady').textContent.includes('Cache offline preparado'),{timeout:15000});
+  const codec=await page.locator('#videoCapability').textContent();
+  if(!codec.includes('Gravação'))throw Error('Diagnóstico de gravação não apareceu: '+codec);
   await page.reload();
   await page.waitForFunction(()=>!!navigator.serviceWorker.controller,{timeout:15000});
   await context.setOffline(true);
