@@ -37,6 +37,9 @@ jobs:
       - name: Testar fallback MP4 recusado para WebM com áudio
         run: STUDIO_TEST_CODEC_FALLBACK=1 node scripts/video-smoke.mjs
 
+      - name: Testar fallback MP4 recusado no inicio da gravacao
+        run: STUDIO_TEST_CODEC_START_FALLBACK=1 node scripts/video-smoke.mjs
+
       - name: Testar exportação de vídeo com áudio em viewport Android simulado
         run: STUDIO_TEST_MOBILE=1 node scripts/video-smoke.mjs
 
