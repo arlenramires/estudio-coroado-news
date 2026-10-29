@@ -23,5 +23,7 @@ jobs:
       - name: Testar navegador e PNG
         run: node scripts/smoke.mjs
 
+      - name: Instalar FFmpeg para validação de áudio
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
       - name: Testar exportação de vídeo com áudio
         run: node scripts/video-smoke.mjs
