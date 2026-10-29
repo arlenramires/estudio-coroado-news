@@ -20,6 +20,7 @@ if(!windowsLauncher.includes('ThreadingHTTPServer')||!windowsLauncher.includes('
 if(windowsLauncher.includes('start "" "http://127.0.0.1:8765'))throw Error('Inicializador Windows abre navegador antes do servidor');
 const androidInstructions=fs.readFileSync(path.join(dir,'LEIA-ME-PRIMEIRO.txt'),'utf8');
 if(!androidInstructions.includes('termux-setup-storage')||!androidInstructions.includes('mantenha a janela aberta'))throw Error('Instruções de instalação local incompletas');
+if(androidInstructions.includes(String.raw`\n`))throw Error('Instruções de instalação contêm barras n literais em vez de quebras de linha');
 const offline=fs.readFileSync(path.join(dir,'Estudio_Coroado_Offline.html'),'utf8');
 if((offline.match(/"src":"data:image\/webp;base64,/g)||[]).length!==22)throw Error('HTML offline sem as 22 molduras incorporadas');
 const manifest=JSON.parse(fs.readFileSync(path.join(dir,'manifest.webmanifest'),'utf8'));
