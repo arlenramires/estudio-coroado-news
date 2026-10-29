@@ -10,4 +10,11 @@ const missing=[...new Set(sources)].filter(p=>!fs.existsSync(p));
 if(missing.length)throw new Error('Molduras ausentes: '+missing.join(', '));
 for(const p of new Set(sources)){const b=fs.readFileSync(p);if(b.length<1000)throw new Error('Imagem vazia: '+p);if(p.endsWith('.png')&&b.subarray(1,4).toString()!=='PNG')throw new Error('PNG inválido: '+p);if(p.endsWith('.webp')&&b.subarray(8,12).toString()!=='WEBP')throw new Error('WebP inválido: '+p);}
 if(!html.includes("captureStream")||!html.includes("MediaRecorder"))throw new Error('Exportação de vídeo ausente');
+const manifest=JSON.parse(fs.readFileSync('manifest.webmanifest','utf8'));
+if(manifest.display!=='standalone'||!manifest.icons?.length)throw new Error('Manifesto PWA incompleto');
+const sw=fs.readFileSync('sw.js','utf8');new vm.Script(sw,{filename:'sw.js'});
+for(let i=1;i<=22;i++){const p='molduras/original_'+String(i).padStart(2,'0')+'.webp';if(!fs.existsSync(p))throw new Error('Moldura offline ausente: '+p)}
+if(!sw.includes('cache.addAll(ASSETS)'))throw new Error('Pré-cache offline não configurado');
+if(fs.existsSync('.github/workflows/pages.yml'))throw new Error('Publicação pública não autorizada');
+if(!html.includes('serviceWorker.register'))throw new Error('PWA não integrado ao editor');
 console.log('Editor: JavaScript válido, '+new Set(sources).size+' molduras presentes, exportação implementada.');
