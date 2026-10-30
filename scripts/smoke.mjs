@@ -41,6 +41,31 @@ try{
  const freshFile=await freshPng;
  if(!freshFile.suggestedFilename().endsWith('.png'))throw Error('Novo PNG não foi exportado');
  console.log('PNG assíncrono aprovado: edição invalida download antigo e permite nova exportação.');
+ // Regressão: uma foto ainda em carregamento não pode deixar a foto antiga na prévia
+ // nem permitir exportar uma arte sem a mídia recém-selecionada.
+ await page.evaluate(()=>{
+   const originalLoad=load;
+   window.__restorePendingLoad=()=>{load=originalLoad};
+   load=src=>src.startsWith('blob:')
+     ? new Promise((resolve,reject)=>{window.__completePendingLoad=()=>originalLoad(src).then(resolve,reject)})
+     : originalLoad(src);
+ });
+ await page.locator('#media').setInputFiles({name:'nova-foto-pendente.png',mimeType:'image/png',buffer:Buffer.from(png64,'base64')});
+ await page.waitForFunction(()=>typeof window.__completePendingLoad==='function');
+ const pendingState=await page.evaluate(()=>({
+   photoCleared:photo===null,videoCleared:video===null,
+   pngDisabled:document.querySelector('#savePNG').disabled,
+   status:document.querySelector('#status').textContent
+ }));
+ if(!pendingState.photoCleared||!pendingState.videoCleared||!pendingState.pngDisabled||!pendingState.status.includes('Carregando'))
+   throw Error('Editor permite exportar mídia ainda não carregada: '+JSON.stringify(pendingState));
+ await page.evaluate(()=>document.querySelector('#savePNG').onclick());
+ const pendingMessage=await page.locator('#status').textContent();
+ if(!pendingMessage.includes('Aguarde o carregamento'))throw Error('Proteção de PNG durante carregamento não funcionou');
+ await page.evaluate(()=>window.__completePendingLoad());
+ await page.waitForFunction(()=>photo?.naturalWidth===32&&!document.querySelector('#savePNG').disabled);
+ await page.evaluate(()=>window.__restorePendingLoad());
+ console.log('Troca de mídia pendente aprovada: prévia antiga limpa e PNG bloqueado até carregar.');
  // Regressão: uma foto lenta não pode substituir uma foto escolhida depois.
  await page.evaluate(()=>{
    const originalLoad=load;let delayed=false;
