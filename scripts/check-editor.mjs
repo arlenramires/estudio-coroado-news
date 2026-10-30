@@ -38,6 +38,9 @@ for(let i=0;i<22;i++){
   const expected='molduras/original_'+String(i+1).padStart(2,'0')+'.webp';
   if(!asset||asset.src!==expected||editorPaths.has(asset.src))throw new Error('Moldura ausente, duplicada ou fora de ordem no editor: '+expected);
   if(typeof asset.name!=='string'||!asset.name.trim())throw new Error('Nome ausente no editor: '+expected);
+  const catalogAsset=catalog.assets[i];
+  if(asset.name!==catalogAsset.name||asset.w!==catalogAsset.width||asset.h!==catalogAsset.height)
+    throw new Error('Editor e catálogo divergem em nome ou dimensões: '+expected);
   if(!Array.isArray(asset.box)||asset.box.length!==4||!asset.box.every(n=>Number.isFinite(n)))throw new Error('Área editável inválida: '+expected);
   if(!Number.isFinite(asset.w)||asset.w<=0||!Number.isFinite(asset.h)||asset.h<=0)throw new Error('Dimensões inválidas no editor: '+expected);
   // A janela da foto/vídeo deve caber inteiramente na moldura, sem coordenadas negativas.
