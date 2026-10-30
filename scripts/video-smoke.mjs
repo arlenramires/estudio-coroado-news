@@ -255,6 +255,28 @@ try{
    throw Error('Cancelamento na finalização não liberou Wake Lock: '+JSON.stringify(wakeAfterFinalCancel));
  console.log('Cancelamento durante validação assíncrona: sem download, prévia e controles preservados.');
 
+ // Regressão: o decodificador pode falhar depois de carregar o primeiro quadro.
+ // Não manter o vídeo quebrado selecionado nem permitir uma nova exportação.
+ const failedSource=await page.evaluate(()=>{
+   const source=video;
+   source.onerror(new Event('error'));
+   return {
+     videoCleared:video===null,
+     audioCleared:audioCtx===null && audioDest===null,
+     pngBlocked:document.querySelector('#savePNG').disabled,
+     previewPreserved:document.querySelector('#videoPreview').style.display==='block',
+     status:document.querySelector('#status').textContent
+   };
+ });
+ if(!failedSource.videoCleared||!failedSource.audioCleared||!failedSource.pngBlocked||
+    !failedSource.previewPreserved||!failedSource.status.includes('não conseguiu abrir'))
+   throw Error('Falha tardia de decodificação deixou mídia inválida exportável: '+JSON.stringify(failedSource));
+ await page.click('#saveVideo');
+ const blockedStatus=await page.locator('#status').textContent();
+ if(!blockedStatus.includes('Escolha um vídeo')||unexpectedDownloads!==1)
+   throw Error('Vídeo com falha de decodificação ainda pôde ser exportado: '+blockedStatus);
+ console.log('Falha tardia de decodificação: vídeo e áudio invalidados, PNG bloqueado e prévia anterior preservada.');
+
  if(errors.length)throw Error('Erros no navegador: '+errors.join(' | '));
  console.log('Vídeo exportado com imagem e áudio:',name,fs.statSync(target).size,'bytes; streams:',types.join(','));
 }finally{await browser.close()}
