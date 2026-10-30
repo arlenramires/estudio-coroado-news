@@ -29,6 +29,9 @@ jobs:
       - name: Testar interface móvel, toque, PNG e offline
         run: node scripts/mobile-smoke.mjs
 
+      - name: Testar vídeo com metadados antes do primeiro quadro
+        run: node scripts/media-ready-smoke.mjs
+
       - name: Instalar FFmpeg para validação de áudio
         run: if ! command -v ffmpeg >/dev/null || ! command -v ffprobe >/dev/null; then sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg; fi
       - name: Testar exportação de vídeo com áudio
