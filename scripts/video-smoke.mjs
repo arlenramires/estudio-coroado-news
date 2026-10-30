@@ -324,6 +324,33 @@ try{
    throw Error('Cancelamento com AudioContext pendente entregou arquivo ou apagou prévia');
  console.log('Cancelamento com AudioContext.resume pendente: controles liberados sem aguardar permissão.');
 
+ // Regressão Android: o usuário pode bloquear a tela enquanto resume() está
+ // pendente. Não esperar a permissão para descartar a exportação em segundo plano.
+ await page.evaluate(()=>{
+   const resume=audioCtx.resume.bind(audioCtx);
+   window.__restoreBackgroundAudio=()=>{audioCtx.resume=resume};
+   audioCtx.resume=()=>new Promise(resolve=>{window.__resolveBackgroundAudio=resolve});
+ });
+ const beforeBackgroundPreparation=unexpectedDownloads;
+ await page.click('#saveVideo');
+ await page.waitForFunction(()=>recording && typeof window.__resolveBackgroundAudio==='function' &&
+   document.querySelector('#stopVideo').style.display==='block',{timeout:5000});
+ await page.evaluate(()=>{
+   Object.defineProperty(document,'hidden',{configurable:true,value:true});
+   document.dispatchEvent(new Event('visibilitychange'));
+   delete document.hidden;
+ });
+ await page.waitForFunction(()=>!recording && !document.querySelector('#media').disabled &&
+   document.querySelector('#status').textContent.includes('segundo plano'),{timeout:5000});
+ await page.evaluate(()=>{window.__restoreBackgroundAudio();window.__resolveBackgroundAudio()});
+ await page.waitForTimeout(150);
+ if(unexpectedDownloads!==beforeBackgroundPreparation ||
+   await page.locator('#videoPreview').getAttribute('src')===null)
+   throw Error('Segundo plano durante preparo entregou arquivo ou apagou prévia');
+ if(await page.evaluate(()=>document.querySelector('#stopVideo').style.display!=='none'))
+   throw Error('Cancelamento em segundo plano não liberou os controles');
+ console.log('Segundo plano durante áudio pendente: exportação abortada sem arquivo parcial.');
+
  // Regressão Android: permissão de Wake Lock pode ficar pendente e ser
  // concedida após Cancelar. O bloqueio tardio precisa ser liberado.
  await page.evaluate(()=>{
