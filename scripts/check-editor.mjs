@@ -26,6 +26,22 @@ for(let i=1;i<=22;i++){
   if(!fs.existsSync(expected))throw new Error('Moldura offline ausente: '+expected);
   if(!sw.includes("'./"+expected+"'")&&!sw.includes("Array.from({length:22}"))throw new Error('Moldura ausente do pré-cache: '+expected);
 }
+// Confere também o catálogo realmente utilizado pelo editor, não apenas os arquivos no disco.
+const dataMatch=html.match(/const DATA\s*=\s*(\[[^;]*\]);/);
+if(!dataMatch)throw new Error('Catálogo DATA do editor não encontrado');
+let editorAssets;
+try{editorAssets=JSON.parse(dataMatch[1]);}catch{throw new Error('Catálogo DATA do editor inválido')}
+if(!Array.isArray(editorAssets)||editorAssets.length!==22)throw new Error('Editor deve oferecer exatamente 22 molduras');
+const editorPaths=new Set();
+for(let i=0;i<22;i++){
+  const asset=editorAssets[i];
+  const expected='molduras/original_'+String(i+1).padStart(2,'0')+'.webp';
+  if(!asset||asset.src!==expected||editorPaths.has(asset.src))throw new Error('Moldura ausente, duplicada ou fora de ordem no editor: '+expected);
+  if(typeof asset.name!=='string'||!asset.name.trim())throw new Error('Nome ausente no editor: '+expected);
+  if(!Array.isArray(asset.box)||asset.box.length!==4||!asset.box.every(n=>Number.isFinite(n)))throw new Error('Área editável inválida: '+expected);
+  if(!Number.isFinite(asset.w)||asset.w<=0||!Number.isFinite(asset.h)||asset.h<=0)throw new Error('Dimensões inválidas no editor: '+expected);
+  editorPaths.add(asset.src);
+}
 if(!sw.includes('length:22'))throw new Error('Pré-cache não garante as 22 molduras');
 for(const size of [192,512]){const b=fs.readFileSync('icons/studio-'+size+'.png');if(b.subarray(1,4).toString()!=='PNG'||b.readUInt32BE(16)!==size||b.readUInt32BE(20)!==size)throw new Error('Ícone PNG inválido: '+size)}
 if(!sw.includes('cache.addAll(ASSETS)'))throw new Error('Pré-cache offline não configurado');
