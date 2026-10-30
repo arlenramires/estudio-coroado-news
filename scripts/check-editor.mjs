@@ -58,7 +58,7 @@ if(fs.existsSync(workflowsDir)){
   for(const name of fs.readdirSync(workflowsDir)){
     if(!/\.ya?ml$/i.test(name))continue;
     const workflow=fs.readFileSync(path.join(workflowsDir,name),'utf8');
-    if(/actions\/deploy-pages(?:@|\b)|\bgithub-pages\b|\bpages:\s*write\b/i.test(workflow))
+    if(/actions\/(?:deploy-pages|configure-pages|upload-pages-artifact)(?:@|\b)|\bgithub-pages\b|\bpages:\s*write\b|peaceiris\/actions-gh-pages|JamesIves\/github-pages-deploy-action|\bgh-pages\b/i.test(workflow))
       throw new Error('Workflow de publicação pública não autorizado: '+name);
   }
 }
