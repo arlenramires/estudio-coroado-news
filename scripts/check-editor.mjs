@@ -13,7 +13,20 @@ if(!html.includes("captureStream")||!html.includes("MediaRecorder"))throw new Er
 const manifest=JSON.parse(fs.readFileSync('manifest.webmanifest','utf8'));
 if(manifest.display!=='standalone'||!manifest.icons?.length)throw new Error('Manifesto PWA incompleto');
 const sw=fs.readFileSync('sw.js','utf8');new vm.Script(sw,{filename:'sw.js'});
-for(let i=1;i<=22;i++){const p='molduras/original_'+String(i).padStart(2,'0')+'.webp';if(!fs.existsSync(p))throw new Error('Moldura offline ausente: '+p)}
+const catalog=JSON.parse(fs.readFileSync('molduras/catalogo-22.json','utf8'));
+if(!Array.isArray(catalog.assets)||catalog.assets.length!==22)throw new Error('Catálogo deve conter exatamente 22 molduras');
+const catalogPaths=new Set();
+for(let i=1;i<=22;i++){
+  const expected='molduras/original_'+String(i).padStart(2,'0')+'.webp';
+  const asset=catalog.assets[i-1];
+  if(!asset||asset.id!==String(i).padStart(2,'0')||asset.target!==expected)throw new Error('Catálogo fora de ordem ou caminho incorreto: '+expected);
+  if(typeof asset.name!=='string'||!asset.name.trim()||!Number.isInteger(asset.width)||asset.width<=0||!Number.isInteger(asset.height)||asset.height<=0)throw new Error('Metadados inválidos: '+expected);
+  if(asset.status!=='publicado'||catalogPaths.has(asset.target))throw new Error('Moldura duplicada ou não publicada: '+expected);
+  catalogPaths.add(asset.target);
+  if(!fs.existsSync(expected))throw new Error('Moldura offline ausente: '+expected);
+  if(!sw.includes("'./"+expected+"'")&&!sw.includes("Array.from({length:22}"))throw new Error('Moldura ausente do pré-cache: '+expected);
+}
+if(!sw.includes('length:22'))throw new Error('Pré-cache não garante as 22 molduras');
 for(const size of [192,512]){const b=fs.readFileSync('icons/studio-'+size+'.png');if(b.subarray(1,4).toString()!=='PNG'||b.readUInt32BE(16)!==size||b.readUInt32BE(20)!==size)throw new Error('Ícone PNG inválido: '+size)}
 if(!sw.includes('cache.addAll(ASSETS)'))throw new Error('Pré-cache offline não configurado');
 if(fs.existsSync('.github/workflows/pages.yml'))throw new Error('Publicação pública não autorizada');
