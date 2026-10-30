@@ -52,6 +52,16 @@ for(let i=0;i<22;i++){
 if(!sw.includes('length:22'))throw new Error('Pré-cache não garante as 22 molduras');
 for(const size of [192,512]){const b=fs.readFileSync('icons/studio-'+size+'.png');if(b.subarray(1,4).toString()!=='PNG'||b.readUInt32BE(16)!==size||b.readUInt32BE(20)!==size)throw new Error('Ícone PNG inválido: '+size)}
 if(!sw.includes('cache.addAll(ASSETS)'))throw new Error('Pré-cache offline não configurado');
+// Bloqueia publicação por Pages mesmo quando o workflow usa outro nome.
+const workflowsDir='.github/workflows';
+if(fs.existsSync(workflowsDir)){
+  for(const name of fs.readdirSync(workflowsDir)){
+    if(!/\.ya?ml$/i.test(name))continue;
+    const workflow=fs.readFileSync(path.join(workflowsDir,name),'utf8');
+    if(/actions\/deploy-pages(?:@|\b)|\bgithub-pages\b|\bpages:\s*write\b/i.test(workflow))
+      throw new Error('Workflow de publicação pública não autorizado: '+name);
+  }
+}
 if(fs.existsSync('.github/workflows/pages.yml'))throw new Error('Publicação pública não autorizada');
 if(!html.includes('serviceWorker.register'))throw new Error('PWA não integrado ao editor');
 if(!html.includes('id="offlineReady"')||!html.includes('id="videoCapability"'))throw new Error('Diagnóstico de offline/codec ausente');
