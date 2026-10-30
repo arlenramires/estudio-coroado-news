@@ -15,6 +15,28 @@ for(const file of assets){
 }
 for(const file of ['Estudio_Coroado_Offline.html','Iniciar-PC-Windows.cmd','Iniciar-Android-Termux.sh','LEIA-ME-PRIMEIRO.txt'])
   if(!fs.existsSync(path.join(dir,file)))throw Error('Instalação incompleta: '+file);
+// Pacotes anteriores nao podem deixar arquivos extras na nova entrega.
+const expected=new Set([...assets,'Estudio_Coroado_Offline.html','Iniciar-PC-Windows.cmd','Iniciar-Android-Termux.sh','LEIA-ME-PRIMEIRO.txt','SHA256SUMS.txt']);
+function scan(directory){
+  for(const entry of fs.readdirSync(directory,{withFileTypes:true})){
+    const absolute=path.join(directory,entry.name);
+    if(entry.isDirectory())scan(absolute);
+    else if(entry.isFile()){
+      const relative=path.relative(dir,absolute).split(path.sep).join('/');
+      if(!expected.has(relative))throw Error('Arquivo obsoleto no pacote: '+relative);
+    }
+  }
+}
+scan(dir);
+const sums=fs.readFileSync(path.join(dir,'SHA256SUMS.txt'),'utf8').trimEnd().split('\n');
+if(sums.length!==expected.size-1)throw Error('Manifesto SHA-256 incompleto');
+const verified=new Set();
+for(const line of sums){
+  const match=/^([a-f0-9]{64})  (.+)$/.exec(line);
+  if(!match||!expected.has(match[2])||match[2]==='SHA256SUMS.txt'||verified.has(match[2]))throw Error('Entrada SHA-256 invalida: '+line);
+  if(hash(path.join(dir,match[2]))!==match[1])throw Error('Hash SHA-256 divergente: '+match[2]);
+  verified.add(match[2]);
+}
 const windowsLauncher=fs.readFileSync(path.join(dir,'Iniciar-PC-Windows.cmd'),'utf8');
 if(!windowsLauncher.includes('ThreadingHTTPServer')||!windowsLauncher.includes('webbrowser.open'))throw Error('Inicializador Windows não espera servidor antes de abrir o navegador');
 if(windowsLauncher.includes('start "" "http://127.0.0.1:8765'))throw Error('Inicializador Windows abre navegador antes do servidor');
