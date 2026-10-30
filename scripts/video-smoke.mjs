@@ -75,6 +75,21 @@ try{
  // Metadados não bastam: o editor só libera exportação após decodificar o primeiro quadro.
  await page.waitForFunction(()=>video && !mediaLoading && video.readyState>=2 && !document.querySelector('#savePNG').disabled,{timeout:15000});
  await page.fill('#trimStart','0');await page.fill('#trimEnd','2');
+ // Android exige que AudioContext.resume() seja solicitado no gesto do clique,
+ // antes de aguardar a permissão assíncrona de Wake Lock.
+ await page.evaluate(()=>{
+   window.__resumeWakeOrder=[];
+   const resume=audioCtx.resume.bind(audioCtx);
+   audioCtx.resume=function(...args){
+     window.__resumeWakeOrder.push('audio');
+     return resume(...args);
+   };
+   const wake=navigator.wakeLock.request.bind(navigator.wakeLock);
+   navigator.wakeLock.request=function(...args){
+     window.__resumeWakeOrder.push('wake');
+     return wake(...args);
+   };
+ });
  // Simula verificação lenta do cabeçalho: o editor não pode ser liberado antes da entrega.
  await page.evaluate(()=>{
    const original=Blob.prototype.arrayBuffer;
@@ -110,6 +125,8 @@ try{
  await page.waitForFunction(()=>!document.querySelector('#media').disabled && !document.querySelector('#editorial').disabled && !document.querySelector('#savePNG').disabled && [...document.querySelectorAll('#gallery .tile')].every(b=>!b.disabled));
  const wake=await page.evaluate(()=>window.__wakeLockTest);
  if(wake.requests!==1||wake.releases!==1)throw Error('Wake Lock não foi solicitado e liberado corretamente: '+JSON.stringify(wake));
+ const order=await page.evaluate(()=>window.__resumeWakeOrder.slice(0,2));
+ if(order.join(',')!=='audio,wake')throw Error('Áudio não retomado antes do Wake Lock: '+JSON.stringify(order));
  if(process.env.STUDIO_TEST_CODEC_START_FALLBACK==='1'){
    const rejected=await page.evaluate(()=>window.__rejectedMp4Starts);
    if(!rejected||!d.suggestedFilename().endsWith('.webm'))throw Error('Fallback após falha no start do MP4 não ocorreu: '+rejected+' / '+d.suggestedFilename());
