@@ -91,9 +91,9 @@ const sums=files.map(file=>{
   const relative=path.relative(dest,file).split(path.sep).join('/');
   const digest=crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex');
   return digest+'  '+relative;
-}).sort().join('\\n')+'\\n';
+}).sort().join('\n')+'\n';
 fs.writeFileSync(path.join(dest,'SHA256SUMS.txt'),sums);
-for(const line of sums.trimEnd().split('\\n')){
+for(const line of sums.trimEnd().split('\n')){
   const [digest,relative]=line.split('  ');
   const actual=crypto.createHash('sha256').update(fs.readFileSync(path.join(dest,relative))).digest('hex');
   if(actual!==digest)throw Error('Falha de integridade no pacote: '+relative);
