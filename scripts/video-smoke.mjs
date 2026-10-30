@@ -61,6 +61,15 @@ try{
    return {premature,settled};
  });
  if(seekResult.premature||!seekResult.settled)throw Error('Exportação não aguardou o quadro decodificado: '+JSON.stringify(seekResult));
+ // O seek precisa respeitar AbortSignal imediatamente, sem aguardar o timeout de 10 s.
+ const seekAbort=await page.evaluate(async()=>{
+   const fake=new EventTarget();fake.readyState=2;fake.seeking=true;fake.currentTime=0;
+   const controller=new AbortController();
+   const result=seekForExport(fake,.7,controller.signal).then(()=>({cancelled:false}),err=>({cancelled:err.message.includes('Exportação cancelada.')}));
+   controller.abort();
+   return result;
+ });
+ if(!seekAbort.cancelled)throw Error('Seek inicial ignorou o cancelamento do usuário.');
  await page.locator('#media').setInputFiles('test-input.mp4');
  await page.waitForFunction(()=>document.querySelector('#videoTools').style.display==='block' && document.querySelector('#trimEnd').value!=='0',{timeout:15000});
  // Metadados não bastam: o editor só libera exportação após decodificar o primeiro quadro.
@@ -254,6 +263,29 @@ try{
  if(wakeAfterFinalCancel.requests!==8||wakeAfterFinalCancel.releases!==8)
    throw Error('Cancelamento na finalização não liberou Wake Lock: '+JSON.stringify(wakeAfterFinalCancel));
  console.log('Cancelamento durante validação assíncrona: sem download, prévia e controles preservados.');
+
+ // Regressão Android: durante o seek inicial, o botão Cancelar já deve funcionar.
+ // Forçar seeking=true mantém o primeiro quadro pendente sem esperar 10 segundos.
+ await page.fill('#trimStart','0.7');
+ await page.evaluate(()=>{
+   window.__holdInitialSeek=true;
+   Object.defineProperty(video,'seeking',{configurable:true,get:()=>window.__holdInitialSeek});
+ });
+ const downloadsBeforeSeekCancel=unexpectedDownloads;
+ await page.click('#saveVideo');
+ await page.waitForFunction(()=>recording && !recorder && video.currentTime>=.65 &&
+   document.querySelector('#stopVideo').style.display==='block',{timeout:15000});
+ await page.click('#stopVideo');
+ await page.waitForFunction(()=>!recording && !document.querySelector('#media').disabled &&
+   document.querySelector('#status').textContent.includes('Exportação cancelada.'),{timeout:5000});
+ await page.evaluate(()=>{window.__holdInitialSeek=false;delete video.seeking});
+ await page.fill('#trimStart','0');
+ await page.waitForTimeout(250);
+ if(unexpectedDownloads!==downloadsBeforeSeekCancel)throw Error('Cancelamento no seek entregou vídeo parcial');
+ if(await page.locator('#videoPreview').getAttribute('src')===null)throw Error('Cancelamento no seek apagou a prévia válida');
+ const wakeAfterSeekCancel=await page.evaluate(()=>window.__wakeLockTest);
+ if(wakeAfterSeekCancel.requests!==wakeAfterSeekCancel.releases)throw Error('Wake Lock vazou após cancelamento no seek: '+JSON.stringify(wakeAfterSeekCancel));
+ console.log('Cancelamento durante seek inicial: resposta imediata, sem download, prévia e Wake Lock preservados.');
 
  // Regressão: PNG solicitado pode terminar de codificar após o vídeo falhar.
  // O callback antigo não pode entregar uma imagem de fonte inválida.
