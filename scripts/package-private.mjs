@@ -79,4 +79,23 @@ Nao use IP HTTP do PC para instalar PWA no Android.
 Se o Termux nao encontrar a pasta Downloads, execute termux-setup-storage, autorize e use ~/storage/downloads.
 Se o PWA nao abrir offline, acesse-o com servidor ativo uma vez e aguarde o aviso de cache pronto.
 `);
+// Lista verificável de integridade para detectar ZIP extraído parcialmente ou alterado.
+const files=[];
+function collect(dir){for(const entry of fs.readdirSync(dir,{withFileTypes:true})){
+  const absolute=path.join(dir,entry.name);
+  if(entry.isDirectory())collect(absolute);
+  else if(entry.isFile()&&entry.name!=='SHA256SUMS.txt')files.push(absolute);
+}}
+collect(dest);
+const sums=files.map(file=>{
+  const relative=path.relative(dest,file).split(path.sep).join('/');
+  const digest=crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex');
+  return digest+'  '+relative;
+}).sort().join('\\n')+'\\n';
+fs.writeFileSync(path.join(dest,'SHA256SUMS.txt'),sums);
+for(const line of sums.trimEnd().split('\\n')){
+  const [digest,relative]=line.split('  ');
+  const actual=crypto.createHash('sha256').update(fs.readFileSync(path.join(dest,relative))).digest('hex');
+  if(actual!==digest)throw Error('Falha de integridade no pacote: '+relative);
+}
 console.log('Pacote privado gerado:',dest,'com',required.length,'arquivos do PWA + HTML offline e iniciadores.');
