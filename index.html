@@ -131,7 +131,7 @@ function deliver(blob,name){
 }
 // Espera o quadro do ponto de início ficar decodificado antes de gravar.
  // currentTime muda imediatamente, mas o seek do vídeo pode continuar pendente no Android.
-async function seekForExport(v,seconds){
+async function seekForExport(v,seconds,signal){
  if(!v.seeking && v.readyState>=2 && Math.abs(v.currentTime-seconds)<.03)return;
  await new Promise((resolve,reject)=>{
    let timer;
@@ -140,12 +140,16 @@ async function seekForExport(v,seconds){
      v.removeEventListener('seeked',check);
      v.removeEventListener('loadeddata',check);
      v.removeEventListener('error',failed);
+     signal?.removeEventListener('abort',aborted);
    };
    const check=()=>{
      if(v.seeking||v.readyState<2||Math.abs(v.currentTime-seconds)>.15)return;
      cleanup();resolve();
    };
    const failed=()=>{cleanup();reject(new Error('Falha ao decodificar o início do vídeo.'))};
+   const aborted=()=>{cleanup();reject(new Error('Exportação cancelada. Nenhum arquivo parcial foi entregue.'))};
+   if(signal?.aborted){aborted();return}
+   signal?.addEventListener('abort',aborted,{once:true});
    v.addEventListener('seeked',check);
    v.addEventListener('loadeddata',check);
    v.addEventListener('error',failed);
@@ -171,7 +175,18 @@ $('saveVideo').onclick=async()=>{if(!video){status('Escolha um vídeo antes de e
  let start=Math.max(0,+$('trimStart').value||0),end=Math.min(video.duration,+$('trimEnd').value||video.duration);if(!(end>start+.3)){status('Escolha um trecho válido de pelo menos 0,3 segundo.');return}
  const mimes=['video/mp4;codecs=avc1.42E01E,mp4a.40.2','video/mp4;codecs=avc1.42E01E','video/mp4','video/webm;codecs=vp8,opus','video/webm'];const supportedMimes=mimes.filter(x=>MediaRecorder.isTypeSupported(x));if(!supportedMimes.length){status('Seu navegador não suporta MP4 nem WebM.');return}
  recording=true;setExportBusy(true);let chunks=[],lastTime=-1,frameId=0,videoFrameId=0,interval=0,stopRequested=false,stream=null,mime='',exportErrorMessage='',visibilityHandler=null;
- try{await acquireExportWakeLock();await audioCtx?.resume();video.pause();await seekForExport(video,start);
+ const preparationAbort=new AbortController();let stopCapture=null;
+ const cancelMessage='Exportação cancelada. Nenhum arquivo parcial foi entregue.';
+ // Cancelar deve funcionar também durante Wake Lock, retomada do áudio e seek inicial.
+ $('stopVideo').onclick=()=>{
+  if(!recording)return;
+  if(stopCapture)stopCapture(cancelMessage);
+  else{exportErrorMessage=cancelMessage;preparationAbort.abort()}
+ };
+ try{await acquireExportWakeLock();await audioCtx?.resume();
+ if(preparationAbort.signal.aborted)throw new Error(cancelMessage);
+ video.pause();await seekForExport(video,start,preparationAbort.signal);
+ if(preparationAbort.signal.aborted)throw new Error(cancelMessage);
  const [W,H]=canvasFormat();recordCanvas=document.createElement('canvas');const sc=Math.min(1,720/W);recordCanvas.width=Math.round(W*sc);recordCanvas.height=Math.round(H*sc);recordCtx=recordCanvas.getContext('2d',{alpha:false});draw();recordCtx.drawImage(canvas,0,0,recordCanvas.width,recordCanvas.height);
  stream=recordCanvas.captureStream(0);let frameTrack=stream.getVideoTracks()[0];const manualFrame=typeof frameTrack.requestFrame==='function';if(!manualFrame){stream.getVideoTracks().forEach(t=>t.stop());stream=recordCanvas.captureStream(30);frameTrack=stream.getVideoTracks()[0]}if($('audio').checked&&audioDest){for(const t of audioDest.stream.getAudioTracks())stream.addTrack(t)}
  // Alguns navegadores anunciam MP4, mas rejeitam o codec ao construir o gravador. Tentar o próximo formato evita falha total.
@@ -184,6 +199,7 @@ $('saveVideo').onclick=async()=>{if(!video){status('Escolha um vídeo antes de e
   try{recorder.requestData()}catch(err){console.warn('Não foi possível solicitar o último bloco:',err.message)}
   recorder.stop();
  }}
+ stopCapture=stop;
  // Ao bloquear a tela ou trocar de aplicativo, o navegador pode suspender os quadros e o áudio.
  // Descartar a gravação evita entregar um vídeo congelado ou incompleto como finalizado.
  visibilityHandler=()=>{if(document.hidden)stop('Exportação interrompida: o Estúdio foi para segundo plano. Nenhum arquivo parcial foi entregue.')};
@@ -220,8 +236,8 @@ $('saveVideo').onclick=async()=>{if(!video){status('Escolha um vídeo antes de e
     recorder=null;recording=false;setExportBusy(false);discardFailedMedia();
   }
 };
- recorder.onerror=e=>{exportErrorMessage='Falha na gravação: '+(e.error?.message||'erro desconhecido')+'. Nenhum arquivo parcial foi entregue.';stop()};await video.play();if(video.requestVideoFrameCallback)videoFrameId=video.requestVideoFrameCallback(paint);else frameId=requestAnimationFrame(paint);recordTimer=setTimeout(()=>stop('Tempo limite da gravação excedido. Nenhum arquivo parcial foi entregue.'),Math.max(15000,(end-start)*4000+10000));$('stopVideo').onclick=()=>stop('Exportação cancelada. Nenhum arquivo parcial foi entregue.');status('Exportando vídeo de '+(end-start).toFixed(1)+'s em tempo real. Mantenha a tela ligada.')
- }catch(err){recording=false;if(visibilityHandler)document.removeEventListener('visibilitychange',visibilityHandler);await releaseExportWakeLock();clearTimeout(recordTimer);cancelAnimationFrame(frameId);if(videoFrameId)video.cancelVideoFrameCallback?.(videoFrameId);setExportBusy(false);status('Falha na exportação: '+err.message);if(recorder){recorder.onstop=null;if(recorder.state==='recording')recorder.stop()}stream?.getVideoTracks().forEach(t=>t.stop());recorder=null;discardFailedMedia()}
+ recorder.onerror=e=>{exportErrorMessage='Falha na gravação: '+(e.error?.message||'erro desconhecido')+'. Nenhum arquivo parcial foi entregue.';stop()};await video.play();if(video.requestVideoFrameCallback)videoFrameId=video.requestVideoFrameCallback(paint);else frameId=requestAnimationFrame(paint);recordTimer=setTimeout(()=>stop('Tempo limite da gravação excedido. Nenhum arquivo parcial foi entregue.'),Math.max(15000,(end-start)*4000+10000));status('Exportando vídeo de '+(end-start).toFixed(1)+'s em tempo real. Mantenha a tela ligada.')
+ }catch(err){recording=false;if(visibilityHandler)document.removeEventListener('visibilitychange',visibilityHandler);await releaseExportWakeLock();clearTimeout(recordTimer);cancelAnimationFrame(frameId);if(videoFrameId)video.cancelVideoFrameCallback?.(videoFrameId);setExportBusy(false);status(exportErrorMessage||'Falha na exportação: '+err.message);if(recorder){recorder.onstop=null;if(recorder.state==='recording')recorder.stop()}stream?.getVideoTracks().forEach(t=>t.stop());recorder=null;discardFailedMedia()}
 };
 init().catch(e=>status('Erro ao carregar as molduras: '+e.message));
 </script></body></html>
