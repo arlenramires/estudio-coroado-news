@@ -277,6 +277,21 @@ try{
    throw Error('Vídeo com falha de decodificação ainda pôde ser exportado: '+blockedStatus);
  console.log('Falha tardia de decodificação: vídeo e áudio invalidados, PNG bloqueado e prévia anterior preservada.');
 
+ // A mesma falha durante a gravação deve interromper o MediaRecorder sem
+ // entregar bytes parciais e limpar a fonte apenas após finalizar o gravador.
+ await page.locator('#media').setInputFiles('test-input.mp4');
+ await page.waitForFunction(()=>video && !mediaLoading && !document.querySelector('#savePNG').disabled,{timeout:15000});
+ await page.click('#saveVideo');
+ await page.waitForFunction(()=>recorder?.state==='recording',{timeout:15000});
+ await page.evaluate(()=>video.onerror(new Event('error')));
+ await page.waitForFunction(()=>!recording && !document.querySelector('#media').disabled && video===null &&
+   document.querySelector('#savePNG').disabled,{timeout:15000});
+ await page.waitForTimeout(300);
+ if(unexpectedDownloads!==1||await page.locator('#videoPreview').getAttribute('src')===null)
+   throw Error('Falha do vídeo durante gravação entregou arquivo parcial ou apagou prévia');
+ console.log('Falha de decodificação durante gravação: captura cancelada, fonte limpa e sem arquivo parcial.');
+
+
  if(errors.length)throw Error('Erros no navegador: '+errors.join(' | '));
  console.log('Vídeo exportado com imagem e áudio:',name,fs.statSync(target).size,'bytes; streams:',types.join(','));
 }finally{await browser.close()}
