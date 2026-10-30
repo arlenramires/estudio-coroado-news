@@ -262,13 +262,14 @@ try{
    source.onerror(new Event('error'));
    return {
      videoCleared:video===null,
+     inputCleared:document.querySelector('#media').value==='',
      audioCleared:audioCtx===null && audioDest===null,
      pngBlocked:document.querySelector('#savePNG').disabled,
      previewPreserved:document.querySelector('#videoPreview').style.display==='block',
      status:document.querySelector('#status').textContent
    };
  });
- if(!failedSource.videoCleared||!failedSource.audioCleared||!failedSource.pngBlocked||
+ if(!failedSource.videoCleared||!failedSource.inputCleared||!failedSource.audioCleared||!failedSource.pngBlocked||
     !failedSource.previewPreserved||!failedSource.status.includes('não conseguiu abrir'))
    throw Error('Falha tardia de decodificação deixou mídia inválida exportável: '+JSON.stringify(failedSource));
  await page.click('#saveVideo');
@@ -279,8 +280,7 @@ try{
 
  // A mesma falha durante a gravação deve interromper o MediaRecorder sem
  // entregar bytes parciais e limpar a fonte apenas após finalizar o gravador.
- // Limpar o input: escolher o mesmo arquivo não dispara change automaticamente.
- await page.locator('#media').setInputFiles([]);
+ // A falha deve ter limpado o input para permitir escolher o mesmo arquivo.
  await page.locator('#media').setInputFiles('test-input.mp4');
  await page.waitForFunction(()=>video && !mediaLoading && !document.querySelector('#savePNG').disabled,{timeout:15000});
  await page.click('#saveVideo');
