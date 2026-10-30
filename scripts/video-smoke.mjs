@@ -370,6 +370,38 @@ try{
    throw Error('Cancelamento da exportação silenciosa entregou arquivo parcial');
  console.log('Exportação silenciosa: gravador iniciou sem aguardar AudioContext.');
 
+ // Android: play() pode ficar pendente e só concluir depois do cancelamento.
+ // Nenhuma continuação tardia pode reiniciar temporizador, renderização ou aviso.
+ for(const outcome of ['resolve','reject']){
+   await page.evaluate(mode=>{
+     const original=video.play.bind(video);
+     window.__restoreHeldPlay=()=>{video.play=original};
+     video.play=()=>new Promise((resolve,reject)=>{
+       window.__finishHeldPlay=()=>mode==='resolve'?resolve():reject(new Error('play rejeitado após cancelar'));
+     });
+   },outcome);
+   const downloadsBefore=unexpectedDownloads;
+   await page.click('#saveVideo');
+   await page.waitForFunction(()=>recorder?.state==='recording' && typeof window.__finishHeldPlay==='function',{timeout:15000});
+   await page.click('#stopVideo');
+   await page.waitForFunction(()=>!recording && !document.querySelector('#media').disabled &&
+     document.querySelector('#status').textContent.includes('Exportação cancelada.'),{timeout:15000});
+   const timerAfterCancel=await page.evaluate(()=>recordTimer);
+   await page.evaluate(()=>{window.__finishHeldPlay();window.__restoreHeldPlay()});
+   await page.waitForTimeout(250);
+   const late=await page.evaluate(()=>({
+     recording, timer:recordTimer,
+     status:document.querySelector('#status').textContent,
+     disabled:document.querySelector('#media').disabled,
+     preview:document.querySelector('#videoPreview').style.display
+   }));
+   if(late.recording||late.disabled||late.timer!==timerAfterCancel||
+     !late.status.includes('Exportação cancelada.')||late.preview!=='block'||
+     unexpectedDownloads!==downloadsBefore)
+     throw Error('play() tardio ('+outcome+') reativou exportação cancelada: '+JSON.stringify(late));
+ }
+ console.log('Cancelamento durante play() pendente: resolve/reject tardios sem timers, downloads ou avisos falsos.');
+
  // Regressão: PNG solicitado pode terminar de codificar após o vídeo falhar.
  // O callback antigo não pode entregar uma imagem de fonte inválida.
  await page.evaluate(()=>{
