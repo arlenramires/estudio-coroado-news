@@ -209,7 +209,9 @@ $('saveVideo').onclick=async()=>{if(!video){status('Escolha um vídeo antes de e
  try{
   // A retomada do AudioContext precisa ocorrer diretamente no clique: no Android,
   // aguardar Wake Lock primeiro pode perder a ativação do usuário e bloquear o áudio.
-  await waitForPreparation(audioCtx?.resume(),preparationAbort.signal);
+  // Sem áudio, não aguarde AudioContext: no Android resume() pode ficar pendente.
+  // A exportação silenciosa deve continuar independente da permissão de áudio.
+  if($('audio').checked)await waitForPreparation(audioCtx?.resume(),preparationAbort.signal);
   await waitForPreparation(acquireExportWakeLock(preparationAbort.signal),preparationAbort.signal);
   if(preparationAbort.signal.aborted)throw new Error(cancelMessage);
  video.pause();await seekForExport(video,start,preparationAbort.signal);
