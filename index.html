@@ -101,10 +101,32 @@ function setExportBusy(busy){
 // No Android, bloquear o sono da tela durante a gravação reduz cortes quando disponível.
 // A API pode não existir ou recusar permissão; nesse caso o editor continua funcionando.
 let exportWakeLock=null;
-async function acquireExportWakeLock(){
+// O Android pode deixar resume() ou a solicitação de Wake Lock pendentes.
+// O botão Cancelar deve funcionar sem aguardar essas permissões do navegador.
+function waitForPreparation(promise,signal){
+  const cancelled=()=>new Error('Exportação cancelada. Nenhum arquivo parcial foi entregue.');
+  if(signal.aborted)return Promise.reject(cancelled());
+  return new Promise((resolve,reject)=>{
+    let finished=false;
+    const cleanup=()=>signal.removeEventListener('abort',abort);
+    const abort=()=>{if(finished)return;finished=true;cleanup();reject(cancelled())};
+    signal.addEventListener('abort',abort,{once:true});
+    Promise.resolve(promise).then(value=>{
+      if(finished)return;finished=true;cleanup();resolve(value);
+    },err=>{
+      if(finished)return;finished=true;cleanup();reject(err);
+    });
+    if(signal.aborted)abort();
+  });
+}
+async function acquireExportWakeLock(signal){
   if(!navigator.wakeLock?.request)return;
-  try{exportWakeLock=await navigator.wakeLock.request('screen')}
-  catch(err){console.warn('Bloqueio de tela indisponível:',err.message)}
+  try{
+    const lock=await navigator.wakeLock.request('screen');
+    // Se a permissão chegar após Cancelar, não deixar Wake Lock órfão.
+    if(signal?.aborted){await lock.release();return}
+    exportWakeLock=lock;
+  }catch(err){console.warn('Bloqueio de tela indisponível:',err.message)}
 }
 async function releaseExportWakeLock(){
   const lock=exportWakeLock;exportWakeLock=null;
@@ -186,10 +208,9 @@ $('saveVideo').onclick=async()=>{if(!video){status('Escolha um vídeo antes de e
  try{
   // A retomada do AudioContext precisa ocorrer diretamente no clique: no Android,
   // aguardar Wake Lock primeiro pode perder a ativação do usuário e bloquear o áudio.
-  await audioCtx?.resume();
+  await waitForPreparation(audioCtx?.resume(),preparationAbort.signal);
+  await waitForPreparation(acquireExportWakeLock(preparationAbort.signal),preparationAbort.signal);
   if(preparationAbort.signal.aborted)throw new Error(cancelMessage);
-  await acquireExportWakeLock();
- if(preparationAbort.signal.aborted)throw new Error(cancelMessage);
  video.pause();await seekForExport(video,start,preparationAbort.signal);
  if(preparationAbort.signal.aborted)throw new Error(cancelMessage);
  const [W,H]=canvasFormat();recordCanvas=document.createElement('canvas');const sc=Math.min(1,720/W);recordCanvas.width=Math.round(W*sc);recordCanvas.height=Math.round(H*sc);recordCtx=recordCanvas.getContext('2d',{alpha:false});draw();recordCtx.drawImage(canvas,0,0,recordCanvas.width,recordCanvas.height);
