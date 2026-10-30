@@ -63,6 +63,8 @@ try{
  if(seekResult.premature||!seekResult.settled)throw Error('Exportação não aguardou o quadro decodificado: '+JSON.stringify(seekResult));
  await page.locator('#media').setInputFiles('test-input.mp4');
  await page.waitForFunction(()=>document.querySelector('#videoTools').style.display==='block' && document.querySelector('#trimEnd').value!=='0',{timeout:15000});
+ // Metadados não bastam: o editor só libera exportação após decodificar o primeiro quadro.
+ await page.waitForFunction(()=>video && !mediaLoading && video.readyState>=2 && !document.querySelector('#savePNG').disabled,{timeout:15000});
  await page.fill('#trimStart','0');await page.fill('#trimEnd','2');
  // Simula verificação lenta do cabeçalho: o editor não pode ser liberado antes da entrega.
  await page.evaluate(()=>{
