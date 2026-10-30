@@ -220,6 +220,41 @@ try{
    throw Error('Interrupção inesperada não liberou Wake Lock: '+JSON.stringify(wakeAfterUnexpectedStop));
  console.log('Stop inesperado do navegador: nenhum download parcial, prévia preservada e controles liberados.');
 
+ // Regressão: ao terminar a gravação, a leitura assíncrona do cabeçalho ainda
+ // mantém o botão Cancelar visível. Cancelar nesse intervalo não pode baixar o arquivo.
+ await page.evaluate(()=>{
+   const original=Blob.prototype.arrayBuffer;
+   window.__restoreFinalHeader=()=>{Blob.prototype.arrayBuffer=original};
+   window.__finalHeaderHeld=false;
+   Blob.prototype.arrayBuffer=function(...args){
+     if(this.size===16 && !window.__finalHeaderHeld){
+       window.__finalHeaderHeld=true;
+       return new Promise((resolve,reject)=>{
+         window.__releaseFinalHeader=()=>original.apply(this,args).then(resolve,reject);
+       });
+     }
+     return original.apply(this,args);
+   };
+ });
+ await page.click('#saveVideo');
+ await page.waitForFunction(()=>typeof window.__releaseFinalHeader==='function',{timeout:30000});
+ const finalizing=await page.evaluate(()=>({
+   recording,canCancel:document.querySelector('#stopVideo').style.display==='block',
+   editingLocked:document.querySelector('#headline').disabled
+ }));
+ if(!finalizing.recording||!finalizing.canCancel||!finalizing.editingLocked)
+   throw Error('Finalização não manteve cancelamento disponível: '+JSON.stringify(finalizing));
+ await page.click('#stopVideo');
+ await page.evaluate(()=>{window.__releaseFinalHeader();window.__restoreFinalHeader()});
+ await page.waitForFunction(()=>!recording && !document.querySelector('#media').disabled && document.querySelector('#status').textContent.includes('Exportação cancelada.'),{timeout:15000});
+ await page.waitForTimeout(300);
+ if(unexpectedDownloads!==1)throw Error('Cancelamento durante validação entregou arquivo indevido: '+unexpectedDownloads);
+ if(await page.locator('#videoPreview').getAttribute('src')===null)throw Error('Cancelamento na finalização apagou prévia válida');
+ const wakeAfterFinalCancel=await page.evaluate(()=>window.__wakeLockTest);
+ if(wakeAfterFinalCancel.requests!==8||wakeAfterFinalCancel.releases!==8)
+   throw Error('Cancelamento na finalização não liberou Wake Lock: '+JSON.stringify(wakeAfterFinalCancel));
+ console.log('Cancelamento durante validação assíncrona: sem download, prévia e controles preservados.');
+
  if(errors.length)throw Error('Erros no navegador: '+errors.join(' | '));
  console.log('Vídeo exportado com imagem e áudio:',name,fs.statSync(target).size,'bytes; streams:',types.join(','));
 }finally{await browser.close()}
