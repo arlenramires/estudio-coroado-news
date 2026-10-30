@@ -7,8 +7,20 @@ const browser=await chromium.launch({headless:true,executablePath:exe,args:['--n
 const page=await browser.newPage({acceptDownloads:true,viewport:{width:1300,height:900}});
 const errors=[];page.on('pageerror',e=>errors.push(e.message));
 try{
- await page.goto(process.env.STUDIO_URL || 'http://127.0.0.1:8765/index.html');
+ // A primeira moldura pode demorar no Android. Não exportar um PNG vazio enquanto carrega.
+ await page.route('**/molduras/original_01.webp',async route=>{
+   await new Promise(resolve=>setTimeout(resolve,900));
+   await route.continue();
+ });
+ await page.goto(process.env.STUDIO_URL || 'http://127.0.0.1:8765/index.html',{waitUntil:'domcontentloaded'});
+ const initialDisabled=await page.locator('#savePNG').isDisabled();
+ if(!initialDisabled)throw Error('PNG liberado antes de carregar as molduras');
+ await page.evaluate(()=>document.querySelector('#savePNG').onclick());
+ const initialStatus=await page.locator('#status').textContent();
+ if(!initialStatus.includes('Aguarde o carregamento das molduras'))throw Error('PNG vazio não foi bloqueado durante inicialização');
  await page.waitForFunction(()=>document.querySelectorAll('#gallery .tile').length===22,{timeout:25000});
+ if(await page.locator('#savePNG').isDisabled())throw Error('PNG não foi liberado após carregar as 22 molduras');
+ console.log('Inicialização lenta aprovada: nenhum PNG vazio e exportação liberada após carregar as molduras.');
  await page.selectOption('#editorial','21');
  const png64=await page.evaluate(()=>{const t=document.createElement('canvas');t.width=t.height=32;const g=t.getContext('2d');g.fillStyle='#f00';g.fillRect(0,0,32,32);return t.toDataURL('image/png').split(',')[1]});
  await page.locator('#media').setInputFiles({name:'vermelho.png',mimeType:'image/png',buffer:Buffer.from(png64,'base64')});
