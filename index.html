@@ -183,7 +183,12 @@ $('saveVideo').onclick=async()=>{if(!video){status('Escolha um vídeo antes de e
   if(stopCapture)stopCapture(cancelMessage);
   else{exportErrorMessage=cancelMessage;preparationAbort.abort()}
  };
- try{await acquireExportWakeLock();await audioCtx?.resume();
+ try{
+  // A retomada do AudioContext precisa ocorrer diretamente no clique: no Android,
+  // aguardar Wake Lock primeiro pode perder a ativação do usuário e bloquear o áudio.
+  await audioCtx?.resume();
+  if(preparationAbort.signal.aborted)throw new Error(cancelMessage);
+  await acquireExportWakeLock();
  if(preparationAbort.signal.aborted)throw new Error(cancelMessage);
  video.pause();await seekForExport(video,start,preparationAbort.signal);
  if(preparationAbort.signal.aborted)throw new Error(cancelMessage);
