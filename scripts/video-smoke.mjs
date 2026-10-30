@@ -255,11 +255,25 @@ try{
    throw Error('Cancelamento na finalização não liberou Wake Lock: '+JSON.stringify(wakeAfterFinalCancel));
  console.log('Cancelamento durante validação assíncrona: sem download, prévia e controles preservados.');
 
+ // Regressão: PNG solicitado pode terminar de codificar após o vídeo falhar.
+ // O callback antigo não pode entregar uma imagem de fonte inválida.
+ await page.evaluate(()=>{
+   const original=canvas.toBlob.bind(canvas);
+   canvas.toBlob=(callback,...args)=>original(blob=>{
+     window.__releasePngAfterVideoError=()=>callback(blob);
+   },...args);
+   window.__restorePngAfterVideoError=()=>{canvas.toBlob=original};
+ });
+ await page.click('#savePNG');
+ await page.waitForFunction(()=>typeof window.__releasePngAfterVideoError==='function',{timeout:15000});
+
  // Regressão: o decodificador pode falhar depois de carregar o primeiro quadro.
  // Não manter o vídeo quebrado selecionado nem permitir uma nova exportação.
  const failedSource=await page.evaluate(()=>{
    const source=video;
    source.onerror(new Event('error'));
+   window.__releasePngAfterVideoError();
+   window.__restorePngAfterVideoError();
    return {
      videoCleared:video===null,
      inputCleared:document.querySelector('#media').value==='',
@@ -272,6 +286,8 @@ try{
  if(!failedSource.videoCleared||!failedSource.inputCleared||!failedSource.audioCleared||!failedSource.pngBlocked||
     !failedSource.previewPreserved||!failedSource.status.includes('não conseguiu abrir'))
    throw Error('Falha tardia de decodificação deixou mídia inválida exportável: '+JSON.stringify(failedSource));
+ await page.waitForTimeout(300);
+ if(unexpectedDownloads!==1)throw Error('PNG obsoleto foi entregue após erro do vídeo: '+unexpectedDownloads);
  await page.click('#saveVideo');
  const blockedStatus=await page.locator('#status').textContent();
  if(!blockedStatus.includes('Escolha um vídeo')||unexpectedDownloads!==1)
