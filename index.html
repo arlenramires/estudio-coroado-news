@@ -171,7 +171,7 @@ $('saveVideo').onclick=async()=>{if(!video){status('Escolha um vídeo antes de e
  for(const candidate of supportedMimes){try{const attempt=new MediaRecorder(stream,{mimeType:candidate,videoBitsPerSecond:2500000,audioBitsPerSecond:128000});attempt.start(1000);recorder=attempt;mime=attempt.mimeType||candidate;break}catch(err){recorder=null;console.warn('Formato de gravação indisponível ao iniciar:',candidate,err.message)}}
  if(!recorder)throw new Error('O dispositivo não conseguiu iniciar um gravador MP4 ou WebM.');
  recorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};
- function stop(reason=''){if(stopRequested)return;stopRequested=true;if(reason&&!exportErrorMessage)exportErrorMessage=reason;if(recorder?.state==='recording'){
+ function stop(reason=''){if(reason&&!exportErrorMessage)exportErrorMessage=reason;if(stopRequested)return;stopRequested=true;if(recorder?.state==='recording'){
   // Alguns MediaRecorder (especialmente móveis) rejeitam requestData durante a finalização.
   // A falha desse pedido não deve impedir stop(), onstop e a liberação dos controles.
   try{recorder.requestData()}catch(err){console.warn('Não foi possível solicitar o último bloco:',err.message)}
@@ -199,6 +199,8 @@ $('saveVideo').onclick=async()=>{if(!video){status('Escolha um vídeo antes de e
     if(exportErrorMessage){status(exportErrorMessage);return}
     const blob=new Blob(chunks,{type:mime});
     const bytes=new Uint8Array(await blob.slice(0,16).arrayBuffer());
+    // Cancelar ainda é possível enquanto o cabeçalho é lido de forma assíncrona.
+    if(exportErrorMessage){status(exportErrorMessage);return}
     const mp4=bytes.length>8&&String.fromCharCode(...bytes.slice(4,8))==='ftyp';
     const webm=bytes[0]===26&&bytes[1]===69&&bytes[2]===223&&bytes[3]===163;
     if(!mp4&&!webm){status('O navegador gerou um vídeo inválido. Nenhum arquivo foi entregue.');return}
