@@ -40,6 +40,10 @@ for(let i=0;i<22;i++){
   if(typeof asset.name!=='string'||!asset.name.trim())throw new Error('Nome ausente no editor: '+expected);
   if(!Array.isArray(asset.box)||asset.box.length!==4||!asset.box.every(n=>Number.isFinite(n)))throw new Error('Área editável inválida: '+expected);
   if(!Number.isFinite(asset.w)||asset.w<=0||!Number.isFinite(asset.h)||asset.h<=0)throw new Error('Dimensões inválidas no editor: '+expected);
+  // A janela da foto/vídeo deve caber inteiramente na moldura, sem coordenadas negativas.
+  const [x,y,width,height]=asset.box;
+  if(x<0||y<0||width<=0||height<=0||x+width>asset.w||y+height>asset.h)
+    throw new Error('Janela de mídia fora dos limites da moldura: '+expected);
   editorPaths.add(asset.src);
 }
 if(!sw.includes('length:22'))throw new Error('Pré-cache não garante as 22 molduras');
