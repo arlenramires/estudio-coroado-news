@@ -204,6 +204,20 @@ try{
    throw Error('Falha de requestData não liberou Wake Lock: '+JSON.stringify(wakeAfterRequestFailure));
  console.log('Falha simulada de requestData: stop executado, sem arquivo parcial, controles e Wake Lock liberados.');
 
+ // Regressão: se o navegador encerrar o MediaRecorder sem o editor pedir stop(),
+ // os bytes gravados até ali não podem ser oferecidos como vídeo finalizado.
+ await page.click('#saveVideo');
+ await page.waitForFunction(()=>recorder?.state==='recording',{timeout:15000});
+ await page.evaluate(()=>recorder.stop());
+ await page.waitForFunction(()=>!recording && !document.querySelector('#media').disabled && document.querySelector('#status').textContent.includes('interrompida pelo navegador'),{timeout:15000});
+ await page.waitForTimeout(300);
+ if(unexpectedDownloads!==1)throw Error('Interrupção inesperada entregou vídeo parcial: '+unexpectedDownloads);
+ if(await page.locator('#videoPreview').getAttribute('src')===null)throw Error('Interrupção inesperada apagou a prévia anterior');
+ const wakeAfterUnexpectedStop=await page.evaluate(()=>window.__wakeLockTest);
+ if(wakeAfterUnexpectedStop.requests!==7||wakeAfterUnexpectedStop.releases!==7)
+   throw Error('Interrupção inesperada não liberou Wake Lock: '+JSON.stringify(wakeAfterUnexpectedStop));
+ console.log('Stop inesperado do navegador: nenhum download parcial, prévia preservada e controles liberados.');
+
  if(errors.length)throw Error('Erros no navegador: '+errors.join(' | '));
  console.log('Vídeo exportado com imagem e áudio:',name,fs.statSync(target).size,'bytes; streams:',types.join(','));
 }finally{await browser.close()}
