@@ -46,6 +46,13 @@ echo "Abra http://127.0.0.1:8765/index.html no Chrome."
 echo "Para instalar o PWA: menu do Chrome > Instalar app (quando disponivel)."
 python -m http.server 8765 --bind 127.0.0.1
 `;
+// Evita distribuir iniciadores com aspas escapadas como em strings JavaScript comuns.
+// Em CMD e shell, barras antes de aspas alteram o caminho ou os argumentos.
+for(const [name,launcher] of [['Windows',win],['Android',android]]){
+  if(launcher.includes('\\\\"'))throw Error('Iniciador '+name+' contém aspas escapadas incorretamente');
+}
+if(!win.includes('cd /d "%~dp0"')||!android.includes('cd "$(dirname "$0")"'))
+  throw Error('Iniciadores não preservam corretamente caminhos com espaços');
 fs.writeFileSync(path.join(dest,'Iniciar-PC-Windows.cmd'),win);
 fs.writeFileSync(path.join(dest,'Iniciar-Android-Termux.sh'),android,{mode:0o755});
 fs.writeFileSync(path.join(dest,'LEIA-ME-PRIMEIRO.txt'),String.raw`ESTUDIO COROADO NEWS 24H - PACOTE PRIVADO PC E ANDROID
