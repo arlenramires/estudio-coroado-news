@@ -92,6 +92,8 @@ for(const id of ['headline','format','fit','font','color','size','zoom','px','py
 $('play').onclick=async()=>{if(!video)return;await audioCtx?.resume();video.currentTime=Math.max(0,+$('trimStart').value||0);try{await video.play();loop()}catch(e){status('Toque novamente para iniciar o vídeo: '+e.message)}};
 // Evita trocar mídia, moldura ou dimensões durante a captura de vídeo.
 function setExportBusy(busy){
+ // Uma exportação PNG ainda em toBlob não pode ser entregue durante a gravação de vídeo.
+ if(busy)pngGeneration++;
  for(const id of ['editorial','media','headline','format','fit','font','color','size','zoom','px','py','trimStart','trimEnd','audio','play','savePNG','saveVideo'])$(id).disabled=busy;
  document.querySelectorAll('#gallery .tile').forEach(button=>button.disabled=busy);
  $('stopVideo').style.display=busy?'block':'none';
