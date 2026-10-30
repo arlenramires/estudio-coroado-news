@@ -7,9 +7,10 @@ const browser=await chromium.launch({headless:true,executablePath:exe,args:['--n
 const page=await browser.newPage({acceptDownloads:true,viewport:{width:1300,height:900}});
 const errors=[];page.on('pageerror',e=>errors.push(e.message));
 try{
- // A primeira moldura pode demorar no Android. Não exportar um PNG vazio enquanto carrega.
+ // Segurar a primeira moldura até testar uma foto selecionada antes de o catálogo terminar.
+ let releaseFirstFrame;
  await page.route('**/molduras/original_01.webp',async route=>{
-   await new Promise(resolve=>setTimeout(resolve,900));
+   await new Promise(resolve=>{releaseFirstFrame=resolve});
    await route.continue();
  });
  await page.goto(process.env.STUDIO_URL || 'http://127.0.0.1:8765/index.html',{waitUntil:'domcontentloaded'});
@@ -18,6 +19,22 @@ try{
  await page.evaluate(()=>document.querySelector('#savePNG').onclick());
  const initialStatus=await page.locator('#status').textContent();
  if(!initialStatus.includes('Aguarde o carregamento das molduras'))throw Error('PNG vazio não foi bloqueado durante inicialização');
+ // Regressão: uma mídia pronta não pode desbloquear PNG se as 22 molduras ainda carregam.
+ await page.locator('#media').setInputFiles({name:'arquivo-corrompido.png',mimeType:'image/png',buffer:Buffer.from('nao-e-uma-imagem')});
+ await page.waitForFunction(()=>document.querySelector('#status').textContent.includes('Falha ao abrir foto'));
+ if(!(await page.locator('#savePNG').isDisabled()))throw Error('Mídia inválida desbloqueou PNG antes do catálogo');
+ const earlyPng64=await page.evaluate(()=>{
+   const t=document.createElement('canvas');t.width=t.height=32;
+   t.getContext('2d').fillRect(0,0,32,32);
+   return t.toDataURL('image/png').split(',')[1];
+ });
+ await page.locator('#media').setInputFiles({name:'foto-antes-das-molduras.png',mimeType:'image/png',buffer:Buffer.from(earlyPng64,'base64')});
+ await page.waitForFunction(()=>document.querySelector('#status').textContent.includes('Foto encaixada'));
+ if(!(await page.locator('#savePNG').isDisabled()))throw Error('Foto pronta desbloqueou PNG antes das 22 molduras');
+ await page.evaluate(()=>document.querySelector('#savePNG').onclick());
+ if(!(await page.locator('#status').textContent()).includes('Aguarde o carregamento das molduras'))throw Error('Clique programático ignorou a proteção de PNG incompleto');
+ if(typeof releaseFirstFrame!=='function')throw Error('A primeira moldura não foi interceptada');
+ releaseFirstFrame();
  await page.waitForFunction(()=>document.querySelectorAll('#gallery .tile').length===22,{timeout:25000});
  if(await page.locator('#savePNG').isDisabled())throw Error('PNG não foi liberado após carregar as 22 molduras');
  console.log('Inicialização lenta aprovada: nenhum PNG vazio e exportação liberada após carregar as molduras.');
