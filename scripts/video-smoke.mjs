@@ -347,6 +347,29 @@ try{
    throw Error('Wake Lock tardio não foi liberado ou exportação cancelada entregou arquivo');
  console.log('Cancelamento com Wake Lock pendente: resposta imediata e permissão tardia liberada.');
 
+ // Exportação sem áudio não deve depender da autorização de AudioContext.
+ // Em alguns Androids resume() pode ficar pendente indefinidamente.
+ await page.uncheck('#audio');
+ await page.evaluate(()=>{
+   const original=audioCtx.resume.bind(audioCtx);
+   window.__silentResumeCalls=0;
+   audioCtx.resume=()=>{window.__silentResumeCalls++;return new Promise(()=>{})};
+   window.__restoreSilentResume=()=>{audioCtx.resume=original};
+ });
+ const beforeSilentCancel=unexpectedDownloads;
+ await page.click('#saveVideo');
+ await page.waitForFunction(()=>recorder?.state==='recording',{timeout:15000});
+ const silentResumeCalls=await page.evaluate(()=>window.__silentResumeCalls);
+ if(silentResumeCalls!==0)throw Error('Exportação sem áudio tentou retomar AudioContext: '+silentResumeCalls);
+ await page.click('#stopVideo');
+ await page.waitForFunction(()=>!recording && !document.querySelector('#media').disabled &&
+   document.querySelector('#status').textContent.includes('Exportação cancelada.'),{timeout:15000});
+ await page.evaluate(()=>window.__restoreSilentResume());
+ await page.check('#audio');
+ if(unexpectedDownloads!==beforeSilentCancel)
+   throw Error('Cancelamento da exportação silenciosa entregou arquivo parcial');
+ console.log('Exportação silenciosa: gravador iniciou sem aguardar AudioContext.');
+
  // Regressão: PNG solicitado pode terminar de codificar após o vídeo falhar.
  // O callback antigo não pode entregar uma imagem de fonte inválida.
  await page.evaluate(()=>{
