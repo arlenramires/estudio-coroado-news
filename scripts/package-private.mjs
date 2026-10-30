@@ -6,7 +6,7 @@ const root=process.cwd();
 const dest=path.join(root,'dist','Estudio-Coroado-Privado');
 const required=['index.html','manifest.webmanifest','sw.js','icons/studio.svg','icons/studio-192.png','icons/studio-512.png',
   ...Array.from({length:22},(_,i)=>'molduras/original_'+String(i+1).padStart(2,'0')+'.webp')];
-fs.mkdirSync(dest,{recursive:true});
+// Recria o pacote do zero para impedir arquivos obsoletos de entregas anteriores.\nfs.rmSync(dest,{recursive:true,force:true});\nfs.mkdirSync(dest,{recursive:true});
 for(const file of required){
   const source=path.join(root,file),target=path.join(dest,file);
   if(!fs.existsSync(source))throw Error('Arquivo necessário ausente: '+file);
