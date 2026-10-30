@@ -279,6 +279,8 @@ try{
 
  // A mesma falha durante a gravação deve interromper o MediaRecorder sem
  // entregar bytes parciais e limpar a fonte apenas após finalizar o gravador.
+ // Limpar o input: escolher o mesmo arquivo não dispara change automaticamente.
+ await page.locator('#media').setInputFiles([]);
  await page.locator('#media').setInputFiles('test-input.mp4');
  await page.waitForFunction(()=>video && !mediaLoading && !document.querySelector('#savePNG').disabled,{timeout:15000});
  await page.click('#saveVideo');
