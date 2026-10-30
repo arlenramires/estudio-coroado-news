@@ -53,6 +53,27 @@ try{
  const freshFile=await freshPng;
  if(!freshFile.suggestedFilename().endsWith('.png'))throw Error('Novo PNG não foi exportado');
  console.log('PNG assíncrono aprovado: edição invalida download antigo e permite nova exportação.');
+ // Uma codificação PNG pendente deve ser invalidada quando a exportação de vídeo
+ // bloqueia o editor, evitando download atrasado durante a gravação.
+ let pngDuringVideo=0;
+ const countBusyPng=()=>{pngDuringVideo++};
+ page.on('download',countBusyPng);
+ await page.evaluate(()=>{
+   const original=canvas.toBlob.bind(canvas);
+   window.__restoreBusyPng=()=>{canvas.toBlob=original};
+   canvas.toBlob=(callback,...args)=>original(blob=>{window.__releaseBusyPng=()=>callback(blob)},...args);
+ });
+ await page.click('#savePNG');
+ await page.waitForFunction(()=>typeof window.__releaseBusyPng==='function');
+ await page.evaluate(()=>setExportBusy(true));
+ await page.evaluate(()=>window.__releaseBusyPng());
+ await page.waitForTimeout(250);
+ if(pngDuringVideo)throw Error('PNG pendente foi baixado depois de iniciar exportação de vídeo');
+ await page.evaluate(()=>{window.__restoreBusyPng();setExportBusy(false)});
+ page.off('download',countBusyPng);
+ if(await page.locator('#savePNG').isDisabled())throw Error('PNG permaneceu bloqueado após exportação de vídeo');
+ console.log('PNG pendente aprovado: início da exportação de vídeo invalida download atrasado.');
+
  // Regressão: uma foto ainda em carregamento não pode deixar a foto antiga na prévia
  // nem permitir exportar uma arte sem a mídia recém-selecionada.
  await page.evaluate(()=>{
