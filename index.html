@@ -206,6 +206,16 @@ $('saveVideo').onclick=async()=>{if(!video){status('Escolha um vídeo antes de e
   if(stopCapture)stopCapture(cancelMessage);
   else{exportErrorMessage=cancelMessage;preparationAbort.abort()}
  };
+ // No Android, a tela pode apagar ainda durante resume(), Wake Lock ou seek.
+ // Vigiar desde o início impede que uma exportação comece oculta após permissão tardia.
+ visibilityHandler=()=>{
+  if(!document.hidden)return;
+  const reason='Exportação interrompida: o Estúdio foi para segundo plano. Nenhum arquivo parcial foi entregue.';
+  if(stopCapture)stopCapture(reason);
+  else{exportErrorMessage=reason;preparationAbort.abort()}
+ };
+ document.addEventListener('visibilitychange',visibilityHandler);
+ if(document.hidden)visibilityHandler();
  try{
   // A retomada do AudioContext precisa ocorrer diretamente no clique: no Android,
   // aguardar Wake Lock primeiro pode perder a ativação do usuário e bloquear o áudio.
@@ -231,8 +241,6 @@ $('saveVideo').onclick=async()=>{if(!video){status('Escolha um vídeo antes de e
  stopCapture=stop;
  // Ao bloquear a tela ou trocar de aplicativo, o navegador pode suspender os quadros e o áudio.
  // Descartar a gravação evita entregar um vídeo congelado ou incompleto como finalizado.
- visibilityHandler=()=>{if(document.hidden)stop('Exportação interrompida: o Estúdio foi para segundo plano. Nenhum arquivo parcial foi entregue.')};
- document.addEventListener('visibilitychange',visibilityHandler);
  function paint(_now,metadata){if(!recording)return;const mediaTime=metadata?.mediaTime??video.currentTime;if(mediaTime>lastTime+.001){lastTime=mediaTime;draw();recordCtx.drawImage(canvas,0,0,recordCanvas.width,recordCanvas.height);if(manualFrame)frameTrack.requestFrame()}if(video.currentTime>=end-.04||video.ended){video.pause();stop();return}if(video.requestVideoFrameCallback)videoFrameId=video.requestVideoFrameCallback(paint);else frameId=requestAnimationFrame(paint)}
  recorder.onstop=async()=>{
   // Se o navegador encerrar a gravação sem solicitação do editor, o arquivo pode estar incompleto.
