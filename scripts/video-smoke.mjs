@@ -304,6 +304,49 @@ try{
  if(wakeAfterSeekCancel.requests!==wakeAfterSeekCancel.releases)throw Error('Wake Lock vazou após cancelamento no seek: '+JSON.stringify(wakeAfterSeekCancel));
  console.log('Cancelamento durante seek inicial: resposta imediata, sem download, prévia e Wake Lock preservados.');
 
+ // Regressão Android: AudioContext.resume() pode nunca resolver quando o
+ // sistema retém a autorização de áudio. Cancelar não pode ficar preso no await.
+ await page.evaluate(()=>{
+   const resume=audioCtx.resume.bind(audioCtx);
+   window.__restoreHeldAudio=()=>{audioCtx.resume=resume};
+   audioCtx.resume=()=>new Promise(resolve=>{window.__resolveHeldAudio=resolve});
+ });
+ const beforeStalledAudio=unexpectedDownloads;
+ await page.click('#saveVideo');
+ await page.waitForFunction(()=>recording && typeof window.__resolveHeldAudio==='function' &&
+   document.querySelector('#stopVideo').style.display==='block',{timeout:5000});
+ await page.click('#stopVideo');
+ await page.waitForFunction(()=>!recording && !document.querySelector('#media').disabled &&
+   document.querySelector('#status').textContent.includes('Exportação cancelada.'),{timeout:5000});
+ await page.evaluate(()=>{window.__restoreHeldAudio();window.__resolveHeldAudio()});
+ await page.waitForTimeout(150);
+ if(unexpectedDownloads!==beforeStalledAudio||await page.locator('#videoPreview').getAttribute('src')===null)
+   throw Error('Cancelamento com AudioContext pendente entregou arquivo ou apagou prévia');
+ console.log('Cancelamento com AudioContext.resume pendente: controles liberados sem aguardar permissão.');
+
+ // Regressão Android: permissão de Wake Lock pode ficar pendente e ser
+ // concedida após Cancelar. O bloqueio tardio precisa ser liberado.
+ await page.evaluate(()=>{
+   const request=navigator.wakeLock.request.bind(navigator.wakeLock);
+   window.__lateWakeReleases=0;
+   window.__restoreHeldWake=()=>{navigator.wakeLock.request=request};
+   navigator.wakeLock.request=()=>new Promise(resolve=>{
+     window.__grantHeldWake=()=>resolve({release:async()=>{window.__lateWakeReleases++}});
+   });
+ });
+ const beforeStalledWake=unexpectedDownloads;
+ await page.click('#saveVideo');
+ await page.waitForFunction(()=>recording && typeof window.__grantHeldWake==='function' &&
+   document.querySelector('#stopVideo').style.display==='block',{timeout:5000});
+ await page.click('#stopVideo');
+ await page.waitForFunction(()=>!recording && !document.querySelector('#media').disabled &&
+   document.querySelector('#status').textContent.includes('Exportação cancelada.'),{timeout:5000});
+ await page.evaluate(()=>{window.__restoreHeldWake();window.__grantHeldWake()});
+ await page.waitForFunction(()=>window.__lateWakeReleases===1,{timeout:5000});
+ if(unexpectedDownloads!==beforeStalledWake||await page.locator('#videoPreview').getAttribute('src')===null)
+   throw Error('Wake Lock tardio não foi liberado ou exportação cancelada entregou arquivo');
+ console.log('Cancelamento com Wake Lock pendente: resposta imediata e permissão tardia liberada.');
+
  // Regressão: PNG solicitado pode terminar de codificar após o vídeo falhar.
  // O callback antigo não pode entregar uma imagem de fonte inválida.
  await page.evaluate(()=>{
