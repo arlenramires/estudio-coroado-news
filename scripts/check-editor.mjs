@@ -184,3 +184,7 @@ if(!/if\(\$\('audio'\)\.checked&&!stream\.getAudioTracks\(\)\.some\(t=>t\.readyS
     throw new Error('Instalação bem-sucedida não aguardou os arquivos: '+operations.join(','));
   console.log('Instalação offline aprovada: pré-cache completo antes de skipWaiting.');
 }
+
+// Cache privado não deve persistir redirecionamentos nem respostas de origem diferente.
+if((sw.match(/response\.ok&&response\.type==='basic'&&response\.url===req\.url/g)||[]).length!==2)
+  throw new Error('Cache PWA deve rejeitar respostas redirecionadas ou de outra origem');
