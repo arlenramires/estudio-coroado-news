@@ -93,6 +93,19 @@ for(let i=0;i<22;i++){
   const [x,y,width,height]=asset.box;
   if(x<0||y<0||width<=0||height<=0||x+width>asset.w||y+height>asset.h)
     throw new Error('Janela de mídia fora dos limites da moldura: '+expected);
+  // A área da manchete também deve ficar dentro do quadro original.
+  // Evita exportações com texto invisível ou cortado após ajustes no catálogo.
+  if(!Array.isArray(asset.title)||asset.title.length!==4||!asset.title.every(Number.isFinite))
+    throw new Error('Área da manchete inválida: '+expected);
+  const [tx,ty,tw,th]=asset.title;
+  if(tx<0||ty<0||tw<=0||th<=0||tx+tw>asset.w||ty+th>asset.h)
+    throw new Error('Manchete fora dos limites da moldura: '+expected);
+  // Coordenadas do mascote são metadados de proteção visual: não redesenhar.
+  if(!Array.isArray(asset.fish)||asset.fish.length!==4||!asset.fish.every(Number.isFinite))
+    throw new Error('Metadados do mascote inválidos: '+expected);
+  const [fx,fy,fw,fh]=asset.fish;
+  if(fx<0||fy<0||fw<=0||fh<=0||fx+fw>asset.w||fy+fh>asset.h)
+    throw new Error('Mascote fora dos limites da moldura: '+expected);
   editorPaths.add(asset.src);
 }
 // Executa a declaração do service worker em um contexto isolado para verificar
