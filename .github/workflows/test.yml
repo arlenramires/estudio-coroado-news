@@ -57,6 +57,8 @@ jobs:
         run: STUDIO_URL="file://$GITHUB_WORKSPACE/dist/Estudio_Coroado_Offline.html" node scripts/video-smoke.mjs
       - name: Montar pacote privado PWA + HTML offline para PC e Android
         run: node scripts/package-private.mjs
+      - name: Verificar checksums e 22 molduras incorporadas no pacote final
+        run: node scripts/check-delivery.mjs
       - name: Validar pacote instalável em localhost, offline e tela móvel
         run: node scripts/package-smoke.mjs
       - name: Disponibilizar pacote privado de instalação
