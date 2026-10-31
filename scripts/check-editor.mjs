@@ -107,3 +107,6 @@ if(fs.existsSync('.github/workflows/pages.yml'))throw new Error('Publicação p�
 if(!html.includes('serviceWorker.register'))throw new Error('PWA não integrado ao editor');
 if(!html.includes('id="offlineReady"')||!html.includes('id="videoCapability"'))throw new Error('Diagnóstico de offline/codec ausente');
 console.log('Editor: JavaScript válido, '+new Set(sources).size+' molduras presentes, exportação implementada.');
+
+// Regressão: não afirmar que um vídeo conserva áudio quando a faixa de captura está ausente.
+if(!html.includes('Áudio original solicitado, mas a captura de áudio não está disponível')||!html.includes('stream.getAudioTracks().length'))throw new Error('Proteção contra exportação silenciosa ausente');
