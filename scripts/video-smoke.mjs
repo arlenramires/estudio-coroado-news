@@ -136,6 +136,14 @@ try{
  const target='test-output-'+name;
  const streams=JSON.parse(execFileSync('ffprobe',['-v','error','-show_entries','stream=codec_type','-of','json',target],{encoding:'utf8'})).streams;
  const types=streams.map(x=>x.codec_type);
+ // A extensão anunciada precisa corresponder ao contêiner real: evita MP4
+ // renomeado de WebM, que falharia ao abrir em alguns celulares.
+ const container=JSON.parse(execFileSync('ffprobe',['-v','error','-show_entries','format=format_name','-of','json',target],{encoding:'utf8'})).format?.format_name||'';
+ if(name.endsWith('.mp4')&&!container.split(',').some(x=>['mov','mp4','m4a','3gp','3g2','mj2'].includes(x)))
+   throw Error('Arquivo .mp4 não contém contêiner MP4: '+container);
+ if(name.endsWith('.webm')&&!container.split(',').includes('matroska'))
+   throw Error('Arquivo .webm não contém contêiner WebM/Matroska: '+container);
+ if(!/\.(mp4|webm)$/i.test(name))throw Error('Extensão de vídeo inesperada: '+name);
  if(!types.includes('video'))throw Error('Arquivo exportado sem vídeo');
  if(!types.includes('audio'))throw Error('Arquivo exportado sem áudio: '+JSON.stringify(streams));
  const volume=spawnSync('ffmpeg',['-hide_banner','-nostats','-i',target,'-vn','-af','volumedetect','-f','null','-'],{encoding:'utf8'});
