@@ -44,3 +44,8 @@ Na execução bem-sucedida de **Actions → Testar Estúdio**, baixe o artefato 
 O código-fonte no GitHub **continua público** enquanto o proprietário não alterar a visibilidade do repositório. A entrega não ativa GitHub Pages, não fornece APK e não hospeda dados pessoais. MP4 depende de suporte nativo do navegador; WebM é a alternativa quando não houver MP4.
 
 Para gerar localmente com Node.js: `node scripts/build-offline.mjs && node scripts/package-private.mjs`. O pacote será criado em `dist/Estudio-Coroado-Privado/`.
+
+## Qualidade da imagem: PNG e vídeo
+O botão **Salvar PNG** gera uma imagem estática, não um vídeo. A opção **Feed** usa 1080 × 1350; **Reels/Story** usa 1080 × 1920. Para evitar texto tremido ou imagem esticada, selecione o formato final **antes** de exportar, use foto/vídeo de origem com resolução suficiente e confira o arquivo baixado em tamanho real (100%), não apenas a miniatura do aplicativo de mensagens. Enviar uma imagem como foto por mensageiros pode recomprimir o arquivo; prefira enviar o PNG como documento/arquivo.
+
+Se o nome aparecer como **PNG4**, verifique a extensão real do arquivo: o formato correto de imagem é **.png**. Para publicação com movimento e áudio, use **Exportar vídeo**; o editor não transforma um PNG em vídeo. Se o navegador só disponibilizar WebM, não renomeie o arquivo para MP4: isso não converte o codec. Para obter MP4 universal, converta o WebM com um codificador H.264/AAC externo e confira o áudio antes da publicação.
