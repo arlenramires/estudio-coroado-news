@@ -154,3 +154,33 @@ if(!/if\(\$\('audio'\)\.checked&&!stream\.getAudioTracks\(\)\.some\(t=>t\.readyS
     throw new Error('Instalação falha não removeu o cache parcial: '+operations.join(','));
   console.log('Rollback do pré-cache aprovado: instalação rejeitada e cache parcial apagado.');
 }
+
+
+// Teste funcional de instalação bem-sucedida: todos os arquivos essenciais
+// precisam ser pré-carregados antes de liberar o controle ao novo service worker.
+{
+  const listeners=new Map();
+  const operations=[];
+  const fakeCaches={
+    open:async name=>({addAll:async assets=>{
+      operations.push('addAll:'+assets.length);
+      if(assets.length!==requiredPrecache.length)throw new Error('Pré-cache incompleto');
+    }}),
+    delete:async name=>{operations.push('delete:'+name);return true}
+  };
+  const worker={
+    registration:{scope:'http://127.0.0.1:8765/'},
+    addEventListener:(type,callback)=>listeners.set(type,callback),
+    skipWaiting:async()=>{operations.push('skipWaiting')}
+  };
+  const context=vm.createContext({URL,self:worker,caches:fakeCaches});
+  new vm.Script(sw,{filename:'sw.js'}).runInContext(context);
+  let installation;
+  listeners.get('install')({waitUntil:promise=>{installation=promise}});
+  if(!installation||typeof installation.then!=='function')
+    throw new Error('Instalação bem-sucedida não aguardou o pré-cache');
+  await installation;
+  if(operations.join(',')!=='addAll:'+requiredPrecache.length+',skipWaiting')
+    throw new Error('Instalação bem-sucedida não aguardou os arquivos: '+operations.join(','));
+  console.log('Instalação offline aprovada: pré-cache completo antes de skipWaiting.');
+}
