@@ -10,6 +10,9 @@ const missing=[...new Set(sources)].filter(p=>!fs.existsSync(p));
 if(missing.length)throw new Error('Molduras ausentes: '+missing.join(', '));
 for(const p of new Set(sources)){const b=fs.readFileSync(p);if(b.length<1000)throw new Error('Imagem vazia: '+p);if(p.endsWith('.png')&&b.subarray(1,4).toString()!=='PNG')throw new Error('PNG inválido: '+p);if(p.endsWith('.webp')&&b.subarray(8,12).toString()!=='WEBP')throw new Error('WebP inválido: '+p);}
 if(!html.includes("captureStream")||!html.includes("MediaRecorder"))throw new Error('Exportação de vídeo ausente');
+// Cancelamento durante preparação não deve deixar o vídeo original reproduzindo em segundo plano.
+if(!/catch\(err\)\{recording=false;[\s\S]*?video\.pause\(\);setExportBusy\(false\)/.test(html))
+  throw new Error('Falha/cancelamento de exportação deve pausar o vídeo original');
 const manifest=JSON.parse(fs.readFileSync('manifest.webmanifest','utf8'));
 if(manifest.display!=='standalone'||!manifest.icons?.length)throw new Error('Manifesto PWA incompleto');
 
