@@ -67,7 +67,7 @@ function draw(){const f=frames[selected];if(!f)return;const [W,H]=canvasFormat()
  if(Math.abs(W/H-f.w/f.h)>.01){ctx.save();ctx.filter='blur(35px) brightness(.35)';const bg=Math.max(W/f.w,H/f.h);ctx.drawImage(f.img,(W-f.w*bg)/2,(H-f.h*bg)/2,f.w*bg,f.h*bg);ctx.restore()}
  ctx.save();ctx.translate(dx,dy);ctx.scale(scale,scale);ctx.drawImage(f.img,0,0,f.w,f.h);
  const b={x:f.box[0],y:f.box[1],w:f.box[2],h:f.box[3]},src=video||photo;
- if(src&&dims(src)[0]){ctx.save();ctx.beginPath();ctx.rect(b.x,b.y,b.w,b.h);ctx.clip();const z=+$('zoom').value/100,px=+$('px').value/100,py=+$('py').value/100;
+ if(src&&dims(src)[0]){ctx.save();ctx.beginPath();const r=Math.min(b.w,b.h)*.035;ctx.moveTo(b.x+r,b.y);ctx.lineTo(b.x+b.w-r,b.y);ctx.quadraticCurveTo(b.x+b.w,b.y,b.x+b.w,b.y+r);ctx.lineTo(b.x+b.w,b.y+b.h-r);ctx.quadraticCurveTo(b.x+b.w,b.y+b.h,b.x+b.w-r,b.y+b.h);ctx.lineTo(b.x+r,b.y+b.h);ctx.quadraticCurveTo(b.x,b.y+b.h,b.x,b.y+b.h-r);ctx.lineTo(b.x,b.y+r);ctx.quadraticCurveTo(b.x,b.y,b.x+r,b.y);ctx.closePath();ctx.clip();const z=+$('zoom').value/100,px=+$('px').value/100,py=+$('py').value/100;
  if($('fit').value==='contain'){ctx.save();ctx.filter='blur(24px) brightness(.4)';drawFit(ctx,src,b,'cover',1,px,py);ctx.restore()}
  drawFit(ctx,src,b,$('fit').value,z,px,py);ctx.restore();
  // A máscara transparente preserva o mascote e a moldura, retirando somente o fundo preto da janela.
