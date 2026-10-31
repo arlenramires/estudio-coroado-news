@@ -118,3 +118,39 @@ if(!html.includes('Áudio original solicitado, mas a captura de áudio não est�
 // Regressão: a faixa pode morrer durante a gravação, mesmo após passar no teste inicial.
 if(!/if\(\$\('audio'\)\.checked&&!stream\.getAudioTracks\(\)\.some\(t=>t\.readyState==='live'\)\)/.test(html))
   throw new Error('Exportação deve descartar arquivo quando áudio termina durante gravação');
+
+
+
+// Teste funcional da instalação: uma falha no pré-cache deve apagar o cache
+// incompleto e rejeitar a instalação, sem deixar um PWA aparentemente offline.
+{
+  const listeners=new Map();
+  const operations=[];
+  const fakeCaches={
+    open:async name=>({addAll:async assets=>{
+      operations.push('addAll:'+assets.length);
+      throw new Error('falha simulada de download');
+    }}),
+    delete:async name=>{operations.push('delete:'+name);return true}
+  };
+  const worker={
+    registration:{scope:'http://127.0.0.1:8765/'},
+    addEventListener:(type,callback)=>listeners.set(type,callback),
+    skipWaiting:async()=>{operations.push('skipWaiting')}
+  };
+  const context=vm.createContext({URL,self:worker,caches:fakeCaches});
+  new vm.Script(sw,{filename:'sw.js'}).runInContext(context);
+  const install=listeners.get('install');
+  if(!install)throw new Error('Service worker sem evento install');
+  let installation;
+  install({waitUntil:promise=>{installation=promise}});
+  if(!installation||typeof installation.then!=='function')
+    throw new Error('Instalação não aguarda o pré-cache');
+  let rejected=false;
+  try{await installation}catch(error){rejected=String(error.message).includes('falha simulada')}
+  if(!rejected||operations[0]!=='addAll:'+requiredPrecache.length||
+     operations[1]!=='delete:estudio-coroado-offline-v32'||
+     operations.includes('skipWaiting'))
+    throw new Error('Instalação falha não removeu o cache parcial: '+operations.join(','));
+  console.log('Rollback do pré-cache aprovado: instalação rejeitada e cache parcial apagado.');
+}
