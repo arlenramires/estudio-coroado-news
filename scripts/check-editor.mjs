@@ -50,6 +50,27 @@ for(let i=1;i<=22;i++){
   if(asset.status!=='publicado'||catalogPaths.has(asset.target))throw new Error('Moldura duplicada ou não publicada: '+expected);
   catalogPaths.add(asset.target);
   if(!fs.existsSync(expected))throw new Error('Moldura offline ausente: '+expected);
+  // Lê as dimensões reais do contêiner WebP (VP8, VP8L ou VP8X).
+  // Impede que um arquivo trocado ou truncado passe só por existir no disco.
+  const webp=fs.readFileSync(expected);
+  if(webp.length<30||webp.toString('ascii',0,4)!=='RIFF'||webp.toString('ascii',8,12)!=='WEBP'||webp.readUInt32LE(4)+8!==webp.length)
+    throw new Error('WebP corrompido ou tamanho RIFF incorreto: '+expected);
+  const codec=webp.toString('ascii',12,16);
+  let actualWidth,actualHeight;
+  if(codec==='VP8X'){
+    actualWidth=1+webp.readUIntLE(24,3);
+    actualHeight=1+webp.readUIntLE(27,3);
+  }else if(codec==='VP8L'){
+    if(webp[20]!==0x2f)throw new Error('Assinatura VP8L inválida: '+expected);
+    actualWidth=1+(((webp[22]&0x3f)<<8)|webp[21]);
+    actualHeight=1+(((webp[24]&0x0f)<<10)|(webp[23]<<2)|((webp[22]&0xc0)>>6));
+  }else if(codec==='VP8 '){
+    if(webp[23]!==0x9d||webp[24]!==0x01||webp[25]!==0x2a)throw new Error('Assinatura VP8 inválida: '+expected);
+    actualWidth=webp.readUInt16LE(26)&0x3fff;
+    actualHeight=webp.readUInt16LE(28)&0x3fff;
+  }else throw new Error('Codec WebP não reconhecido: '+expected);
+  if(actualWidth!==asset.width||actualHeight!==asset.height)
+    throw new Error('Dimensões reais da moldura divergem do catálogo: '+expected+' ('+actualWidth+'x'+actualHeight+')');
 }
 // Confere também o catálogo realmente utilizado pelo editor, não apenas os arquivos no disco.
 const dataMatch=html.match(/const DATA\s*=\s*(\[[^;]*\]);/);
