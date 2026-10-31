@@ -1,13 +1,13 @@
 'use strict';
 // Somente arquivos públicos do próprio estúdio: mídia importada pelo usuário nunca é armazenada.
-const CACHE='estudio-coroado-offline-v31';
+const CACHE='estudio-coroado-offline-v32';
 const ASSETS=['./','./index.html','./manifest.webmanifest','./icons/studio.svg','./icons/studio-192.png','./icons/studio-512.png',
   ...Array.from({length:22},(_,i)=>'./molduras/original_'+String(i+1).padStart(2,'0')+'.webp')];
 // Somente arquivos declarados do aplicativo podem entrar no cache.
 // Requisições extras (incluindo parâmetros de URL) passam direto para a rede.
 const OFFLINE_URLS=new Set(ASSETS.map(asset=>new URL(asset,self.registration.scope).href));
 self.addEventListener('install',event=>{
-  event.waitUntil((async()=>{const cache=await caches.open(CACHE);await cache.addAll(ASSETS);await self.skipWaiting()})());
+  event.waitUntil((async()=>{const cache=await caches.open(CACHE);try{await cache.addAll(ASSETS)}catch(error){await caches.delete(CACHE);throw error}await self.skipWaiting()})());
 });
 self.addEventListener('activate',event=>{
   event.waitUntil((async()=>{for(const key of await caches.keys())if(key.startsWith('estudio-coroado-offline-')&&key!==CACHE)await caches.delete(key);await self.clients.claim()})());
