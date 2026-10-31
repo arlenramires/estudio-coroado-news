@@ -110,3 +110,7 @@ console.log('Editor: JavaScript válido, '+new Set(sources).size+' molduras pres
 
 // Regressão: não afirmar que um vídeo conserva áudio quando a faixa de captura está ausente.
 if(!html.includes('Áudio original solicitado, mas a captura de áudio não está disponível')||!html.includes('stream.getAudioTracks().length'))throw new Error('Proteção contra exportação silenciosa ausente');
+
+// Regressão: a faixa pode morrer durante a gravação, mesmo após passar no teste inicial.
+if(!/if\(\$\('audio'\)\.checked&&!stream\.getAudioTracks\(\)\.some\(t=>t\.readyState==='live'\)\)/.test(html))
+  throw new Error('Exportação deve descartar arquivo quando áudio termina durante gravação');
