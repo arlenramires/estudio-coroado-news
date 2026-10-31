@@ -265,6 +265,10 @@ $('saveVideo').onclick=async()=>{if(!video){status('Escolha um vídeo antes de e
     clearTimeout(recordTimer);clearInterval(interval);video.pause();
     stream.getVideoTracks().forEach(t=>t.stop());
     if(exportErrorMessage){status(exportErrorMessage);return}
+    // Uma faixa de áudio pode encerrar após o início; não entregar vídeo silencioso.
+    if($('audio').checked&&!stream.getAudioTracks().some(t=>t.readyState==='live')){
+      status('A faixa de áudio foi encerrada durante a gravação. Nenhum arquivo foi entregue.');return;
+    }
     const blob=new Blob(chunks,{type:mime});
     const bytes=new Uint8Array(await blob.slice(0,16).arrayBuffer());
     // Cancelar ainda é possível enquanto o cabeçalho é lido de forma assíncrona.
