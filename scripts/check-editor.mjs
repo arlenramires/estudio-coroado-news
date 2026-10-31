@@ -42,7 +42,6 @@ for(let i=1;i<=22;i++){
   if(asset.status!=='publicado'||catalogPaths.has(asset.target))throw new Error('Moldura duplicada ou não publicada: '+expected);
   catalogPaths.add(asset.target);
   if(!fs.existsSync(expected))throw new Error('Moldura offline ausente: '+expected);
-  if(!sw.includes("'./"+expected+"'")&&!sw.includes("Array.from({length:22}"))throw new Error('Moldura ausente do pré-cache: '+expected);
 }
 // Confere também o catálogo realmente utilizado pelo editor, não apenas os arquivos no disco.
 const dataMatch=html.match(/const DATA\s*=\s*(\[[^;]*\]);/);
@@ -67,7 +66,23 @@ for(let i=0;i<22;i++){
     throw new Error('Janela de mídia fora dos limites da moldura: '+expected);
   editorPaths.add(asset.src);
 }
-if(!sw.includes('length:22'))throw new Error('Pré-cache não garante as 22 molduras');
+// Executa a declaração do service worker em um contexto isolado para verificar
+// a lista real de pré-cache, sem depender de uma substring no código-fonte.
+const swContext=vm.createContext({
+  URL,
+  self:{registration:{scope:'http://127.0.0.1:8765/'},addEventListener(){}}
+});
+new vm.Script(sw,{filename:'sw.js'}).runInContext(swContext);
+const precache=Array.from(vm.runInContext('ASSETS',swContext));
+const requiredPrecache=[
+  './','./index.html','./manifest.webmanifest',
+  './icons/studio.svg','./icons/studio-192.png','./icons/studio-512.png',
+  ...Array.from({length:22},(_,i)=>'./molduras/original_'+String(i+1).padStart(2,'0')+'.webp')
+];
+if(precache.length!==requiredPrecache.length||
+   new Set(precache).size!==precache.length||
+   requiredPrecache.some(asset=>!precache.includes(asset)))
+  throw new Error('Pré-cache PWA incompleto, duplicado ou divergente das 22 molduras');
 for(const size of [192,512]){const b=fs.readFileSync('icons/studio-'+size+'.png');if(b.subarray(1,4).toString()!=='PNG'||b.readUInt32BE(16)!==size||b.readUInt32BE(20)!==size)throw new Error('Ícone PNG inválido: '+size)}
 if(!sw.includes('cache.addAll(ASSETS)'))throw new Error('Pré-cache offline não configurado');
 // Bloqueia publicação por Pages mesmo quando o workflow usa outro nome.
