@@ -229,7 +229,13 @@ $('saveVideo').onclick=async()=>{if(!video){status('Escolha um vídeo antes de e
  const [W,H]=canvasFormat();recordCanvas=document.createElement('canvas');const sc=Math.min(1,720/W);recordCanvas.width=Math.round(W*sc);recordCanvas.height=Math.round(H*sc);recordCtx=recordCanvas.getContext('2d',{alpha:false});draw();recordCtx.drawImage(canvas,0,0,recordCanvas.width,recordCanvas.height);
  try{stream=recordCanvas.captureStream(0)}catch(err){console.warn('Captura manual indisponível; usando 30 fps:',err.message);stream=recordCanvas.captureStream(30)}
  let frameTrack=stream.getVideoTracks()[0];if(!frameTrack)throw new Error('O navegador não forneceu faixa de vídeo para exportação.');
- let manualFrame=typeof frameTrack.requestFrame==='function';if(!manualFrame){stream.getVideoTracks().forEach(t=>t.stop());stream=recordCanvas.captureStream(30);frameTrack=stream.getVideoTracks()[0];if(!frameTrack)throw new Error('Falha ao iniciar captura de vídeo a 30 fps.');manualFrame=false}if($('audio').checked&&audioDest){for(const t of audioDest.stream.getAudioTracks())stream.addTrack(t)}
+ let manualFrame=typeof frameTrack.requestFrame==='function';if(!manualFrame){stream.getVideoTracks().forEach(t=>t.stop());stream=recordCanvas.captureStream(30);frameTrack=stream.getVideoTracks()[0];if(!frameTrack)throw new Error('Falha ao iniciar captura de vídeo a 30 fps.');manualFrame=false}if($('audio').checked){
+  // Nunca entregar um arquivo silencioso como se preservasse o áudio original.
+  const tracks=audioDest?.stream.getAudioTracks()||[];
+  if(!tracks.length||tracks.every(t=>t.readyState!=='live'))throw new Error('Áudio original solicitado, mas a captura de áudio não está disponível. Desmarque Manter áudio original para exportar sem som.');
+  for(const t of tracks.filter(t=>t.readyState==='live'))stream.addTrack(t);
+  if(!stream.getAudioTracks().length)throw new Error('Não foi possível incluir o áudio original na gravação.');
+ }
  // Alguns navegadores anunciam MP4, mas rejeitam o codec ao construir o gravador. Tentar o próximo formato evita falha total.
  for(const candidate of supportedMimes){try{const attempt=new MediaRecorder(stream,{mimeType:candidate,videoBitsPerSecond:2500000,audioBitsPerSecond:128000});attempt.start(1000);recorder=attempt;mime=attempt.mimeType||candidate;break}catch(err){recorder=null;console.warn('Formato de gravação indisponível ao iniciar:',candidate,err.message)}}
  if(!recorder)throw new Error('O dispositivo não conseguiu iniciar um gravador MP4 ou WebM.');
