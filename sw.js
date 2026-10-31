@@ -23,6 +23,6 @@ self.addEventListener('fetch',event=>{
       try{const response=await fetch(req);if(response.ok&&response.type==='basic'&&response.url===req.url)await cache.put(req,response.clone());return response}catch{return cached||await cache.match('./index.html')||Response.error()}
     }
     if(cached)return cached;
-    try{const response=await fetch(req);if(response.ok)await cache.put(req,response.clone());return response}catch{return Response.error()}
+    try{const response=await fetch(req);if(response.ok&&response.type==='basic'&&response.url===req.url)await cache.put(req,response.clone());return response}catch{return Response.error()}
   })());
 });
