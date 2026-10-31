@@ -20,7 +20,7 @@ self.addEventListener('fetch',event=>{
     const cached=await cache.match(req,{ignoreSearch:true});
     // O HTML recebe correções quando conectado; as molduras imutáveis ficam disponíveis offline.
     if(req.mode==='navigate'||new URL(req.url).pathname.endsWith('/index.html')){
-      try{const response=await fetch(req);if(response.ok)await cache.put(req,response.clone());return response}catch{return cached||await cache.match('./index.html')||Response.error()}
+      try{const response=await fetch(req);if(response.ok&&response.type==='basic'&&response.url===req.url)await cache.put(req,response.clone());return response}catch{return cached||await cache.match('./index.html')||Response.error()}
     }
     if(cached)return cached;
     try{const response=await fetch(req);if(response.ok)await cache.put(req,response.clone());return response}catch{return Response.error()}
