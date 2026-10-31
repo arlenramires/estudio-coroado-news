@@ -61,7 +61,7 @@ const server=http.createServer((req,res)=>{
 await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
 const browser=await chromium.launch({headless:true,executablePath:exe,args:['--no-sandbox']});
 const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true,acceptDownloads:true,serviceWorkers:'allow'});
-const page=await context.newPage();
+let page=await context.newPage();
 const errors=[];page.on('pageerror',err=>errors.push(err.message));
 try{
   await page.goto('http://127.0.0.1:'+server.address().port+'/index.html');
@@ -74,11 +74,20 @@ try{
   await page.waitForFunction(()=>document.querySelectorAll('#gallery .tile').length===22);
   const loaded=await page.evaluate(()=>frames.length===22&&frames.every(f=>f.img.complete&&f.img.naturalWidth>0));
   if(!loaded)throw Error('Molduras não funcionam offline no pacote');
+  // A instalacao precisa sobreviver ao fechamento da aba, nao apenas ao reload.
+  // Reabre uma nova aba no mesmo perfil, ainda sem rede, e valida o cache persistente.
+  await page.close();
+  page=await context.newPage();
+  page.on('pageerror',err=>errors.push(err.message));
+  await page.goto('http://127.0.0.1:'+server.address().port+'/index.html',{waitUntil:'domcontentloaded'});
+  await page.waitForFunction(()=>document.querySelectorAll('#gallery .tile').length===22);
+  const reopened=await page.evaluate(()=>navigator.serviceWorker.controller!==null&&frames.length===22&&frames.every(f=>f.img.complete&&f.img.naturalWidth>0));
+  if(!reopened)throw Error('PWA não restaura as 22 molduras após fechar e reabrir offline');
   const d=page.waitForEvent('download',{timeout:15000});
   await page.locator('#savePNG').tap();
   if(!(await d).suggestedFilename().endsWith('.png'))throw Error('PNG indisponível offline');
   if(errors.length)throw Error('Erros no PWA empacotado: '+errors.join(' | '));
-  console.log('Pacote privado aprovado: 22 molduras íntegras, PWA em localhost, offline e PNG em tela móvel.');
+  console.log('Pacote privado aprovado: 22 molduras íntegras, PWA em localhost, reabertura offline em nova aba e PNG em tela móvel.');
 }finally{
   await browser.close();
   await new Promise(resolve=>server.close(resolve));
