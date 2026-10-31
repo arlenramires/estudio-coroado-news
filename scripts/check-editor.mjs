@@ -12,6 +12,24 @@ for(const p of new Set(sources)){const b=fs.readFileSync(p);if(b.length<1000)thr
 if(!html.includes("captureStream")||!html.includes("MediaRecorder"))throw new Error('Exportação de vídeo ausente');
 const manifest=JSON.parse(fs.readFileSync('manifest.webmanifest','utf8'));
 if(manifest.display!=='standalone'||!manifest.icons?.length)throw new Error('Manifesto PWA incompleto');
+
+if(manifest.start_url!=='./index.html'||manifest.scope!=='./'||manifest.id!=='./')
+  throw new Error('PWA deve permanecer restrito ao diretório local do Estúdio');
+const iconSources=new Set();
+for(const icon of manifest.icons){
+  if(typeof icon.src!=='string'||!/^icons\/[a-zA-Z0-9_.-]+\.(?:png|svg)$/.test(icon.src)||iconSources.has(icon.src))
+    throw new Error('Ícone PWA inválido, externo ou duplicado: '+icon.src);
+  if(!fs.existsSync(icon.src))throw new Error('Ícone PWA ausente: '+icon.src);
+  if(icon.src.endsWith('.png')&&icon.type!=='image/png')throw new Error('MIME do ícone PNG incorreto: '+icon.src);
+  if(icon.src.endsWith('.svg')&&icon.type!=='image/svg+xml')throw new Error('MIME do ícone SVG incorreto: '+icon.src);
+  iconSources.add(icon.src);
+}
+for(const size of [192,512]){
+  const src='icons/studio-'+size+'.png';
+  if(!iconSources.has(src)||!manifest.icons.some(icon=>icon.src===src&&icon.sizes===size+'x'+size))
+    throw new Error('Manifesto sem ícone instalável '+size+'x'+size);
+}
+
 const sw=fs.readFileSync('sw.js','utf8');new vm.Script(sw,{filename:'sw.js'});
 const catalog=JSON.parse(fs.readFileSync('molduras/catalogo-22.json','utf8'));
 if(!Array.isArray(catalog.assets)||catalog.assets.length!==22)throw new Error('Catálogo deve conter exatamente 22 molduras');
