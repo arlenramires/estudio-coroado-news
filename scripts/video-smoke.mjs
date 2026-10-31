@@ -144,6 +144,9 @@ try{
  if(name.endsWith('.webm')&&!container.split(',').includes('matroska'))
    throw Error('Arquivo .webm não contém contêiner WebM/Matroska: '+container);
  if(!/\.(mp4|webm)$/i.test(name))throw Error('Extensão de vídeo inesperada: '+name);
+ const videoInfo=JSON.parse(execFileSync('ffprobe',['-v','error','-select_streams','v:0','-show_entries','stream=width,height','-of','json',target],{encoding:'utf8'})).streams?.[0];
+ if(!videoInfo||videoInfo.width!==1080||![1350,1920].includes(videoInfo.height))
+   throw Error('Resolução de exportação incorreta: '+JSON.stringify(videoInfo)+' (esperado 1080x1350 ou 1080x1920)');
  if(!types.includes('video'))throw Error('Arquivo exportado sem vídeo');
  if(!types.includes('audio'))throw Error('Arquivo exportado sem áudio: '+JSON.stringify(streams));
  const volume=spawnSync('ffmpeg',['-hide_banner','-nostats','-i',target,'-vn','-af','volumedetect','-f','null','-'],{encoding:'utf8'});
