@@ -19,6 +19,9 @@ jobs:
       - name: Validar editor e arquivos originais
         run: node scripts/check-editor.mjs
 
+      - name: Verificar privacidade do cache PWA
+        run: node scripts/check-sw-privacy.mjs
+
       - name: Instalar Playwright Core
         run: npm install --no-save playwright-core@1.56.1
       - name: Servir o estúdio por HTTP
