@@ -93,6 +93,10 @@ if(precache.length!==requiredPrecache.length||
   throw new Error('Pré-cache PWA incompleto, duplicado ou divergente das 22 molduras');
 for(const size of [192,512]){const b=fs.readFileSync('icons/studio-'+size+'.png');if(b.subarray(1,4).toString()!=='PNG'||b.readUInt32BE(16)!==size||b.readUInt32BE(20)!==size)throw new Error('Ícone PNG inválido: '+size)}
 if(!sw.includes('cache.addAll(ASSETS)'))throw new Error('Pré-cache offline não configurado');
+// Uma falha de download não pode deixar um cache de instalação parcialmente preenchido.
+if(!/try\s*\{\s*await cache\.addAll\(ASSETS\)\s*\}\s*catch\s*\(error\)\s*\{\s*await caches\.delete\(CACHE\);\s*throw error\s*\}/.test(sw))
+  throw new Error('Instalação offline deve eliminar cache parcial após falha');
+
 // Bloqueia publicação por Pages mesmo quando o workflow usa outro nome.
 const workflowsDir='.github/workflows';
 if(fs.existsSync(workflowsDir)){
