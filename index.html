@@ -281,7 +281,7 @@ $('saveVideo').onclick=async()=>{if(!video){status('Escolha um vídeo antes de e
  if(video.requestVideoFrameCallback)videoFrameId=video.requestVideoFrameCallback(paint);else frameId=requestAnimationFrame(paint);
  recordTimer=setTimeout(()=>stop('Tempo limite da gravação excedido. Nenhum arquivo parcial foi entregue.'),Math.max(15000,(end-start)*4000+10000));
  status('Exportando vídeo de '+(end-start).toFixed(1)+'s em tempo real. Mantenha a tela ligada.')
- }catch(err){recording=false;if(visibilityHandler)document.removeEventListener('visibilitychange',visibilityHandler);await releaseExportWakeLock();clearTimeout(recordTimer);cancelAnimationFrame(frameId);if(videoFrameId)video.cancelVideoFrameCallback?.(videoFrameId);setExportBusy(false);status(exportErrorMessage||'Falha na exportação: '+err.message);if(recorder){recorder.onstop=null;if(recorder.state==='recording')recorder.stop()}stream?.getVideoTracks().forEach(t=>t.stop());recorder=null;discardFailedMedia()}
+ }catch(err){recording=false;if(visibilityHandler)document.removeEventListener('visibilitychange',visibilityHandler);await releaseExportWakeLock();clearTimeout(recordTimer);cancelAnimationFrame(frameId);if(videoFrameId)video.cancelVideoFrameCallback?.(videoFrameId);video.pause();setExportBusy(false);status(exportErrorMessage||'Falha na exportação: '+err.message);if(recorder){recorder.onstop=null;if(recorder.state==='recording')recorder.stop()}stream?.getVideoTracks().forEach(t=>t.stop());recorder=null;discardFailedMedia()}
 };
 init().catch(e=>status('Erro ao carregar as molduras: '+e.message));
 </script></body></html>
