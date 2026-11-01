@@ -255,7 +255,7 @@ $('saveVideo').onclick=async()=>{if(!video){status('Escolha um vídeo antes de e
   // Alguns MediaRecorder (especialmente móveis) rejeitam requestData durante a finalização.
   // A falha desse pedido não deve impedir stop(), onstop e a liberação dos controles.
   try{recorder.requestData()}catch(err){console.warn('Não foi possível solicitar o último bloco:',err.message)}
-  recorder.stop();
+  try{recorder.stop()}catch(err){console.warn('Gravador já encerrado durante cancelamento:',err.message);if(recorder.state==='inactive')recorder.onstop?.()}
  }}
  stopCapture=stop;
  // Ao bloquear a tela ou trocar de aplicativo, o navegador pode suspender os quadros e o áudio.
