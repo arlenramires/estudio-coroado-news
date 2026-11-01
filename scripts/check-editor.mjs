@@ -5,12 +5,12 @@ const html=fs.readFileSync('index.html','utf8');
 // Privacidade: o editor privado não pode carregar scripts, estilos, imagens ou
 // fontes de terceiros. Uma dependência remota quebraria o uso offline e poderia
 // transmitir informações de acesso a um servidor externo.
-const remoteAttributes=[...html.matchAll(/\\b(?:src|href|poster|action)\\s*=\\s*(["'])(.*?)\\1/gi)]
-  .map(match=>match[2]).filter(value=>/^(?:https?:)?\\/\\//i.test(value));
+const remoteAttributes=[...html.matchAll(/\b(?:src|href|poster|action)\s*=\s*(["'])(.*?)\1/gi)]
+  .map(match=>match[2]).filter(value=>/^(?:https?:)?\/\//i.test(value));
 if(remoteAttributes.length)throw new Error('Recurso remoto não autorizado no editor privado: '+remoteAttributes.join(', '));
-if(/<script\\b[^>]*\\bsrc\\s*=/i.test(html))
+if(/<script\b[^>]*\bsrc\s*=/i.test(html))
   throw new Error('JavaScript externo não autorizado: manter editor autossuficiente e offline');
-if(/<link\\b[^>]*\\brel\\s*=\\s*["'](?:stylesheet|preload|modulepreload)["']/i.test(html))
+if(/<link\b[^>]*\brel\s*=\s*["'](?:stylesheet|preload|modulepreload)["']/i.test(html))
   throw new Error('Estilos ou módulos externos não autorizados no editor privado');
 const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)];
 if(!scripts.length)throw new Error('Editor sem JavaScript');
