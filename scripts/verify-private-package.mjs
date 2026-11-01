@@ -70,6 +70,17 @@ function walk(folder){
   }
 }
 walk(dir);
+// Os iniciadores distribuídos não podem expor o servidor à rede local.
+// Um bind em 0.0.0.0 (ou sem bind explícito) tornaria as mídias acessíveis
+// a outros dispositivos na mesma rede durante a edição.
+const windows=fs.readFileSync(path.join(dir,'Iniciar-PC-Windows.cmd'),'utf8');
+const android=fs.readFileSync(path.join(dir,'Iniciar-Android-Termux.sh'),'utf8');
+if(!windows.includes("('127.0.0.1',8765)")||
+   !android.includes('--bind 127.0.0.1')||
+   /(?:0\\.0\\.0\\.0|--bind\\s+::|--bind\\s+0\\.0\\.0\\.0)/.test(windows+'\\n'+android))
+  throw Error('Iniciador privado não restringe o servidor a localhost');
+if(!windows.includes('cd /d "%~dp0"')||!android.includes('cd "$(dirname "$0")"'))
+  throw Error('Iniciador não funciona em pasta com espaços');
 const offline=fs.readFileSync(path.join(dir,'Estudio_Coroado_Offline.html'),'utf8');
 // Confere os bytes incorporados, não apenas menções aos nomes das molduras.
 // Uma página offline pode citar as 22 molduras e ainda estar sem as imagens.
