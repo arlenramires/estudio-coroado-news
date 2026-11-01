@@ -7,15 +7,16 @@ import assert from 'node:assert/strict';
 const source=fs.readFileSync('sw.js','utf8');
 const handlers=new Map();
 const writes=[];
+const reads=[];
 const scope='http://127.0.0.1:8765/';
 const context=vm.createContext({
   URL,
   self:{registration:{scope},addEventListener:(name,fn)=>handlers.set(name,fn)},
   caches:{open:async()=>({
-    match:async()=>null,
+    match:async req=>{reads.push(typeof req==='string'?req:req.url);return null},
     put:async(req)=>writes.push(req.url)
   })},
-  fetch:async()=>({ok:true,clone(){return this}}),
+  fetch:async req=>({ok:true,type:'basic',url:req.url,clone(){return this}}),
   Response:{error:()=>({ok:false})}
 });
 new vm.Script(source,{filename:'sw.js'}).runInContext(context);
@@ -38,7 +39,13 @@ const bypass=[
 for(const url of bypass)assert.equal(dispatch(url),undefined,'Interceptou URL não autorizada: '+url);
 assert.equal(dispatch(scope+'index.html',{method:'POST'}),undefined);
 assert.equal(dispatch(scope+'index.html',{range:true}),undefined);
-assert.ok(dispatch(scope+'molduras/original_01.webp'),'Moldura autorizada não interceptada');
-assert.ok(dispatch(scope+'index.html'),'Editor autorizado não interceptado');
-assert.equal(writes.length,0,'O teste não deve gravar dados antes da resolução das respostas');
+const moldura=dispatch(scope+'molduras/original_01.webp');
+const editor=dispatch(scope+'index.html');
+assert.ok(moldura,'Moldura autorizada não interceptada');
+assert.ok(editor,'Editor autorizado não interceptado');
+await Promise.all([moldura,editor]);
+assert.deepEqual(writes.sort(),[scope+'index.html',scope+'molduras/original_01.webp'].sort(),
+  'Somente arquivos permitidos podem ser gravados no cache');
+assert.ok(reads.length>=2,'Os recursos autorizados devem consultar o cache');
+assert.equal(dispatch(scope+'index.html?segredo=1'),undefined,'Query string não pode ser interceptada');
 console.log('Privacidade PWA: URLs externas, mídia pessoal, consultas, POST e Range ignorados.');
