@@ -173,6 +173,19 @@ try{
  await page.waitForFunction(()=>!document.querySelector('#media').disabled && document.querySelector('#status').textContent.includes('Nenhum arquivo parcial foi entregue.'),{timeout:15000});
  await page.waitForTimeout(300);
  if(unexpectedDownloads)throw Error('Gravação com erro entregou arquivo parcial');
+ // A falha não pode destruir a última exportação válida nem deixar controles bloqueados.
+ const errorState=await page.evaluate(()=>({
+   previewVisible:document.querySelector('#videoPreview').style.display==='block',
+   previewSrc:document.querySelector('#videoPreview').getAttribute('src'),
+   previewControls:document.querySelector('#videoPreview').controls,
+   recording,mediaDisabled:document.querySelector('#media').disabled,
+   pngDisabled:document.querySelector('#savePNG').disabled,
+   cancelVisible:document.querySelector('#stopVideo').style.display==='block'
+ }));
+ if(!errorState.previewVisible||!errorState.previewSrc?.startsWith('blob:')||
+   !errorState.previewControls||errorState.recording||errorState.mediaDisabled||
+   errorState.pngDisabled||errorState.cancelVisible)
+   throw Error('Erro de gravação deixou prévia ou controles inconsistentes: '+JSON.stringify(errorState));
  const wakeAfterError=await page.evaluate(()=>window.__wakeLockTest);
  if(wakeAfterError.requests!==2||wakeAfterError.releases!==2)throw Error('Wake Lock não liberado após erro de gravação: '+JSON.stringify(wakeAfterError));
  console.log('Erro simulado do gravador: sem download parcial, controles e Wake Lock liberados.');
