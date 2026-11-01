@@ -62,6 +62,27 @@ function walk(folder){
 }
 walk(dir);
 const offline=fs.readFileSync(path.join(dir,'Estudio_Coroado_Offline.html'),'utf8');
-if(!offline.includes('original_01')||!offline.includes('original_22'))
-  throw Error('HTML offline não contém referências às molduras extremas');
+// Confere os bytes incorporados, não apenas menções aos nomes das molduras.
+// Uma página offline pode citar as 22 molduras e ainda estar sem as imagens.
+const embedded=[...offline.matchAll(/"src":"data:image\/webp;base64,([A-Za-z0-9+/=]+)"/g)];
+if(embedded.length!==22)throw Error('HTML offline deve incorporar exatamente 22 imagens WebP: '+embedded.length);
+const embeddedHashes=new Map();
+for(const match of embedded){
+  const encoded=match[1];
+  const bytes=Buffer.from(encoded,'base64');
+  if(bytes.toString('base64')!==encoded||bytes.length<32||
+     bytes.toString('ascii',0,4)!=='RIFF'||bytes.toString('ascii',8,12)!=='WEBP')
+    throw Error('Moldura incorporada inválida no HTML offline');
+  const digest=crypto.createHash('sha256').update(bytes).digest('hex');
+  embeddedHashes.set(digest,(embeddedHashes.get(digest)||0)+1);
+}
+for(let i=1;i<=22;i++){
+  const name='molduras/original_'+String(i).padStart(2,'0')+'.webp';
+  const digest=crypto.createHash('sha256').update(fs.readFileSync(path.join(dir,name))).digest('hex');
+  const count=embeddedHashes.get(digest)||0;
+  if(!count)throw Error('Moldura não incorporada ou divergente no HTML offline: '+name);
+  embeddedHashes.set(digest,count-1);
+}
+if([...embeddedHashes.values()].some(count=>count!==0))
+  throw Error('HTML offline contém molduras duplicadas ou desconhecidas');
 console.log('Pacote privado verificado: '+seen.size+' arquivos íntegros, 22 molduras e nenhum arquivo extra.');
