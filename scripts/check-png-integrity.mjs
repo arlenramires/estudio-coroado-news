@@ -32,7 +32,12 @@ function verifyPNG(buffer,size){
       assert.equal(buffer.readUInt32BE(offset+12),size,'Altura incorreta');
       ihdr=true;
     }
-    if(type==='IDAT')idat=true;
+    if(type==='IHDR'&&ihdr&&offset!==8)assert.fail('IHDR duplicado');
+    if(type==='IDAT'){
+      assert.ok(ihdr,'IDAT antes de IHDR');
+      idat=true;
+    }
+    if(type==='IEND')assert.ok(idat,'IEND antes de IDAT');
     offset=end;
     if(type==='IEND'){
       assert.equal(length,0,'IEND inválido');
@@ -50,5 +55,13 @@ for(const size of [192,512]){
   // Um bit alterado no IHDR não pode passar pelo teste.
   tampered[16]^=1;
   assert.throws(()=>verifyPNG(tampered,size));
+  // Um byte de dados alterado deve invalidar o CRC do respectivo chunk.
+  const idat=buffer.indexOf(Buffer.from('IDAT'));
+  assert.ok(idat>=12,'IDAT não encontrado');
+  const corruptedData=Buffer.from(buffer);
+  corruptedData[idat+4]^=1;
+  assert.throws(()=>verifyPNG(corruptedData,size),/CRC inválido/);
+  // Não aceitar bytes anexados após o fim oficial do PNG.
+  assert.throws(()=>verifyPNG(Buffer.concat([buffer,Buffer.from([0])]),size),/Dados extras/);
   console.log('PNG '+size+'x'+size+': chunks, CRC e dimensões válidos');
 }
