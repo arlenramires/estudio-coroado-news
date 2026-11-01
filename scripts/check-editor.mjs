@@ -24,12 +24,12 @@ if(/\bimport\s*\(\s*["'](?:https?:)?\/\//i.test(html))
   throw new Error('Importação dinâmica remota não autorizada');
 // O editor privado não deve abrir canais de telemetria nem enviar mídia para servidores.
 // Verifica chamadas de rede explícitas dentro do JavaScript incorporado.
-const inlineCode=[...html.matchAll(/<script(?:\\s[^>]*)?>([\\s\\S]*?)<\\/script>/gi)].map(m=>m[1]).join('\\n');
+const inlineCode=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(m=>m[1]).join('\n');
 const forbiddenNetwork=[
-  /\\b(?:new\\s+)?(?:WebSocket|EventSource)\\s*\\(/,
-  /\\b(?:navigator\\.)?sendBeacon\\s*\\(/,
-  /\\bfetch\\s*\\(\\s*['"`]\\s*(?:https?:)?\\/\\//i,
-  /\\.open\\s*\\(\\s*['"`](?:GET|POST|PUT|PATCH|DELETE)['"`]\\s*,\\s*['"`]\\s*(?:https?:)?\\/\\//i
+  /\b(?:new\s+)?(?:WebSocket|EventSource)\s*\(/,
+  /\b(?:navigator\.)?sendBeacon\s*\(/,
+  /\bfetch\s*\(\s*['"`]\s*(?:https?:)?\/\//i,
+  /\.open\s*\(\s*['"`](?:GET|POST|PUT|PATCH|DELETE)['"`]\s*,\s*['"`]\s*(?:https?:)?\/\//i
 ];
 if(forbiddenNetwork.some(pattern=>pattern.test(inlineCode)))
   throw new Error('Canal de rede ou envio remoto não autorizado no editor privado');
