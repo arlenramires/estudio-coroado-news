@@ -28,8 +28,19 @@ for(const file of required)if(!seen.has(file))throw Error('Arquivo obrigatório 
 for(let i=1;i<=22;i++){
   const name='molduras/original_'+String(i).padStart(2,'0')+'.webp';
   const buffer=fs.readFileSync(path.join(dir,name));
-  if(buffer.length<32||buffer.toString('ascii',0,4)!=='RIFF'||buffer.toString('ascii',8,12)!=='WEBP')
+  if(buffer.length<32||buffer.toString('ascii',0,4)!=='RIFF'||buffer.toString('ascii',8,12)!=='WEBP'||buffer.readUInt32LE(4)+8!==buffer.length)
     throw Error('Moldura inválida ou vazia: '+name);
+}
+// Confere a integridade estrutural dos ícones PNG instaláveis, além dos hashes.
+// Um arquivo PNG com conteúdo errado e checksum recalculado não pode passar.
+for(const size of [192,512]){
+  const name='icons/studio-'+size+'.png';
+  const buffer=fs.readFileSync(path.join(dir,name));
+  const signature=Buffer.from([137,80,78,71,13,10,26,10]);
+  if(buffer.length<33||!buffer.subarray(0,8).equals(signature)||
+     buffer.toString('ascii',12,16)!=='IHDR'||
+     buffer.readUInt32BE(16)!==size||buffer.readUInt32BE(20)!==size)
+    throw Error('Ícone PNG inválido ou com dimensões incorretas: '+name);
 }
 const manifest=JSON.parse(fs.readFileSync(path.join(dir,'manifest.webmanifest'),'utf8'));
 if(manifest.display!=='standalone'||!manifest.start_url||!manifest.icons?.some(icon=>icon.sizes?.includes('192x192'))||!manifest.icons?.some(icon=>icon.sizes?.includes('512x512')))
