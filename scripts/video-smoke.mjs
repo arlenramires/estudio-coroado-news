@@ -496,8 +496,17 @@ try{
  await page.waitForFunction(()=>!recording && !document.querySelector('#media').disabled && video===null &&
    document.querySelector('#savePNG').disabled,{timeout:15000});
  await page.waitForTimeout(300);
- if(unexpectedDownloads!==1||await page.locator('#videoPreview').getAttribute('src')===null)
-   throw Error('Falha do vídeo durante gravação entregou arquivo parcial ou apagou prévia');
+ const failedRecording=await page.evaluate(()=>({
+   previewSrc:document.querySelector('#videoPreview').getAttribute('src'),
+   previewVisible:document.querySelector('#videoPreview').style.display,
+   downloadVisible:document.querySelector('#download').style.display,
+   status:document.querySelector('#status').textContent,
+   mediaInvalid,recording,recorderState:recorder?.state||'ausente',
+   mediaInput:document.querySelector('#media').value,
+   audioContextCleared:audioCtx===null
+ }));
+ if(unexpectedDownloads!==1||failedRecording.previewSrc===null)
+   throw Error('Falha do vídeo durante gravação entregou arquivo parcial ou apagou prévia: '+JSON.stringify({unexpectedDownloads,...failedRecording}));
  console.log('Falha de decodificação durante gravação: captura cancelada, fonte limpa e sem arquivo parcial.');
 
 
