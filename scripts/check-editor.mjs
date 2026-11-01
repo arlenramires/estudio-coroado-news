@@ -15,6 +15,12 @@ if(/<script\b[^>]*\bsrc\s*=/i.test(html))
   throw new Error('JavaScript externo não autorizado: manter editor autossuficiente e offline');
 if(/<link\b[^>]*\brel\s*=\s*["'](?:stylesheet|preload|modulepreload)["']/i.test(html))
   throw new Error('Estilos ou módulos externos não autorizados no editor privado');
+// Proteção adicional: CSS remoto e importações de código não podem contornar
+// a verificação de atributos HTML, pois o Estúdio precisa funcionar offline.
+const remoteCss=[...html.matchAll(/(?:@import\s+(?:url\s*\(\s*)?|url\s*\(\s*)["']?\s*((?:https?:)?\/\/[^\s"') ;]+)/gi)].map(m=>m[1]);
+if(remoteCss.length)throw new Error('Dependência CSS remota não autorizada: '+remoteCss.join(', '));
+if(/\bimport\s*\(\s*["'](?:https?:)?\/\//i.test(html))
+  throw new Error('Importação dinâmica remota não autorizada');
 const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)];
 if(!scripts.length)throw new Error('Editor sem JavaScript');
 for(const [i,m] of scripts.entries()){new vm.Script(m[1],{filename:'index-inline-'+i+'.js'});}
