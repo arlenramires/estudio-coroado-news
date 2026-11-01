@@ -108,3 +108,6 @@ for(const line of sums.trimEnd().split('\n')){
   if(actual!==digest)throw Error('Falha de integridade no pacote: '+relative);
 }
 console.log('Pacote privado gerado:',dest,'com',required.length,'arquivos do PWA + HTML offline e iniciadores.');
+
+// Valida o pacote final independentemente da etapa de cópia.
+await import('./verify-private-package.mjs');
