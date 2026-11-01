@@ -1,6 +1,9 @@
 import fs from 'node:fs';
 import vm from 'node:vm';
 import path from 'node:path';
+// Executa também a validação profunda de CRC/chunks dos ícones PWA em toda
+// execução do check-editor (local e CI), sem depender de etapa separada.
+import './check-png-integrity.mjs';
 const html=fs.readFileSync('index.html','utf8');
 // Privacidade: o editor privado não pode carregar scripts, estilos, imagens ou
 // fontes de terceiros. Uma dependência remota quebraria o uso offline e poderia
