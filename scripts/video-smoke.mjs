@@ -500,6 +500,7 @@ try{
 
  // A mesma falha durante a gravação deve interromper o MediaRecorder sem
  // entregar bytes parciais e limpar a fonte apenas após finalizar o gravador.
+ // Selecionar nova mídia já invalida a prévia anterior; ela deve permanecer oculta.
  // A falha deve ter limpado o input para permitir escolher o mesmo arquivo.
  await page.locator('#media').setInputFiles('test-input.mp4');
  await page.waitForFunction(()=>video && !mediaLoading && !document.querySelector('#savePNG').disabled,{timeout:15000});
@@ -518,8 +519,8 @@ try{
    mediaInput:document.querySelector('#media').value,
    audioContextCleared:audioCtx===null
  }));
- if(unexpectedDownloads!==1||failedRecording.previewSrc===null)
-   throw Error('Falha do vídeo durante gravação entregou arquivo parcial ou apagou prévia: '+JSON.stringify({unexpectedDownloads,...failedRecording}));
+ if(unexpectedDownloads!==1||failedRecording.previewSrc!==null||failedRecording.previewVisible!=='none'||failedRecording.downloadVisible!=='none'||!failedRecording.mediaInvalid||failedRecording.recording||failedRecording.mediaInput!==''||!failedRecording.audioContextCleared)
+   throw Error('Falha do vídeo durante gravação entregou arquivo parcial ou deixou estado inconsistente: '+JSON.stringify({unexpectedDownloads,...failedRecording}));
  console.log('Falha de decodificação durante gravação: captura cancelada, fonte limpa e sem arquivo parcial.');
 
 
