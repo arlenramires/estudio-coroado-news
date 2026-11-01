@@ -24,6 +24,20 @@ const required=['index.html','manifest.webmanifest','sw.js','Estudio_Coroado_Off
   'icons/studio.svg','icons/studio-192.png','icons/studio-512.png',
   ...Array.from({length:22},(_,i)=>'molduras/original_'+String(i+1).padStart(2,'0')+'.webp')];
 for(const file of required)if(!seen.has(file))throw Error('Arquivo obrigatório ausente: '+file);
+
+for(let i=1;i<=22;i++){
+  const name='molduras/original_'+String(i).padStart(2,'0')+'.webp';
+  const buffer=fs.readFileSync(path.join(dir,name));
+  if(buffer.length<32||buffer.toString('ascii',0,4)!=='RIFF'||buffer.toString('ascii',8,12)!=='WEBP')
+    throw Error('Moldura inválida ou vazia: '+name);
+}
+const manifest=JSON.parse(fs.readFileSync(path.join(dir,'manifest.webmanifest'),'utf8'));
+if(manifest.display!=='standalone'||!manifest.start_url||!manifest.icons?.some(icon=>icon.sizes?.includes('192x192'))||!manifest.icons?.some(icon=>icon.sizes?.includes('512x512')))
+  throw Error('Manifesto PWA sem instalação standalone e ícones obrigatórios');
+const sw=fs.readFileSync(path.join(dir,'sw.js'),'utf8');
+if(!sw.includes('Array.from({length:22}')||!sw.includes('cache.addAll(ASSETS)'))
+  throw Error('Service worker não garante pré-cache das 22 molduras');
+
 function walk(folder){
   for(const entry of fs.readdirSync(folder,{withFileTypes:true})){
     const absolute=path.join(folder,entry.name);
