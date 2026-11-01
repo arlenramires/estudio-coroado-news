@@ -135,7 +135,7 @@ if(precache.length!==requiredPrecache.length||
    new Set(precache).size!==precache.length||
    requiredPrecache.some(asset=>!precache.includes(asset)))
   throw new Error('Pré-cache PWA incompleto, duplicado ou divergente das 22 molduras');
-for(const size of [192,512]){const b=fs.readFileSync('icons/studio-'+size+'.png');if(b.subarray(1,4).toString()!=='PNG'||b.readUInt32BE(16)!==size||b.readUInt32BE(20)!==size)throw new Error('Ícone PNG inválido: '+size)}
+for(const size of [192,512]){const b=fs.readFileSync('icons/studio-'+size+'.png');if(b.length<24||!b.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10]))||b.readUInt32BE(16)!==size||b.readUInt32BE(20)!==size)throw new Error('Ícone PNG inválido: '+size)}
 if(!sw.includes('cache.addAll(ASSETS)'))throw new Error('Pré-cache offline não configurado');
 // Uma falha de download não pode deixar um cache de instalação parcialmente preenchido.
 if(!/try\s*\{\s*await cache\.addAll\(ASSETS\)\s*\}\s*catch\s*\(error\)\s*\{\s*await caches\.delete\(CACHE\);\s*throw error\s*\}/.test(sw))
