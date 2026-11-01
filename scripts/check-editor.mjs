@@ -183,7 +183,7 @@ if(!/if\(\$\('audio'\)\.checked&&!stream\.getAudioTracks\(\)\.some\(t=>t\.readyS
   let rejected=false;
   try{await installation}catch(error){rejected=String(error.message).includes('falha simulada')}
   if(!rejected||operations[0]!=='addAll:'+requiredPrecache.length||
-     operations[1]!=='delete:estudio-coroado-offline-v32'||
+     operations[1]!=='delete:'+vm.runInContext('CACHE',swContext)||
      operations.includes('skipWaiting'))
     throw new Error('Instalação falha não removeu o cache parcial: '+operations.join(','));
   console.log('Rollback do pré-cache aprovado: instalação rejeitada e cache parcial apagado.');
