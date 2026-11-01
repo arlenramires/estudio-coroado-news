@@ -147,6 +147,15 @@ try{
  const videoInfo=JSON.parse(execFileSync('ffprobe',['-v','error','-select_streams','v:0','-show_entries','stream=width,height','-of','json',target],{encoding:'utf8'})).streams?.[0];
  if(!videoInfo||videoInfo.width!==1080||![1350,1920].includes(videoInfo.height))
    throw Error('Resolução de exportação incorreta: '+JSON.stringify(videoInfo)+' (esperado 1080x1350 ou 1080x1920)');
+ // MP4 precisa de codecs amplamente compatíveis com Android e redes sociais.
+ // Um contêiner MP4 com vídeo/áudio não garante H.264/AAC reproduzível.
+ if(name.endsWith('.mp4')){
+   const codecStreams=JSON.parse(execFileSync('ffprobe',['-v','error','-show_entries','stream=codec_type,codec_name','-of','json',target],{encoding:'utf8'})).streams||[];
+   const videoCodec=codecStreams.find(s=>s.codec_type==='video')?.codec_name;
+   const audioCodec=codecStreams.find(s=>s.codec_type==='audio')?.codec_name;
+   if(videoCodec!=='h264'||audioCodec!=='aac')
+     throw Error('MP4 nativo não é H.264/AAC: vídeo='+videoCodec+', áudio='+audioCodec+'. Verificar compatibilidade antes de publicar.');
+ }
  if(!types.includes('video'))throw Error('Arquivo exportado sem vídeo');
  if(!types.includes('audio'))throw Error('Arquivo exportado sem áudio: '+JSON.stringify(streams));
  const volume=spawnSync('ffmpeg',['-hide_banner','-nostats','-i',target,'-vn','-af','volumedetect','-f','null','-'],{encoding:'utf8'});
