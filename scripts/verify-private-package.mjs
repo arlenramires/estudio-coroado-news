@@ -77,7 +77,7 @@ const windows=fs.readFileSync(path.join(dir,'Iniciar-PC-Windows.cmd'),'utf8');
 const android=fs.readFileSync(path.join(dir,'Iniciar-Android-Termux.sh'),'utf8');
 if(!windows.includes("('127.0.0.1',8765)")||
    !android.includes('--bind 127.0.0.1')||
-   /(?:0\\.0\\.0\\.0|--bind\\s+::|--bind\\s+0\\.0\\.0\\.0)/.test(windows+'\\n'+android))
+   /(?:0\.0\.0\.0|--bind\s+(?:::|0\.0\.0\.0)|\('::',\s*8765\))/.test(windows+'\\n'+android))
   throw Error('Iniciador privado não restringe o servidor a localhost');
 if(!windows.includes('cd /d "%~dp0"')||!android.includes('cd "$(dirname "$0")"'))
   throw Error('Iniciador não funciona em pasta com espaços');
