@@ -8,7 +8,7 @@ const dir=mkdtempSync(join(tmpdir(),'estudio-mp4-'));
 function run(cmd,args,expect=0){
  const p=spawnSync(cmd,args,{encoding:'utf8',maxBuffer:4*1024*1024});
  if(p.error)throw new Error(cmd+': '+p.error.message);
- if((p.status===0)!==(expect===0))throw new Error(cmd+' saiu '+p.status+': '+(p.stderr||p.stdout).slice(-1500));
+ if(p.status!==expect)throw new Error(cmd+' saiu '+p.status+' (esperado '+expect+'): '+(p.stderr||p.stdout).slice(-1500));
  return p.stdout;
 }
 try{
@@ -20,5 +20,8 @@ try{
  const silent=join(dir,'sem-audio.webm');
  run('ffmpeg',['-hide_banner','-loglevel','error','-f','lavfi','-i','color=c=black:s=160x120:r=12:d=1','-c:v','libvpx',silent]);
  run('node',['scripts/converter-mp4.mjs',silent,join(dir,'invalido.mp4')],1);
- console.log('OK: conversão H.264/AAC e rejeição de WebM sem áudio');
+ run('node',['scripts/converter-mp4.mjs',input,input],2);
+ run('node',['scripts/converter-mp4.mjs',join(dir,'inexistente.webm'),join(dir,'ausente.mp4')],2);
+ run('node',['scripts/converter-mp4.mjs',input,join(dir,'extensao.webm')],2);
+ console.log('OK: conversão H.264/AAC e rejeição de WebM sem áudio e argumentos inválidos');
 }finally{rmSync(dir,{recursive:true,force:true})}
