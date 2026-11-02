@@ -9,6 +9,7 @@ const listeners=new Map();
 const scope='https://studio.example/private/';
 const assets=new Map();
 let networkCalls=0;
+let serverUnavailable=false;
 const cache={
   match:async request=>assets.get(typeof request==='string'?new URL(request,scope).href:request.url),
   put:async(request,response)=>{assets.set(request.url,response)}
@@ -17,7 +18,9 @@ const context=vm.createContext({
   URL,Set,Array,
   self:{registration:{scope},addEventListener:(name,fn)=>listeners.set(name,fn)},
   caches:{open:async()=>cache},
-  fetch:async request=>{networkCalls++;return {ok:true,type:'basic',url:request.url,clone(){return this}}},
+  fetch:async request=>{networkCalls++;return serverUnavailable
+    ? {ok:false,status:503,type:'basic',url:request.url}
+    : {ok:true,type:'basic',url:request.url,clone(){return this}}},
   Response:{error:()=>({error:true})}
 });
 new vm.Script(source,{filename:'sw.js'}).runInContext(context);
@@ -46,4 +49,8 @@ assert.equal(networkCalls,1);
 const second=await dispatch(request(root));
 assert.equal(second.url,root);
 assert.equal(networkCalls,2,'HTML deve tentar atualização online');
-console.log('Service worker: URLs externas, parâmetros, POST e Range não interceptados.');
+serverUnavailable=true;
+const offline=await dispatch(request(root));
+assert.equal(offline.url,root,'Falha HTTP 503 deve usar editor já armazenado');
+assert.equal(offline.ok,true,'Editor offline deve continuar utilizável após erro do servidor');
+console.log('Service worker: privacidade preservada e fallback offline validado após HTTP 503.');
