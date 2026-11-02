@@ -35,6 +35,20 @@ try{
  run('node',['scripts/converter-mp4.mjs',silent,invalid],1);
  if(readFileSync(invalid,'utf8')!=='arquivo anterior')throw new Error('Conversão falha sobrescreveu arquivo anterior');
  if(readdirSync(dir).some(name=>name.startsWith('.invalido.mp4.')))throw new Error('Conversão falha deixou arquivo temporário');
+ // Arquivo com extensão WebM, mas conteúdo inválido: não deve apagar a saída anterior.
+ const corrupted=join(dir,'corrompido.webm'),preserved=join(dir,'preservado.mp4');
+ writeFileSync(corrupted,'nao e um arquivo de video');
+ writeFileSync(preserved,'MP4 anterior intacto');
+ run('node',['scripts/converter-mp4.mjs',corrupted,preserved],1);
+ if(readFileSync(preserved,'utf8')!=='MP4 anterior intacto')
+   throw new Error('Entrada corrompida sobrescreveu MP4 anterior');
+ if(readdirSync(dir).some(name=>name.startsWith('.preservado.mp4.')))
+   throw new Error('Entrada corrompida deixou arquivo temporário');
+ // Falha de conversão por diretório de destino inexistente também deve preservar a entrada.
+ const inputBeforeFailure=readFileSync(input);
+ run('node',['scripts/converter-mp4.mjs',input,join(dir,'diretorio-ausente','saida.mp4')],1);
+ if(!readFileSync(input).equals(inputBeforeFailure))
+   throw new Error('Falha no destino alterou o vídeo original');
  const alias=join(dir,'alias.mp4');
  symlinkSync(input,alias);
  const original=readFileSync(input);
