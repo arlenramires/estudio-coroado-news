@@ -17,6 +17,14 @@ try{
  run('node',['scripts/converter-mp4.mjs',input,output]);
  const info=JSON.parse(run('ffprobe',['-v','error','-show_entries','stream=codec_type,codec_name:format=duration:format_tags=title','-of','json',output]));
  if(info.format?.tags?.title)throw new Error('MP4 vazou título/metadados do arquivo original');
+ // A presença de codec AAC não basta: decodifique a faixa e confirme que o tom
+ // de teste realmente sobreviveu à conversão (evita MP4 com áudio mudo).
+ const audioCheck=spawnSync('ffmpeg',['-hide_banner','-nostdin','-i',output,'-map','0:a:0','-af','volumedetect','-f','null','-'],{encoding:'utf8',maxBuffer:4*1024*1024});
+ if(audioCheck.error||audioCheck.status!==0)throw new Error('Não foi possível decodificar o áudio do MP4: '+(audioCheck.stderr||audioCheck.error?.message));
+ const volume=audioCheck.stderr.match(/max_volume:\\s*(-?[\\d.]+) dB/);
+ if(!volume||!Number.isFinite(Number(volume[1]))||Number(volume[1]) < -45)
+   throw new Error('Áudio AAC ausente ou praticamente mudo após conversão: '+(volume?.[1]??'sem medição'));
+
  if(!info.streams.some(s=>s.codec_type==='video'&&s.codec_name==='h264')||!info.streams.some(s=>s.codec_type==='audio'&&s.codec_name==='aac')||!(Number(info.format.duration)>0))throw new Error('MP4 sem H.264/AAC ou duração');
  // Repetir a conversão para a mesma saída deve substituir o MP4 antigo
  // apenas depois de validar o novo arquivo, sem deixar temporários.
