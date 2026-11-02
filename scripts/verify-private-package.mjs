@@ -5,6 +5,10 @@ import crypto from 'node:crypto';
 const dir=path.resolve('dist/Estudio-Coroado-Privado');
 const checksumFile=path.join(dir,'SHA256SUMS.txt');
 if(!fs.existsSync(checksumFile))throw Error('Pacote privado não gerado');
+// O próprio diretório raiz também não pode redirecionar a verificação
+// para fora de dist/ por meio de um link simbólico.
+if(fs.lstatSync(dir).isSymbolicLink()||!fs.lstatSync(dir).isDirectory())
+  throw Error('Diretório do pacote privado inválido ou link simbólico');
 if(fs.lstatSync(checksumFile).isSymbolicLink())throw Error('Lista SHA256 não pode ser link simbólico');
 const lines=fs.readFileSync(checksumFile,'utf8').trim().split('\n');
 const seen=new Set();
