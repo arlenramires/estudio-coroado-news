@@ -72,11 +72,11 @@ if(manifest.display!=='standalone'||!manifest.start_url||!manifest.icons?.some(i
 // Impede que um manifesto alterado carregue ícones de uma origem remota.
 const allowedIcons=new Set(['icons/studio.svg','icons/studio-192.png','icons/studio-512.png']);
 for(const icon of manifest.icons||[]){
-  if(typeof icon.src!=='string'||!allowedIcons.has(icon.src.replace(/^\\.\\//,'')))
+  if(typeof icon.src!=='string'||!allowedIcons.has(icon.src.replace(/^\.\//,'')))
     throw Error('Ícone externo ou inesperado no manifesto: '+String(icon.src));
 }
 for(const size of [192,512]){
-  if(!manifest.icons.some(icon=>icon.src.replace(/^\\.\\//,'')==='icons/studio-'+size+'.png'&&icon.sizes?.split(/\\s+/).includes(size+'x'+size)))
+  if(!manifest.icons.some(icon=>icon.src.replace(/^\.\//,'')==='icons/studio-'+size+'.png'&&icon.sizes?.split(/\s+/).includes(size+'x'+size)))
     throw Error('Ícone PNG local obrigatório ausente do manifesto: '+size);
 }
 const sw=fs.readFileSync(path.join(dir,'sw.js'),'utf8');
