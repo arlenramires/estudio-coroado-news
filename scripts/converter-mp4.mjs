@@ -20,7 +20,7 @@ try{
  const source=probe(input);
  if(!source.streams?.some(s=>s.codec_type==='video'))throw new Error('Entrada sem faixa de vídeo');
  if(!source.streams.some(s=>s.codec_type==='audio'))throw new Error('Entrada sem faixa de áudio: não é possível recuperar som ausente');
- run('ffmpeg',['-hide_banner','-loglevel','error','-nostdin','-y','-i',input,'-map','0:v:0','-map','0:a:0','-c:v','libx264','-pix_fmt','yuv420p','-crf','20','-preset','medium','-c:a','aac','-b:a','192k','-movflags','+faststart',temporary]);
+ run('ffmpeg',['-hide_banner','-loglevel','error','-nostdin','-y','-i',input,'-map','0:v:0','-map','0:a:0','-map_metadata','-1','-map_chapters','-1','-c:v','libx264','-pix_fmt','yuv420p','-crf','20','-preset','medium','-c:a','aac','-b:a','192k','-movflags','+faststart',temporary]);
  const result=probe(temporary);
  if(!result.format?.format_name?.split(',').includes('mp4')||
     !result.streams.some(s=>s.codec_type==='video'&&s.codec_name==='h264')||
