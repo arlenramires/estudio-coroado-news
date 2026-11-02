@@ -17,6 +17,15 @@ try{
  run('node',['scripts/converter-mp4.mjs',input,output]);
  const info=JSON.parse(run('ffprobe',['-v','error','-show_entries','stream=codec_type,codec_name:format=duration','-of','json',output]));
  if(!info.streams.some(s=>s.codec_type==='video'&&s.codec_name==='h264')||!info.streams.some(s=>s.codec_type==='audio'&&s.codec_name==='aac')||!(Number(info.format.duration)>0))throw new Error('MP4 sem H.264/AAC ou duração');
+ // Repetir a conversão para a mesma saída deve substituir o MP4 antigo
+ // apenas depois de validar o novo arquivo, sem deixar temporários.
+ writeFileSync(output,'arquivo anterior');
+ run('node',['scripts/converter-mp4.mjs',input,output]);
+ const replaced=JSON.parse(run('ffprobe',['-v','error','-show_entries','stream=codec_type,codec_name:format=duration','-of','json',output]));
+ if(!replaced.streams.some(s=>s.codec_type==='video'&&s.codec_name==='h264')||
+    !replaced.streams.some(s=>s.codec_type==='audio'&&s.codec_name==='aac')||
+    !(Number(replaced.format.duration)>0))throw new Error('Segunda conversão não substituiu MP4 anterior por H.264/AAC válido');
+ if(readdirSync(dir).some(name=>name.startsWith('.saida.mp4.')))throw new Error('Conversão bem-sucedida deixou arquivo temporário');
  const silent=join(dir,'sem-audio.webm');
  run('ffmpeg',['-hide_banner','-loglevel','error','-f','lavfi','-i','color=c=black:s=160x120:r=12:d=1','-c:v','libvpx',silent]);
  const invalid=join(dir,'invalido.mp4');
