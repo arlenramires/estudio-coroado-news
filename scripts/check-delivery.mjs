@@ -5,17 +5,25 @@ import crypto from 'node:crypto';
 const root=path.resolve('dist/Estudio-Coroado-Privado');
 const manifest=path.join(root,'SHA256SUMS.txt');
 if(!fs.existsSync(manifest))throw Error('Pacote sem SHA256SUMS.txt');
+if(fs.lstatSync(root).isSymbolicLink()||fs.lstatSync(manifest).isSymbolicLink())
+  throw Error('Pacote ou manifesto não pode ser link simbólico');
 const lines=fs.readFileSync(manifest,'utf8').trim().split(/\r?\n/);
 const listed=new Set();
 for(const line of lines){
   const match=/^([a-f0-9]{64})  (.+)$/.exec(line);
   if(!match)throw Error('Linha de checksum inválida: '+line);
   const [,expected,relative]=match;
-  if(path.isAbsolute(relative)||relative.split('/').includes('..')||listed.has(relative))
+  if(!relative||path.isAbsolute(relative)||relative.includes('\\')||relative.split('/').some(part=>part===''||part==='.'||part==='..')||listed.has(relative))
     throw Error('Caminho inválido ou duplicado: '+relative);
   listed.add(relative);
   const file=path.join(root,relative);
-  if(!fs.existsSync(file)||!fs.statSync(file).isFile())throw Error('Arquivo ausente: '+relative);
+  let current=root;
+  for(const part of relative.split('/')){
+    current=path.join(current,part);
+    if(!fs.existsSync(current))throw Error('Arquivo ausente: '+relative);
+    if(fs.lstatSync(current).isSymbolicLink())throw Error('Link simbólico proibido: '+relative);
+  }
+  if(!fs.lstatSync(file).isFile())throw Error('Entrada não é arquivo: '+relative);
   const actual=crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex');
   if(actual!==expected)throw Error('Checksum divergente: '+relative);
 }
@@ -23,6 +31,7 @@ const files=[];
 function walk(dir){
   for(const entry of fs.readdirSync(dir,{withFileTypes:true})){
     const absolute=path.join(dir,entry.name);
+    if(entry.isSymbolicLink())throw Error('Link simbólico proibido no pacote: '+absolute);
     if(entry.isDirectory())walk(absolute);
     else if(entry.isFile()&&absolute!==manifest)
       files.push(path.relative(root,absolute).split(path.sep).join('/'));
