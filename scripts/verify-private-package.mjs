@@ -9,6 +9,17 @@ if(!fs.existsSync(checksumFile))throw Error('Pacote privado não gerado');
 // para fora de dist/ por meio de um link simbólico.
 if(fs.lstatSync(dir).isSymbolicLink()||!fs.lstatSync(dir).isDirectory())
   throw Error('Diretório do pacote privado inválido ou link simbólico');
+// Também rejeita redirecionamento por um ancestral (por exemplo dist/).
+// A raiz final pode ser uma pasta normal enquanto o caminho completo escapa
+// do diretório de trabalho por meio de um link simbólico intermediário.
+let ancestor=dir;
+while(true){
+  const parent=path.dirname(ancestor);
+  if(parent===ancestor)break;
+  ancestor=parent;
+  if(fs.lstatSync(ancestor).isSymbolicLink())
+    throw Error('Diretório ancestral do pacote é link simbólico: '+ancestor);
+}
 if(fs.lstatSync(checksumFile).isSymbolicLink())throw Error('Lista SHA256 não pode ser link simbólico');
 const lines=fs.readFileSync(checksumFile,'utf8').trim().split('\n');
 const seen=new Set();
