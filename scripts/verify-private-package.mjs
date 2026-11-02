@@ -105,4 +105,13 @@ for(let i=1;i<=22;i++){
 }
 if([...embeddedHashes.values()].some(count=>count!==0))
   throw Error('HTML offline contém molduras duplicadas ou desconhecidas');
+// O iniciador Android precisa ser sintaticamente válido no shell POSIX do Termux.
+// Um erro de aspas pode deixar o pacote instalável no PC, mas inutilizável no telefone.
+import {spawnSync} from 'node:child_process';
+const shellCheck=spawnSync('sh',['-n',path.join(dir,'Iniciar-Android-Termux.sh')],{encoding:'utf8'});
+if(shellCheck.error||shellCheck.status!==0)
+  throw Error('Iniciador Android contém erro de sintaxe shell: '+(shellCheck.stderr||shellCheck.error?.message||'erro desconhecido'));
+// O manifesto empacotado não pode ampliar o escopo para fora do servidor local.
+if(manifest.start_url!=='./index.html'||manifest.scope!=='./'||manifest.id!=='./')
+  throw Error('Manifesto empacotado alterou escopo privado do PWA');
 console.log('Pacote privado verificado: '+seen.size+' arquivos íntegros, 22 molduras e nenhum arquivo extra.');
