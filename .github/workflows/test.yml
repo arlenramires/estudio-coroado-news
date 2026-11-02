@@ -65,6 +65,8 @@ jobs:
         run: node scripts/package-private.mjs
       - name: Verificar checksums e 22 molduras incorporadas no pacote final
         run: node scripts/check-delivery.mjs
+      - name: Testar rejeição de adulterações no pacote privado
+        run: node scripts/test-package-tampering.mjs
       - name: Validar pacote instalável em localhost, offline e tela móvel
         run: node scripts/package-smoke.mjs
       - name: Disponibilizar pacote privado de instalação
