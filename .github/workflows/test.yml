@@ -40,6 +40,9 @@ jobs:
 
       - name: Instalar FFmpeg para validação de áudio
         run: if ! command -v ffmpeg >/dev/null || ! command -v ffprobe >/dev/null; then sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg; fi
+      - name: Testar conversor WebM para MP4 H.264/AAC e rejeição sem áudio
+        run: node scripts/test-converter-mp4.mjs
+
       - name: Testar exportação de vídeo com áudio
         run: node scripts/video-smoke.mjs
 
