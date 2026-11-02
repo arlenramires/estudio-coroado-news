@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Teste real do conversor local: WebM com áudio -> MP4 H.264/AAC.
-import {mkdtempSync,rmSync,existsSync,readFileSync,writeFileSync,readdirSync} from 'node:fs';
+import {mkdtempSync,rmSync,existsSync,readFileSync,writeFileSync,readdirSync,symlinkSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {spawnSync} from 'node:child_process';
@@ -35,6 +35,11 @@ try{
  run('node',['scripts/converter-mp4.mjs',silent,invalid],1);
  if(readFileSync(invalid,'utf8')!=='arquivo anterior')throw new Error('Conversão falha sobrescreveu arquivo anterior');
  if(readdirSync(dir).some(name=>name.startsWith('.invalido.mp4.')))throw new Error('Conversão falha deixou arquivo temporário');
+ const alias=join(dir,'alias.mp4');
+ symlinkSync(input,alias);
+ const original=readFileSync(input);
+ run('node',['scripts/converter-mp4.mjs',input,alias],2);
+ if(!readFileSync(input).equals(original))throw new Error('Alias da entrada foi alterado');
  run('node',['scripts/converter-mp4.mjs',input,input],2);
  run('node',['scripts/converter-mp4.mjs',join(dir,'inexistente.webm'),join(dir,'ausente.mp4')],2);
  run('node',['scripts/converter-mp4.mjs',input,join(dir,'extensao.webm')],2);
