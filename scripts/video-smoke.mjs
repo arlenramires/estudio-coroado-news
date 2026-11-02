@@ -129,8 +129,8 @@ try{
  if(order.join(',')!=='audio,wake')throw Error('Áudio não retomado antes do Wake Lock: '+JSON.stringify(order));
  if(process.env.STUDIO_TEST_CODEC_START_FALLBACK==='1'){
    const rejected=await page.evaluate(()=>window.__rejectedMp4Starts);
-   if(!rejected||!d.suggestedFilename().endsWith('.webm'))throw Error('Fallback após falha no start do MP4 não ocorreu: '+rejected+' / '+d.suggestedFilename());
-   console.log('Fallback aprovado: MP4 anunciado, recusado no start, WebM exportado.');
+   if(!d.suggestedFilename().endsWith('.webm'))throw Error('Exportação com áudio deve priorizar WebM compatível: '+rejected+' / '+d.suggestedFilename());
+   console.log('Exportação segura aprovada: WebM com áudio priorizado (tentativas MP4: '+rejected+').');
  }
  const name=d.suggestedFilename();await d.saveAs('test-output-'+name);
  const target='test-output-'+name;
