@@ -21,7 +21,7 @@ try{
  // de teste realmente sobreviveu à conversão (evita MP4 com áudio mudo).
  const audioCheck=spawnSync('ffmpeg',['-hide_banner','-nostdin','-i',output,'-map','0:a:0','-af','volumedetect','-f','null','-'],{encoding:'utf8',maxBuffer:4*1024*1024});
  if(audioCheck.error||audioCheck.status!==0)throw new Error('Não foi possível decodificar o áudio do MP4: '+(audioCheck.stderr||audioCheck.error?.message));
- const volume=audioCheck.stderr.match(/max_volume:\\s*(-?[\\d.]+) dB/);
+ const volume=audioCheck.stderr.match(/max_volume:\s*(-?[\d.]+) dB/);
  if(!volume||!Number.isFinite(Number(volume[1]))||Number(volume[1]) < -45)
    throw new Error('Áudio AAC ausente ou praticamente mudo após conversão: '+(volume?.[1]??'sem medição'));
 
