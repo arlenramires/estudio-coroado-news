@@ -116,7 +116,21 @@ try{
  if(!held.recording||!held.mediaDisabled||!held.headlineDisabled||!held.exportDisabled||!held.cancelVisible)
    throw Error('Editor liberado antes de validar o vídeo: '+JSON.stringify(held));
  await page.evaluate(()=>{window.__releaseHeaderRead();window.__restoreHeaderRead()});
- const d=await promise;
+ let d;
+ try {
+   d=await promise;
+ } catch(err) {
+   const diagnostics=await page.evaluate(()=>({
+     status:document.querySelector('#status')?.textContent,
+     recording:typeof recording==='undefined'?null:recording,
+     recorderState:typeof recorder==='undefined'?null:recorder?.state,
+     videoReadyState:typeof video==='undefined'?null:video?.readyState,
+     mediaDisabled:document.querySelector('#media')?.disabled,
+     cancelVisible:document.querySelector('#stopVideo')?.style.display,
+     previewVisible:document.querySelector('#videoPreview')?.style.display
+   })).catch(e=>({diagnosticError:String(e)}));
+   throw new Error('Download de vídeo não iniciado: '+err.message+'; estado='+JSON.stringify(diagnostics)+'; erros='+JSON.stringify(errors));
+ }
  // A prévia do vídeo final deve ficar disponível no próprio Estúdio, além do download.
  await page.waitForFunction(()=>{
    const preview=document.querySelector('#videoPreview');
