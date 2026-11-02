@@ -13,9 +13,10 @@ function run(cmd,args,expect=0){
 }
 try{
  const input=join(dir,'entrada.webm'),output=join(dir,'saida.mp4');
- run('ffmpeg',['-hide_banner','-loglevel','error','-f','lavfi','-i','color=c=black:s=320x240:r=12:d=1','-f','lavfi','-i','sine=frequency=440:duration=1','-c:v','libvpx','-b:v','150k','-c:a','libopus','-shortest',input]);
+ run('ffmpeg',['-hide_banner','-loglevel','error','-f','lavfi','-i','color=c=black:s=320x240:r=12:d=1','-f','lavfi','-i','sine=frequency=440:duration=1','-c:v','libvpx','-b:v','150k','-c:a','libopus','-metadata','title=Privado-Estudio-Teste','-shortest',input]);
  run('node',['scripts/converter-mp4.mjs',input,output]);
- const info=JSON.parse(run('ffprobe',['-v','error','-show_entries','stream=codec_type,codec_name:format=duration','-of','json',output]));
+ const info=JSON.parse(run('ffprobe',['-v','error','-show_entries','stream=codec_type,codec_name:format=duration:format_tags=title','-of','json',output]));
+ if(info.format?.tags?.title)throw new Error('MP4 vazou título/metadados do arquivo original');
  if(!info.streams.some(s=>s.codec_type==='video'&&s.codec_name==='h264')||!info.streams.some(s=>s.codec_type==='audio'&&s.codec_name==='aac')||!(Number(info.format.duration)>0))throw new Error('MP4 sem H.264/AAC ou duração');
  // Repetir a conversão para a mesma saída deve substituir o MP4 antigo
  // apenas depois de validar o novo arquivo, sem deixar temporários.
