@@ -40,7 +40,7 @@ async function fire(name){
 }
 await assert.rejects(fire('install'),/Falha simulada/);
 assert.equal(skipWaitingCalls,0,'Não pode ativar instalação incompleta');
-assert.equal(stored.has('estudio-coroado-offline-v32'),false,'Cache parcial deve ser excluído');
+assert.equal(stored.has('estudio-coroado-offline-v33'),false,'Cache parcial deve ser excluído');
 failInstall=false;
 await fire('install');
 assert.equal(skipWaitingCalls,1);
@@ -48,6 +48,6 @@ await fire('activate');
 assert.equal(claimCalls,1);
 assert.equal(stored.has('estudio-coroado-offline-antigo'),false);
 assert.equal(stored.has('cache-de-outro-aplicativo'),true,'Cache de outro app não pode ser excluído');
-assert.equal(stored.has('estudio-coroado-offline-v32'),true);
-assert.deepEqual(removed.sort(),['estudio-coroado-offline-antigo','estudio-coroado-offline-v32'].sort());
+assert.equal(stored.has('estudio-coroado-offline-v33'),true);
+assert.deepEqual(removed.sort(),['estudio-coroado-offline-antigo','estudio-coroado-offline-v33'].sort());
 console.log('PWA: falha de instalação não ativa cache parcial; ativação preserva caches de terceiros.');
