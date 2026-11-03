@@ -157,3 +157,47 @@ console.log('PWA: quota de armazenamento esgotada não bloqueia moldura online.'
   assert.deepEqual(events,['match','fetch'],'Resposta HTTP com erro não deve ser gravada no cache');
 }
 console.log('PWA: erro HTTP 503 preservado sem servir HTML antigo.');
+
+
+// Em modo offline, a navegação deve recuperar o editor do pré-cache.
+// Recursos de mídia que não estejam no cache devem falhar explicitamente,
+// sem devolver HTML como se fosse imagem ou vídeo.
+{
+  const handlers=new Map();
+  const target=scope+'index.html';
+  const events=[];
+  const offlineEditor={ok:true,status:200,marker:'editor-offline'};
+  const cache={
+    match:async request=>{
+      const url=typeof request==='string'?new URL(request,scope).href:request.url;
+      events.push('match:'+url);
+      return url===target?offlineEditor:undefined;
+    },
+    put:async()=>{throw new Error('Não gravar em modo offline')}
+  };
+  const context=vm.createContext({
+    URL,console:{warn(){}},
+    self:{registration:{scope},addEventListener:(name,handler)=>handlers.set(name,handler)},
+    caches:{open:async()=>cache},
+    fetch:async()=>{events.push('fetch');throw new Error('Sem conexão')},
+    Response:{error:()=>({ok:false,marker:'network-error'})}
+  });
+  new vm.Script(source,{filename:'sw.js'}).runInContext(context);
+  const dispatch=async(url,mode)=>{
+    let pending;
+    handlers.get('fetch')({
+      request:{url,method:'GET',mode,headers:{has:()=>false}},
+      respondWith:promise=>{pending=promise}
+    });
+    assert.ok(pending,'Recurso autorizado não interceptado: '+url);
+    return pending;
+  };
+  assert.equal(await dispatch(target,'navigate'),offlineEditor,
+    'Navegação offline não recuperou o editor');
+  const media=await dispatch(scope+'molduras/original_22.webp','no-cors');
+  assert.equal(media.marker,'network-error',
+    'Moldura ausente do cache recebeu conteúdo incorreto em vez de erro de rede');
+  assert.equal(events.filter(item=>item==='fetch').length,2,
+    'Fallback offline deve tentar a rede nas duas situações');
+}
+console.log('PWA: navegação offline usa editor em cache; mídia ausente falha sem HTML falso.');
