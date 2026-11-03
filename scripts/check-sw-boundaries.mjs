@@ -243,3 +243,33 @@ console.log('PWA: navegação offline usa editor em cache; mídia ausente falha 
   assert.ok(!events.includes('put'),'Resposta HTTP 404 não pode entrar no cache');
 }
 console.log('PWA: moldura pré-carregada funciona offline e HTTP 404 não contamina o cache.');
+
+
+// Um redirecionamento para outro endereço não pode ser persistido no cache
+// privado, mesmo que o navegador apresente a resposta como HTTP 200.
+{
+  const handlers=new Map();
+  const target=scope+'molduras/original_05.webp';
+  const events=[];
+  const redirected={ok:true,status:200,type:'basic',url:'https://example.org/externo.webp',clone(){return this}};
+  const context=vm.createContext({
+    URL,console:{warn(){}},
+    self:{registration:{scope},addEventListener:(name,handler)=>handlers.set(name,handler)},
+    caches:{open:async()=>({
+      match:async()=>{events.push('match');return undefined},
+      put:async()=>{events.push('put')}
+    })},
+    fetch:async()=>{events.push('fetch');return redirected},
+    Response:{error:()=>({ok:false})}
+  });
+  new vm.Script(source,{filename:'sw.js'}).runInContext(context);
+  let pending;
+  handlers.get('fetch')({
+    request:{url:target,method:'GET',mode:'no-cors',headers:{has:()=>false}},
+    respondWith:promise=>{pending=promise}
+  });
+  assert.ok(pending,'Moldura autorizada não interceptada');
+  assert.equal(await pending,redirected,'Redirecionamento deve ser entregue sem alteração');
+  assert.deepEqual(events,['match','fetch'],'Resposta redirecionada não pode entrar no cache privado');
+}
+console.log('PWA: resposta redirecionada para domínio externo não é persistida.');
