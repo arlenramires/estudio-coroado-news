@@ -1,6 +1,6 @@
 'use strict';
 // Somente arquivos públicos do próprio estúdio: mídia importada pelo usuário nunca é armazenada.
-const CACHE='estudio-coroado-offline-v34';
+const CACHE='estudio-coroado-offline-v35';
 const ASSETS=['./','./index.html','./manifest.webmanifest','./icons/studio.svg','./icons/studio-192.png','./icons/studio-512.png',
   ...Array.from({length:22},(_,i)=>'./molduras/original_'+String(i+1).padStart(2,'0')+'.webp')];
 // Somente arquivos declarados do aplicativo podem entrar no cache.
@@ -23,6 +23,6 @@ self.addEventListener('fetch',event=>{
       try{const response=await fetch(req);if(response.ok&&response.type==='basic'&&response.url===req.url){try{await cache.put(req,response.clone())}catch(error){console.warn('Cache indisponível; usando resposta da rede',error)}return response}return cached||await cache.match('./index.html')||response}catch{return cached||await cache.match('./index.html')||Response.error()}
     }
     if(cached)return cached;
-    try{const response=await fetch(req);if(response.ok&&response.type==='basic'&&response.url===req.url)await cache.put(req,response.clone());return response}catch{return Response.error()}
+    try{const response=await fetch(req);if(response.ok&&response.type==='basic'&&response.url===req.url){try{await cache.put(req,response.clone())}catch(error){console.warn('Cache de recurso indisponível; usando resposta da rede',error)}}return response}catch{return Response.error()}
   })());
 });
