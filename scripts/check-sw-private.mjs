@@ -60,3 +60,38 @@ assert.equal(offlineHome.url,root,'Navegação inicial deve recuperar index.html
 assert.equal(offlineHome.ok,true,'Página inicial deve permanecer utilizável com HTTP 503');
 assert.equal(networkCalls,4,'Cada navegação deve tentar atualização antes do fallback');
 console.log('Service worker: privacidade e fallback offline para index.html e raiz após HTTP 503.');
+
+
+// Regressão: quota esgotada ou armazenamento bloqueado não deve derrubar
+// respostas válidas da rede (HTML e recursos gráficos).
+{
+  const listenersWithBrokenCache=new Map();
+  let writes=0;
+  const brokenCache={
+    match:async()=>undefined,
+    put:async()=>{writes++;throw new Error('QuotaExceededError')}
+  };
+  const testContext=vm.createContext({
+    URL,Set,Array,console:{warn:()=>{}},
+    self:{registration:{scope},addEventListener:(name,fn)=>listenersWithBrokenCache.set(name,fn)},
+    caches:{open:async()=>brokenCache},
+    fetch:async req=>({ok:true,status:200,type:'basic',url:req.url,clone(){return this}}),
+    Response:{error:()=>({error:true})}
+  });
+  new vm.Script(source,{filename:'sw.js'}).runInContext(testContext);
+  const fetchHandler=listenersWithBrokenCache.get('fetch');
+  async function fetchThroughWorker(req){
+    let result;
+    fetchHandler({request:req,respondWith:promise=>{result=promise}});
+    assert.ok(result,'Recurso autorizado deve ser interceptado');
+    return await result;
+  }
+  const html=await fetchThroughWorker(request(root,{mode:'navigate'}));
+  assert.equal(html.status,200,'Falha ao gravar HTML não pode descartar resposta da rede');
+  const frame=new URL('molduras/original_01.webp',scope).href;
+  const image=await fetchThroughWorker(request(frame));
+  assert.equal(image.status,200,'Falha ao gravar moldura não pode descartar resposta da rede');
+  assert.equal(image.url,frame);
+  assert.equal(writes,2,'Ambos os caminhos devem tentar gravar no cache');
+  console.log('Service worker: respostas HTML e moldura preservadas quando cache.put falha.');
+}
