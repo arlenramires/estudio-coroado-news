@@ -126,3 +126,34 @@ console.log('PWA: falha ao abrir CacheStorage não bloqueia navegação online.'
   assert.deepEqual(events,['match','fetch','put'],'Resposta de rede deve ser preservada após falha de escrita');
 }
 console.log('PWA: quota de armazenamento esgotada não bloqueia moldura online.');
+
+
+// Uma resposta HTTP de erro não é falha de conexão: não mostrar HTML
+// desatualizado do cache nem substituir um 404/503 por sucesso falso.
+{
+  const handlers=new Map();
+  const target=scope+'index.html';
+  const events=[];
+  const cached={ok:true,url:target};
+  const unavailable={ok:false,status:503,url:target};
+  const context=vm.createContext({
+    URL,console:{warn(){}},
+    self:{registration:{scope},addEventListener:(name,handler)=>handlers.set(name,handler)},
+    caches:{open:async()=>({
+      match:async()=>{events.push('match');return cached},
+      put:async()=>{events.push('put')}
+    })},
+    fetch:async()=>{events.push('fetch');return unavailable},
+    Response:{error:()=>({ok:false})}
+  });
+  new vm.Script(source,{filename:'sw.js'}).runInContext(context);
+  let pending;
+  handlers.get('fetch')({
+    request:{url:target,method:'GET',mode:'navigate',headers:{has:()=>false}},
+    respondWith:promise=>{pending=promise}
+  });
+  assert.ok(pending,'Navegação não interceptada');
+  assert.equal(await pending,unavailable,'Erro HTTP foi escondido por HTML antigo');
+  assert.deepEqual(events,['match','fetch'],'Resposta HTTP com erro não deve ser gravada no cache');
+}
+console.log('PWA: erro HTTP 503 preservado sem servir HTML antigo.');
