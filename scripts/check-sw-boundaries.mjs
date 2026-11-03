@@ -95,3 +95,34 @@ console.log('PWA: falha de leitura do cache preserva carregamento de molduras pe
   assert.deepEqual(events,['open','fetch'],'Fallback deve consultar a rede sem cache disponível');
 }
 console.log('PWA: falha ao abrir CacheStorage não bloqueia navegação online.');
+
+
+// Falha de escrita no CacheStorage não pode transformar uma resposta HTTP
+// válida em erro de rede nem impedir o uso do editor/molduras online.
+{
+  const handlers=new Map();
+  const target=scope+'molduras/original_02.webp';
+  const events=[];
+  const response={ok:true,type:'basic',url:target,clone(){return this}};
+  const cache={
+    match:async()=>{events.push('match');return undefined},
+    put:async()=>{events.push('put');throw new Error('QuotaExceededError')}
+  };
+  const context=vm.createContext({
+    URL,console:{warn(){}},
+    self:{registration:{scope},addEventListener:(name,handler)=>handlers.set(name,handler)},
+    caches:{open:async()=>cache},
+    fetch:async()=>{events.push('fetch');return response},
+    Response:{error:()=>({ok:false})}
+  });
+  new vm.Script(source,{filename:'sw.js'}).runInContext(context);
+  let pending;
+  handlers.get('fetch')({
+    request:{url:target,method:'GET',mode:'no-cors',headers:{has:()=>false}},
+    respondWith:promise=>{pending=promise}
+  });
+  assert.ok(pending,'Moldura autorizada não interceptada');
+  assert.equal(await pending,response,'Falha ao gravar cache bloqueou resposta válida da rede');
+  assert.deepEqual(events,['match','fetch','put'],'Resposta de rede deve ser preservada após falha de escrita');
+}
+console.log('PWA: quota de armazenamento esgotada não bloqueia moldura online.');
