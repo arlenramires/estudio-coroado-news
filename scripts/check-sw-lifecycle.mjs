@@ -14,6 +14,8 @@ const removed=[];
 let failInstall=true;
 let skipWaitingCalls=0;
 let claimCalls=0;
+let failCacheListing=false;
+let failCacheCleanup=false;
 const cache={
   addAll:async assets=>{
     assert.equal(assets.length,28,'PWA deve incluir 22 molduras e 6 recursos básicos');
@@ -30,8 +32,8 @@ const context=vm.createContext({
   },
   caches:{
     open:async name=>{stored.add(name);return cache},
-    keys:async()=>[...stored],
-    delete:async name=>{removed.push(name);return stored.delete(name)}
+    keys:async()=>{if(failCacheListing)throw new Error('CacheStorage.keys bloqueado');return [...stored]},
+    delete:async name=>{if(failCacheCleanup)throw new Error('CacheStorage.delete bloqueado');removed.push(name);return stored.delete(name)}
   }
 });
 new vm.Script(source,{filename:'sw.js'}).runInContext(context);
@@ -55,3 +57,16 @@ assert.equal(stored.has('cache-de-outro-aplicativo'),true,'Cache de outro app n�
 assert.equal(stored.has(cacheName),true);
 assert.deepEqual(removed.sort(),['estudio-coroado-offline-antigo',cacheName].sort());
 console.log('PWA: falha de pré-cache permite uso online, remove cache parcial e preserva caches de terceiros.');
+
+// Mesmo com CacheStorage parcialmente bloqueado, o SW deve ativar e controlar clientes.
+failCacheListing=true;
+await fire('activate');
+assert.equal(claimCalls,2,'Falha ao listar caches não deve bloquear clients.claim');
+failCacheListing=false;
+stored.add('estudio-coroado-offline-antigo-2');
+failCacheCleanup=true;
+await fire('activate');
+assert.equal(claimCalls,3,'Falha ao excluir cache antigo não deve bloquear clients.claim');
+assert.equal(stored.has('cache-de-outro-aplicativo'),true,'Cache de terceiros deve permanecer intacto');
+assert.equal(stored.has(cacheName),true,'Cache ativo deve permanecer intacto');
+console.log('PWA: ativação resiliente a falhas de listagem e exclusão de caches.');
