@@ -37,3 +37,34 @@ test(scope+'index.html','POST');
 test(scope+'molduras/original_01.webp','GET',{Range:'bytes=0-100'});
 assert.deepEqual(calls,[],'Requisições externas ou parciais acionaram cache/rede');
 console.log('Privacidade PWA: URLs externas, parâmetros, POST e Range não interceptados.');
+
+
+// CacheStorage pode permitir open() mas falhar na leitura. Isso não pode
+// impedir que uma moldura ainda seja carregada pela rede.
+{
+  const handlers=new Map();
+  const target=scope+'molduras/original_01.webp';
+  const events=[];
+  const response={ok:true,type:'basic',url:target,clone(){return this}};
+  const cache={
+    match:async()=>{events.push('match');throw new Error('Leitura do cache bloqueada')},
+    put:async()=>{events.push('put')}
+  };
+  const context=vm.createContext({
+    URL,console:{warn(){}},
+    self:{registration:{scope},addEventListener:(name,handler)=>handlers.set(name,handler)},
+    caches:{open:async()=>cache},
+    fetch:async()=>{events.push('fetch');return response},
+    Response:{error:()=>({ok:false})}
+  });
+  new vm.Script(source,{filename:'sw.js'}).runInContext(context);
+  let pending;
+  handlers.get('fetch')({
+    request:{url:target,method:'GET',mode:'no-cors',headers:{has:()=>false}},
+    respondWith:promise=>{pending=promise}
+  });
+  assert.ok(pending,'Moldura autorizada não interceptada');
+  assert.equal(await pending,response,'Falha de leitura do cache bloqueou recurso disponível na rede');
+  assert.deepEqual(events,['match','fetch','put'],'Fallback de leitura deve buscar a rede e armazenar resposta válida');
+}
+console.log('PWA: falha de leitura do cache preserva carregamento de molduras pela rede.');
