@@ -273,3 +273,33 @@ console.log('PWA: moldura pré-carregada funciona offline e HTTP 404 não contam
   assert.deepEqual(events,['match','fetch'],'Resposta redirecionada não pode entrar no cache privado');
 }
 console.log('PWA: resposta redirecionada para domínio externo não é persistida.');
+
+
+// Um redirecionamento dentro da mesma origem também não pode substituir
+// a moldura solicitada no cache (ex.: login.html ou página de erro HTTP 200).
+{
+  const handlers=new Map();
+  const target=scope+'molduras/original_06.webp';
+  const events=[];
+  const redirected={ok:true,status:200,type:'basic',url:scope+'index.html',clone(){return this}};
+  const context=vm.createContext({
+    URL,console:{warn(){}},
+    self:{registration:{scope},addEventListener:(name,handler)=>handlers.set(name,handler)},
+    caches:{open:async()=>({
+      match:async()=>{events.push('match');return undefined},
+      put:async()=>{events.push('put')}
+    })},
+    fetch:async()=>{events.push('fetch');return redirected},
+    Response:{error:()=>({ok:false})}
+  });
+  new vm.Script(source,{filename:'sw.js'}).runInContext(context);
+  let pending;
+  handlers.get('fetch')({
+    request:{url:target,method:'GET',mode:'no-cors',headers:{has:()=>false}},
+    respondWith:promise=>{pending=promise}
+  });
+  assert.ok(pending,'Moldura autorizada não interceptada');
+  assert.equal(await pending,redirected,'Redirecionamento interno deve ser entregue sem alteração');
+  assert.deepEqual(events,['match','fetch'],'HTML redirecionado não pode ser salvo como moldura');
+}
+console.log('PWA: redirecionamento interno não contamina cache de molduras.');
