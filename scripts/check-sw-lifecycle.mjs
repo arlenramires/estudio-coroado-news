@@ -47,9 +47,15 @@ async function fire(name){
 await fire('install');
 assert.equal(skipWaitingCalls,1,'Falha de pré-cache não deve bloquear o uso online');
 assert.equal(stored.has(cacheName),false,'Cache parcial deve ser excluído');
+// Falha na limpeza do cache parcial também não pode bloquear a instalação online.
+failCacheCleanup=true;
+await fire('install');
+assert.equal(skipWaitingCalls,2,'Falha ao excluir cache parcial não deve bloquear instalação');
+failCacheCleanup=false;
+stored.delete(cacheName); // Isola o cenário seguinte da tentativa de pré-cache anterior.
 failInstall=false;
 await fire('install');
-assert.equal(skipWaitingCalls,2,'Segunda instalação também deve prosseguir');
+assert.equal(skipWaitingCalls,3,'Instalação após recuperação deve prosseguir');
 await fire('activate');
 assert.equal(claimCalls,1);
 assert.equal(stored.has('estudio-coroado-offline-antigo'),false);
