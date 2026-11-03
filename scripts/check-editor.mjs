@@ -158,9 +158,10 @@ if(precache.length!==requiredPrecache.length||
   throw new Error('Pré-cache PWA incompleto, duplicado ou divergente das 22 molduras');
 for(const size of [192,512]){const b=fs.readFileSync('icons/studio-'+size+'.png');if(b.length<24||!b.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10]))||b.readUInt32BE(16)!==size||b.readUInt32BE(20)!==size)throw new Error('Ícone PNG inválido: '+size)}
 if(!sw.includes('cache.addAll(ASSETS)'))throw new Error('Pré-cache offline não configurado');
-// Uma falha de download não pode deixar um cache de instalação parcialmente preenchido.
-if(!/try\s*\{\s*await cache\.addAll\(ASSETS\)\s*\}\s*catch\s*\(error\)\s*\{\s*await caches\.delete\(CACHE\);\s*throw error\s*\}/.test(sw))
-  throw new Error('Instalação offline deve eliminar cache parcial após falha');
+// O PWA pode permanecer online se o pré-cache falhar; não deve afirmar
+// disponibilidade offline antes de todos os arquivos estarem armazenados.
+if(!sw.includes('cache.addAll(ASSETS)')||!sw.includes('await self.skipWaiting()'))
+  throw new Error('Instalação PWA não configurada');
 
 // Bloqueia publicação por Pages mesmo quando o workflow usa outro nome.
 const workflowsDir='.github/workflows';
@@ -186,40 +187,31 @@ if(!/if\(\$\('audio'\)\.checked&&!stream\.getAudioTracks\(\)\.some\(t=>t\.readyS
 
 
 
-// Teste funcional da instalação: uma falha no pré-cache deve apagar o cache
-// incompleto e rejeitar a instalação, sem deixar um PWA aparentemente offline.
+// Uma falha de pré-cache não deve bloquear o editor online.
+// A limpeza é tentada, mas falha de CacheStorage também é tolerada.
 {
   const listeners=new Map();
   const operations=[];
   const fakeCaches={
-    open:async name=>({addAll:async assets=>{
+    open:async()=>({addAll:async assets=>{
       operations.push('addAll:'+assets.length);
       throw new Error('falha simulada de download');
     }}),
-    delete:async name=>{operations.push('delete:'+name);return true}
+    delete:async()=>{operations.push('delete');throw new Error('cache bloqueado')}
   };
-  const worker={
-    registration:{scope:'http://127.0.0.1:8765/'},
+  const worker={registration:{scope:'http://127.0.0.1:8765/'},
     addEventListener:(type,callback)=>listeners.set(type,callback),
-    skipWaiting:async()=>{operations.push('skipWaiting')}
-  };
-  const context=vm.createContext({URL,self:worker,caches:fakeCaches});
+    skipWaiting:async()=>{operations.push('skipWaiting')}};
+  const context=vm.createContext({URL,self:worker,caches:fakeCaches,console:{warn(){}}});
   new vm.Script(sw,{filename:'sw.js'}).runInContext(context);
-  const install=listeners.get('install');
-  if(!install)throw new Error('Service worker sem evento install');
   let installation;
-  install({waitUntil:promise=>{installation=promise}});
-  if(!installation||typeof installation.then!=='function')
-    throw new Error('Instalação não aguarda o pré-cache');
-  let rejected=false;
-  try{await installation}catch(error){rejected=String(error.message).includes('falha simulada')}
-  if(!rejected||operations[0]!=='addAll:'+requiredPrecache.length||
-     operations[1]!=='delete:'+vm.runInContext('CACHE',swContext)||
-     operations.includes('skipWaiting'))
-    throw new Error('Instalação falha não removeu o cache parcial: '+operations.join(','));
-  console.log('Rollback do pré-cache aprovado: instalação rejeitada e cache parcial apagado.');
+  listeners.get('install')({waitUntil:promise=>{installation=promise}});
+  if(!installation)throw new Error('Instalação não aguarda tentativa de pré-cache');
+  await installation;
+  if(operations.join(',')!=='addAll:'+requiredPrecache.length+',delete,skipWaiting')
+    throw new Error('Fallback online após falha do cache não funcionou: '+operations.join(','));
+  console.log('Fallback online aprovado após falha de pré-cache e limpeza.');
 }
-
 
 // Teste funcional de instalação bem-sucedida: todos os arquivos essenciais
 // precisam ser pré-carregados antes de liberar o controle ao novo service worker.
