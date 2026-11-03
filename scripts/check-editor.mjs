@@ -253,7 +253,7 @@ for(const failure of ['listagem','exclusao']){
   const listeners=new Map();
   const operations=[];
   const fakeCaches={
-    keys:async()=>{operations.push('keys');if(failure==='listagem')throw new Error('CacheStorage bloqueado');return ['estudio-coroado-offline-v1','outro-app','estudio-coroado-offline-v38']},
+    keys:async()=>{operations.push('keys');if(failure==='listagem')throw new Error('CacheStorage bloqueado');return ['estudio-coroado-offline-v1','outro-app',vm.runInContext('CACHE',context)]},
     delete:async key=>{operations.push('delete:'+key);throw new Error('Exclusão bloqueada')}
   };
   const worker={
