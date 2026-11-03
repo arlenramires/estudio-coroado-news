@@ -1,6 +1,6 @@
 'use strict';
 // Somente arquivos públicos do próprio estúdio: mídia importada pelo usuário nunca é armazenada.
-const CACHE='estudio-coroado-offline-v37';
+const CACHE='estudio-coroado-offline-v38';
 const ASSETS=['./','./index.html','./manifest.webmanifest','./icons/studio.svg','./icons/studio-192.png','./icons/studio-512.png',
   ...Array.from({length:22},(_,i)=>'./molduras/original_'+String(i+1).padStart(2,'0')+'.webp')];
 // Somente arquivos declarados do aplicativo podem entrar no cache.
@@ -10,7 +10,7 @@ self.addEventListener('install',event=>{
   event.waitUntil((async()=>{try{const cache=await caches.open(CACHE);await cache.addAll(ASSETS)}catch(error){console.warn('Pré-cache indisponível; aplicativo continua online',error);try{await caches.delete(CACHE)}catch(cleanupError){console.warn('Limpeza de cache indisponível',cleanupError)}}await self.skipWaiting()})());
 });
 self.addEventListener('activate',event=>{
-  event.waitUntil((async()=>{for(const key of await caches.keys())if(key.startsWith('estudio-coroado-offline-')&&key!==CACHE)await caches.delete(key);await self.clients.claim()})());
+  event.waitUntil((async()=>{try{for(const key of await caches.keys()){if(key.startsWith('estudio-coroado-offline-')&&key!==CACHE){try{await caches.delete(key)}catch(error){console.warn('Falha ao limpar cache antigo',error)}}}}catch(error){console.warn('Lista de caches indisponível',error)}await self.clients.claim()})());
 });
 self.addEventListener('fetch',event=>{
   const req=event.request;
