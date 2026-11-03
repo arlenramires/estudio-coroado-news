@@ -245,3 +245,30 @@ if(!/if\(\$\('audio'\)\.checked&&!stream\.getAudioTracks\(\)\.some\(t=>t\.readyS
 // Cache privado não deve persistir redirecionamentos nem respostas de origem diferente.
 if((sw.match(/response\.ok&&response\.type==='basic'&&response\.url===req\.url/g)||[]).length!==2)
   throw new Error('Cache PWA deve rejeitar respostas redirecionadas ou de outra origem');
+
+
+// Regressão de ativação: falha ao listar ou excluir caches antigos não pode
+// impedir que o PWA assuma o controle do editor.
+for(const failure of ['listagem','exclusao']){
+  const listeners=new Map();
+  const operations=[];
+  const fakeCaches={
+    keys:async()=>{operations.push('keys');if(failure==='listagem')throw new Error('CacheStorage bloqueado');return ['estudio-coroado-offline-v1','outro-app','estudio-coroado-offline-v38']},
+    delete:async key=>{operations.push('delete:'+key);throw new Error('Exclusão bloqueada')}
+  };
+  const worker={
+    registration:{scope:'http://127.0.0.1:8765/'},
+    addEventListener:(type,callback)=>listeners.set(type,callback),
+    clients:{claim:async()=>{operations.push('claim')}}
+  };
+  const context=vm.createContext({URL,self:worker,caches:fakeCaches,console:{warn(){}}});
+  new vm.Script(sw,{filename:'sw.js'}).runInContext(context);
+  let activation;
+  listeners.get('activate')({waitUntil:promise=>{activation=promise}});
+  if(!activation)throw new Error('Ativação não aguarda limpeza de cache');
+  await activation;
+  if(operations.at(-1)!=='claim')throw new Error('Ativação não assumiu controle após falha: '+failure);
+  if(failure==='exclusao'&&operations.join(',')!=='keys,delete:estudio-coroado-offline-v1,claim')
+    throw new Error('Ativação excluiu cache de outro app ou versão ativa: '+operations.join(','));
+}
+console.log('Ativação PWA aprovada com CacheStorage indisponível e exclusão bloqueada.');
