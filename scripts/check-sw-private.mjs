@@ -10,6 +10,7 @@ const scope='https://studio.example/private/';
 const assets=new Map();
 let networkCalls=0;
 let serverUnavailable=false;
+let serverErrorStatus=null;
 const cache={
   match:async request=>assets.get(typeof request==='string'?new URL(request,scope).href:request.url),
   put:async(request,response)=>{assets.set(request.url,response)}
@@ -18,9 +19,9 @@ const context=vm.createContext({
   URL,Set,Array,
   self:{registration:{scope},addEventListener:(name,fn)=>listeners.set(name,fn)},
   caches:{open:async()=>cache},
-  fetch:async request=>{networkCalls++;return serverUnavailable
-    ? {ok:false,status:503,type:'basic',url:request.url}
-    : {ok:true,type:'basic',url:request.url,clone(){return this}}},
+  fetch:async request=>{networkCalls++;if(serverUnavailable)throw new Error('Falha de conexão simulada');
+    if(serverErrorStatus!==null)return {ok:false,status:serverErrorStatus,type:'basic',url:request.url};
+    return {ok:true,type:'basic',url:request.url,clone(){return this}}},
   Response:{error:()=>({error:true})}
 });
 new vm.Script(source,{filename:'sw.js'}).runInContext(context);
@@ -51,15 +52,20 @@ assert.equal(second.url,root);
 assert.equal(networkCalls,2,'HTML deve tentar atualização online');
 serverUnavailable=true;
 const offline=await dispatch(request(root));
-assert.equal(offline.url,root,'Falha HTTP 503 deve usar editor já armazenado');
+assert.equal(offline.url,root,'Falha de conexão deve usar editor já armazenado');
 assert.equal(offline.ok,true,'Editor offline deve continuar utilizável após erro do servidor');
 // A navegação pela raiz do escopo também deve abrir o editor offline.
 const home=new URL('./',scope).href;
 const offlineHome=await dispatch(request(home,{mode:'navigate'}));
 assert.equal(offlineHome.url,root,'Navegação inicial deve recuperar index.html do cache');
-assert.equal(offlineHome.ok,true,'Página inicial deve permanecer utilizável com HTTP 503');
+assert.equal(offlineHome.ok,true,'Página inicial deve permanecer utilizável sem conexão');
 assert.equal(networkCalls,4,'Cada navegação deve tentar atualização antes do fallback');
-console.log('Service worker: privacidade e fallback offline para index.html e raiz após HTTP 503.');
+serverUnavailable=false;
+serverErrorStatus=503;
+const httpError=await dispatch(request(root));
+assert.equal(httpError.status,503,'Erro HTTP 503 legítimo não pode ser mascarado pelo cache');
+assert.equal(networkCalls,5,'Erro HTTP deve ser obtido pela rede');
+console.log('Service worker: fallback somente em falha de conexão e preservação de HTTP 503.');
 
 
 // Regressão: quota esgotada ou armazenamento bloqueado não deve derrubar
