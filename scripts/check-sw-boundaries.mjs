@@ -68,3 +68,30 @@ console.log('Privacidade PWA: URLs externas, parâmetros, POST e Range não inte
   assert.deepEqual(events,['match','fetch','put'],'Fallback de leitura deve buscar a rede e armazenar resposta válida');
 }
 console.log('PWA: falha de leitura do cache preserva carregamento de molduras pela rede.');
+
+
+// CacheStorage pode falhar antes mesmo de abrir o cache. A rede deve
+// continuar atendendo o editor, sem tentar gravar uma resposta inexistente.
+{
+  const handlers=new Map();
+  const target=scope+'index.html';
+  const events=[];
+  const response={ok:true,type:'basic',url:target,clone(){return this}};
+  const context=vm.createContext({
+    URL,console:{warn(){}},
+    self:{registration:{scope},addEventListener:(name,handler)=>handlers.set(name,handler)},
+    caches:{open:async()=>{events.push('open');throw new Error('CacheStorage bloqueado')}},
+    fetch:async()=>{events.push('fetch');return response},
+    Response:{error:()=>({ok:false})}
+  });
+  new vm.Script(source,{filename:'sw.js'}).runInContext(context);
+  let pending;
+  handlers.get('fetch')({
+    request:{url:target,method:'GET',mode:'navigate',headers:{has:()=>false}},
+    respondWith:promise=>{pending=promise}
+  });
+  assert.ok(pending,'Navegação autorizada não interceptada');
+  assert.equal(await pending,response,'Falha ao abrir CacheStorage bloqueou editor online');
+  assert.deepEqual(events,['open','fetch'],'Fallback deve consultar a rede sem cache disponível');
+}
+console.log('PWA: falha ao abrir CacheStorage não bloqueia navegação online.');
