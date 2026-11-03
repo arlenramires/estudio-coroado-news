@@ -4,6 +4,9 @@ import assert from 'node:assert/strict';
 
 // Verifica instalação atômica e limpeza restrita ao namespace do Estúdio.
 const source=fs.readFileSync('sw.js','utf8');
+// Acompanha automaticamente a versão real do cache ao atualizar o service worker.
+const cacheName=source.match(/\bconst CACHE\s*=\s*['"](estudio-coroado-offline-v\d+)['"]\s*;/)?.[1];
+assert.ok(cacheName,'Nome/versionamento do cache PWA não encontrado');
 const scope='https://studio.example/private/';
 const listeners=new Map();
 const stored=new Set(['estudio-coroado-offline-antigo','cache-de-outro-aplicativo']);
@@ -40,7 +43,7 @@ async function fire(name){
 }
 await assert.rejects(fire('install'),/Falha simulada/);
 assert.equal(skipWaitingCalls,0,'Não pode ativar instalação incompleta');
-assert.equal(stored.has('estudio-coroado-offline-v33'),false,'Cache parcial deve ser excluído');
+assert.equal(stored.has(cacheName),false,'Cache parcial deve ser excluído');
 failInstall=false;
 await fire('install');
 assert.equal(skipWaitingCalls,1);
@@ -48,6 +51,6 @@ await fire('activate');
 assert.equal(claimCalls,1);
 assert.equal(stored.has('estudio-coroado-offline-antigo'),false);
 assert.equal(stored.has('cache-de-outro-aplicativo'),true,'Cache de outro app não pode ser excluído');
-assert.equal(stored.has('estudio-coroado-offline-v33'),true);
-assert.deepEqual(removed.sort(),['estudio-coroado-offline-antigo','estudio-coroado-offline-v33'].sort());
+assert.equal(stored.has(cacheName),true);
+assert.deepEqual(removed.sort(),['estudio-coroado-offline-antigo',cacheName].sort());
 console.log('PWA: falha de instalação não ativa cache parcial; ativação preserva caches de terceiros.');
