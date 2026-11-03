@@ -53,4 +53,10 @@ serverUnavailable=true;
 const offline=await dispatch(request(root));
 assert.equal(offline.url,root,'Falha HTTP 503 deve usar editor já armazenado');
 assert.equal(offline.ok,true,'Editor offline deve continuar utilizável após erro do servidor');
-console.log('Service worker: privacidade preservada e fallback offline validado após HTTP 503.');
+// A navegação pela raiz do escopo também deve abrir o editor offline.
+const home=new URL('./',scope).href;
+const offlineHome=await dispatch(request(home,{mode:'navigate'}));
+assert.equal(offlineHome.url,root,'Navegação inicial deve recuperar index.html do cache');
+assert.equal(offlineHome.ok,true,'Página inicial deve permanecer utilizável com HTTP 503');
+assert.equal(networkCalls,4,'Cada navegação deve tentar atualização antes do fallback');
+console.log('Service worker: privacidade e fallback offline para index.html e raiz após HTTP 503.');
