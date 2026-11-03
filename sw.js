@@ -22,7 +22,7 @@ self.addEventListener('fetch',event=>{
     const cached=cache?await cache.match(req,{ignoreSearch:true}).catch(()=>undefined):undefined;
     // O HTML recebe correções quando conectado; as molduras imutáveis ficam disponíveis offline.
     if(req.mode==='navigate'||new URL(req.url).pathname.endsWith('/index.html')){
-      try{const response=await fetch(req);if(response.ok&&response.type==='basic'&&response.url===req.url){try{if(cache)await cache.put(req,response.clone())}catch(error){console.warn('Cache indisponível; usando resposta da rede',error)}return response}return cached||(cache?await cache.match('./index.html').catch(()=>undefined):undefined)||response}catch{return cached||(cache?await cache.match('./index.html').catch(()=>undefined):undefined)||Response.error()}
+      try{const response=await fetch(req);if(response.ok&&response.type==='basic'&&response.url===req.url){try{if(cache)await cache.put(req,response.clone())}catch(error){console.warn('Cache indisponível; usando resposta da rede',error)}return response}return response}catch{return cached||(cache?await cache.match('./index.html').catch(()=>undefined):undefined)||Response.error()}
     }
     if(cached)return cached;
     try{const response=await fetch(req);if(response.ok&&response.type==='basic'&&response.url===req.url){try{if(cache)await cache.put(req,response.clone())}catch(error){console.warn('Cache de recurso indisponível; usando resposta da rede',error)}}return response}catch{return Response.error()}
