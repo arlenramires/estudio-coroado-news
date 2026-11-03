@@ -201,3 +201,45 @@ console.log('PWA: erro HTTP 503 preservado sem servir HTML antigo.');
     'Fallback offline deve tentar a rede nas duas situações');
 }
 console.log('PWA: navegação offline usa editor em cache; mídia ausente falha sem HTML falso.');
+
+
+// Molduras já pré-carregadas devem continuar disponíveis sem rede.
+// Respostas HTTP 404 de recursos não presentes não devem contaminar o cache.
+{
+  const handlers=new Map();
+  const cachedUrl=scope+'molduras/original_03.webp';
+  const missingUrl=scope+'molduras/original_04.webp';
+  const events=[];
+  const cached={ok:true,status:200,marker:'moldura-em-cache'};
+  const missing={ok:false,status:404,marker:'moldura-ausente'};
+  const context=vm.createContext({
+    URL,console:{warn(){}},
+    self:{registration:{scope},addEventListener:(name,handler)=>handlers.set(name,handler)},
+    caches:{open:async()=>({
+      match:async request=>{
+        const url=typeof request==='string'?new URL(request,scope).href:request.url;
+        events.push('match:'+url);
+        return url===cachedUrl?cached:undefined;
+      },
+      put:async()=>{events.push('put')}
+    })},
+    fetch:async request=>{events.push('fetch:'+request.url);return missing},
+    Response:{error:()=>({ok:false,marker:'network-error'})}
+  });
+  new vm.Script(source,{filename:'sw.js'}).runInContext(context);
+  const dispatch=async url=>{
+    let pending;
+    handlers.get('fetch')({
+      request:{url,method:'GET',mode:'no-cors',headers:{has:()=>false}},
+      respondWith:promise=>{pending=promise}
+    });
+    assert.ok(pending,'Moldura não interceptada: '+url);
+    return pending;
+  };
+  assert.equal(await dispatch(cachedUrl),cached,'Moldura pré-carregada não foi servida do cache');
+  assert.equal(await dispatch(missingUrl),missing,'Erro HTTP 404 da moldura foi substituído');
+  assert.equal(events.filter(event=>event.startsWith('fetch:')).length,1,
+    'Moldura em cache não deve depender da rede');
+  assert.ok(!events.includes('put'),'Resposta HTTP 404 não pode entrar no cache');
+}
+console.log('PWA: moldura pré-carregada funciona offline e HTTP 404 não contamina o cache.');
