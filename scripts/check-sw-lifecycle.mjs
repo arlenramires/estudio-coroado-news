@@ -41,16 +41,17 @@ async function fire(name){
   assert.ok(pending,name+' não chamou waitUntil');
   return pending;
 }
-await assert.rejects(fire('install'),/Falha simulada/);
-assert.equal(skipWaitingCalls,0,'Não pode ativar instalação incompleta');
+// Sem pré-cache, a instalação prossegue para permitir uso online.
+await fire('install');
+assert.equal(skipWaitingCalls,1,'Falha de pré-cache não deve bloquear o uso online');
 assert.equal(stored.has(cacheName),false,'Cache parcial deve ser excluído');
 failInstall=false;
 await fire('install');
-assert.equal(skipWaitingCalls,1);
+assert.equal(skipWaitingCalls,2,'Segunda instalação também deve prosseguir');
 await fire('activate');
 assert.equal(claimCalls,1);
 assert.equal(stored.has('estudio-coroado-offline-antigo'),false);
 assert.equal(stored.has('cache-de-outro-aplicativo'),true,'Cache de outro app não pode ser excluído');
 assert.equal(stored.has(cacheName),true);
 assert.deepEqual(removed.sort(),['estudio-coroado-offline-antigo',cacheName].sort());
-console.log('PWA: falha de instalação não ativa cache parcial; ativação preserva caches de terceiros.');
+console.log('PWA: falha de pré-cache permite uso online, remove cache parcial e preserva caches de terceiros.');
