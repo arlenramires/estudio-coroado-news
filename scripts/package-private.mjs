@@ -111,3 +111,4 @@ console.log('Pacote privado gerado:',dest,'com',required.length,'arquivos do PWA
 
 // Valida o pacote final independentemente da etapa de cópia.
 await import('./verify-private-package.mjs');
+await import('./check-private-distribution.mjs');
