@@ -1,6 +1,6 @@
 'use strict';
 // Somente arquivos públicos do próprio estúdio: mídia importada pelo usuário nunca é armazenada.
-const CACHE='estudio-coroado-offline-v40';
+const CACHE='estudio-coroado-offline-v41';
 const ASSETS=['./','./index.html','./manifest.webmanifest','./icons/studio.svg','./icons/studio-192.png','./icons/studio-512.png',
   ...Array.from({length:22},(_,i)=>'./molduras/original_'+String(i+1).padStart(2,'0')+'.webp')];
 // Somente arquivos declarados do aplicativo podem entrar no cache.
@@ -22,9 +22,9 @@ self.addEventListener('fetch',event=>{
     const cached=cache?await cache.match(req,{ignoreSearch:true}).catch(()=>undefined):undefined;
     // O HTML recebe correções quando conectado; as molduras imutáveis ficam disponíveis offline.
     if(req.mode==='navigate'||new URL(req.url).pathname.endsWith('/index.html')){
-      try{const response=await fetch(req);if(response.ok&&response.status!==206&&response.type==='basic'&&response.url===req.url&&(!response.headers?.get?.('content-type')||(req.url.includes('/molduras/')?response.headers.get('content-type').toLowerCase().startsWith('image/webp'):response.headers.get('content-type').toLowerCase().startsWith(req.url.endsWith('.webmanifest')?'application/':req.url.endsWith('.svg')?'image/svg+xml':req.url.endsWith('.png')?'image/png':'text/html')))){try{if(cache)await cache.put(req,response.clone())}catch(error){console.warn('Cache indisponível; usando resposta da rede',error)}return response}return response}catch{return cached||(cache?await cache.match('./index.html').catch(()=>undefined):undefined)||Response.error()}
+      try{const response=await fetch(req);if(response.ok&&response.status!==206&&response.type==='basic'&&response.url===req.url&&(!response.headers?.get?.('content-type')||(req.url.includes('/molduras/')?response.headers.get('content-type').toLowerCase().startsWith('image/webp'):(req.url.endsWith('.webmanifest')?/^application\/(?:manifest\+json|json)(?:\s*;|\s*$)/i.test(response.headers.get('content-type')):response.headers.get('content-type').toLowerCase().startsWith(req.url.endsWith('.svg')?'image/svg+xml':req.url.endsWith('.png')?'image/png':'text/html'))))){try{if(cache)await cache.put(req,response.clone())}catch(error){console.warn('Cache indisponível; usando resposta da rede',error)}return response}return response}catch{return cached||(cache?await cache.match('./index.html').catch(()=>undefined):undefined)||Response.error()}
     }
     if(cached)return cached;
-    try{const response=await fetch(req);if(response.ok&&response.status!==206&&response.type==='basic'&&response.url===req.url&&(!response.headers?.get?.('content-type')||(req.url.includes('/molduras/')?response.headers.get('content-type').toLowerCase().startsWith('image/webp'):response.headers.get('content-type').toLowerCase().startsWith(req.url.endsWith('.webmanifest')?'application/':req.url.endsWith('.svg')?'image/svg+xml':req.url.endsWith('.png')?'image/png':'text/html')))){try{if(cache)await cache.put(req,response.clone())}catch(error){console.warn('Cache de recurso indisponível; usando resposta da rede',error)}}return response}catch{return Response.error()}
+    try{const response=await fetch(req);if(response.ok&&response.status!==206&&response.type==='basic'&&response.url===req.url&&(!response.headers?.get?.('content-type')||(req.url.includes('/molduras/')?response.headers.get('content-type').toLowerCase().startsWith('image/webp'):(req.url.endsWith('.webmanifest')?/^application\/(?:manifest\+json|json)(?:\s*;|\s*$)/i.test(response.headers.get('content-type')):response.headers.get('content-type').toLowerCase().startsWith(req.url.endsWith('.svg')?'image/svg+xml':req.url.endsWith('.png')?'image/png':'text/html'))))){try{if(cache)await cache.put(req,response.clone())}catch(error){console.warn('Cache de recurso indisponível; usando resposta da rede',error)}}return response}catch{return Response.error()}
   })());
 });
