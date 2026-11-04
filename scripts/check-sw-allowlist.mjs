@@ -11,6 +11,11 @@ const allowed=['','index.html','manifest.webmanifest','icons/studio.svg','icons/
 const blocked=['molduras/original_00.webp','molduras/original_23.webp',
   'molduras/original_01.webp/extra','molduras/original_01.webp?x=1',
   'molduras/%6friginal_01.webp','icons/studio-192.png?x=1',
+  // Caminhos semelhantes não devem contornar a lista fechada do PWA privado.
+  'molduras/original_01.webp#fragmento','molduras/ORIGINAL_01.webp',
+  'molduras//original_01.webp','molduras/original_01.webp.bak',
+  'molduras/original_01.webp%2fextra','molduras/%2e%2e/index.html',
+  'icons/studio-512.png.old','index.html/extra',
   'midia-pessoal.mp4','uploads/foto.jpg','private/index.html'];
 const listeners=new Map();
 const context=vm.createContext({
