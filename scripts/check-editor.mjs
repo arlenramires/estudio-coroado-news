@@ -93,6 +93,17 @@ for(let i=1;i<=22;i++){
   const webp=fs.readFileSync(expected);
   if(webp.length<30||webp.toString('ascii',0,4)!=='RIFF'||webp.toString('ascii',8,12)!=='WEBP'||webp.readUInt32LE(4)+8!==webp.length)
     throw new Error('WebP corrompido ou tamanho RIFF incorreto: '+expected);
+  // Valida toda a estrutura RIFF: chunks truncados, padding ausente e
+  // comprimentos forjados não podem chegar ao pacote offline.
+  let offset=12;
+  while(offset<webp.length){
+    if(offset+8>webp.length)throw new Error('Cabeçalho de chunk WebP truncado: '+expected);
+    const length=webp.readUInt32LE(offset+4);
+    const end=offset+8+length+(length%2);
+    if(end>webp.length)throw new Error('Chunk WebP ultrapassa o arquivo: '+expected);
+    offset=end;
+  }
+  if(offset!==webp.length)throw new Error('Estrutura de chunks WebP inválida: '+expected);
   const codec=webp.toString('ascii',12,16);
   let actualWidth,actualHeight;
   if(codec==='VP8X'){
