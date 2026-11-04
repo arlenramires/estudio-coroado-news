@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 import path from 'node:path';
+import {spawnSync} from 'node:child_process';
 
 // Testa o pacote distribuído, não apenas os templates do gerador.
 // O servidor local nunca deve escutar na rede Wi-Fi/LAN.
@@ -9,6 +10,14 @@ const windows=fs.readFileSync(path.join(root,'Iniciar-PC-Windows.cmd'),'utf8');
 const android=fs.readFileSync(path.join(root,'Iniciar-Android-Termux.sh'),'utf8');
 const offline=fs.readFileSync(path.join(root,'Estudio_Coroado_Offline.html'),'utf8');
 const manifest=JSON.parse(fs.readFileSync(path.join(root,'manifest.webmanifest'),'utf8'));
+// Valida a sintaxe real do shell Android no runner Linux, além das inspeções textuais.
+// Um script com aspas desbalanceadas poderia passar no teste de substrings.
+if(process.platform!=='win32'){
+  const script=path.join(root,'Iniciar-Android-Termux.sh');
+  const check=spawnSync('sh',['-n',script],{encoding:'utf8'});
+  assert.equal(check.error,undefined,'Não foi possível executar o verificador de sintaxe do shell');
+  assert.equal(check.status,0,'Iniciador Android contém erro de sintaxe: '+check.stderr);
+}
 // Os iniciadores precisam ser executáveis também quando a pasta tem espaços.
 // Aspas precedidas de barra invertida são literais no shell e quebram o cd.
 assert.ok(windows.includes('cd /d "%~dp0"'), 'Windows: diretório do pacote deve estar entre aspas');
