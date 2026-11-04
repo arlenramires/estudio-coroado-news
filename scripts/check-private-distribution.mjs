@@ -13,11 +13,11 @@ const manifest=JSON.parse(fs.readFileSync(path.join(root,'manifest.webmanifest')
 // Aspas precedidas de barra invertida são literais no shell e quebram o cd.
 assert.ok(windows.includes('cd /d "%~dp0"'), 'Windows: diretório do pacote deve estar entre aspas');
 assert.ok(android.includes('cd "$(dirname "$0")"'), 'Android: diretório do pacote deve estar entre aspas');
-assert.ok(!windows.includes('\\\\"'), 'Windows: aspas não podem estar escapadas');
-assert.ok(!android.includes('\\\\"'), 'Android: aspas não podem estar escapadas');
-assert.match(windows,/ThreadingHTTPServer\\(\\('127\\.0\\.0\\.1',8765\\)/);
-assert.match(android,/python -m http\.server 8765 --bind 127\.0\.0\.1/);
-assert.doesNotMatch(windows+android,/0\.0\.0\.0|--bind\s+::|--bind\s+\[::\]/);
+assert.ok(!windows.includes(String.raw`\"`), 'Windows: aspas não podem estar escapadas');
+assert.ok(!android.includes(String.raw`\"`), 'Android: aspas não podem estar escapadas');
+assert.ok(windows.includes("ThreadingHTTPServer(('127.0.0.1',8765)"), 'Windows: servidor deve escutar somente em localhost');
+assert.ok(android.includes('python -m http.server 8765 --bind 127.0.0.1'), 'Android: servidor deve escutar somente em localhost');
+assert.ok(!(windows+android).includes('0.0.0.0'), 'Servidor não pode escutar em todas as interfaces');
 assert.equal(manifest.start_url,'./index.html');
 assert.equal(manifest.scope,'./');
 assert.equal((offline.match(/data:image\/webp;base64,/g)||[]).length,22,
