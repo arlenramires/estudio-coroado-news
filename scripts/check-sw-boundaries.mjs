@@ -303,3 +303,34 @@ console.log('PWA: resposta redirecionada para domínio externo não é persistid
   assert.deepEqual(events,['match','fetch'],'HTML redirecionado não pode ser salvo como moldura');
 }
 console.log('PWA: redirecionamento interno não contamina cache de molduras.');
+
+
+// Um servidor pode devolver página HTML com HTTP 200 na URL de uma moldura.
+// O SW deve entregar a resposta de rede, mas nunca gravá-la como imagem offline.
+{
+  const handlers=new Map();
+  const target=scope+'molduras/original_07.webp';
+  const events=[];
+  const html={ok:true,status:200,type:'basic',url:target,
+    headers:{get:()=> 'text/html; charset=utf-8'},clone(){return this}};
+  const context=vm.createContext({
+    URL,console:{warn(){}},
+    self:{registration:{scope},addEventListener:(name,handler)=>handlers.set(name,handler)},
+    caches:{open:async()=>({
+      match:async()=>{events.push('match');return undefined},
+      put:async()=>{events.push('put')}
+    })},
+    fetch:async()=>{events.push('fetch');return html},
+    Response:{error:()=>({ok:false})}
+  });
+  new vm.Script(source,{filename:'sw.js'}).runInContext(context);
+  let pending;
+  handlers.get('fetch')({
+    request:{url:target,method:'GET',mode:'no-cors',headers:{has:()=>false}},
+    respondWith:promise=>{pending=promise}
+  });
+  assert.ok(pending,'Moldura autorizada não interceptada');
+  assert.equal(await pending,html,'Resposta HTTP 200 deve ser entregue sem adulteração');
+  assert.deepEqual(events,['match','fetch'],'HTML não pode contaminar cache de molduras');
+}
+console.log('PWA: resposta HTML 200 não é armazenada como moldura WebP.');
