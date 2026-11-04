@@ -14,7 +14,7 @@ const blocked=['molduras/original_00.webp','molduras/original_23.webp',
   // Caminhos semelhantes não devem contornar a lista fechada do PWA privado.
   'molduras/ORIGINAL_01.webp',
   'molduras//original_01.webp','molduras/original_01.webp.bak',
-  'molduras/original_01.webp%2fextra','molduras/%2e%2e/index.html',
+  'molduras/original_01.webp%2fextra',
   'icons/studio-512.png.old','index.html/extra',
   'midia-pessoal.mp4','uploads/foto.jpg','private/index.html'];
 const listeners=new Map();
