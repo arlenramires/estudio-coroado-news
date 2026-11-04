@@ -26,4 +26,19 @@ for(let i=1;i<=22;i++){
   const name='original_'+String(i).padStart(2,'0')+'.webp';
   assert.ok(fs.statSync(path.join(root,'molduras',name)).size>1000,name);
 }
+// O ZIP deve transportar os mesmos bytes do acervo aprovado, não apenas arquivos
+// com nomes e tamanhos plausíveis. Evita distribuição de molduras desatualizadas.
+for(let i=1;i<=22;i++){
+  const name='original_'+String(i).padStart(2,'0')+'.webp';
+  const source=fs.readFileSync(path.join('molduras',name));
+  const distributed=fs.readFileSync(path.join(root,'molduras',name));
+  assert.deepEqual(distributed,source,'Moldura divergente no pacote: '+name);
+}
+// Confere os demais recursos que o PWA precisa servir sem rede externa.
+for(const name of ['index.html','manifest.webmanifest','sw.js',
+  'icons/studio.svg','icons/studio-192.png','icons/studio-512.png']){
+  assert.deepEqual(fs.readFileSync(path.join(root,name)),fs.readFileSync(name),
+    'Recurso PWA divergente no pacote: '+name);
+}
+console.log('Integridade do pacote: 22 molduras e recursos PWA idênticos aos originais.');
 console.log('Pacote: iniciadores restritos a localhost, PWA local e 22 molduras offline.');
