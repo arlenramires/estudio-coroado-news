@@ -51,9 +51,9 @@ echo "Para instalar o PWA: menu do Chrome > Instalar app (quando disponivel)."
 python -m http.server 8765 --bind 127.0.0.1
 `.replaceAll('\\"','"');
  // Evita distribuir iniciadores com aspas escapadas como em strings JavaScript comuns.
-// Em CMD e shell, barras antes de aspas alteram o caminho ou os argumentos.
+// Em CMD e shell, uma única barra antes de aspas já altera o caminho ou os argumentos.
 for(const [name,launcher] of [['Windows',win],['Android',android]]){
-  if(launcher.includes('\\\\"'))throw Error('Iniciador '+name+' contém aspas escapadas incorretamente');
+  if(launcher.includes('\\"'))throw Error('Iniciador '+name+' contém aspas escapadas incorretamente');
 }
 if(!win.includes('cd /d "%~dp0"')||!android.includes('cd "$(dirname "$0")"'))
   throw Error('Iniciadores não preservam corretamente caminhos com espaços');
