@@ -10,6 +10,7 @@ import './check-sw-partial-response.mjs';
 import './check-sw-mime.mjs';
 import './check-sw-manifest-json.mjs';
 import './check-sw-bypass.mjs';
+import './check-sw-allowlist.mjs';
 const html=fs.readFileSync('index.html','utf8');
 // Privacidade: o editor privado não pode carregar scripts, estilos, imagens ou
 // fontes de terceiros. Uma dependência remota quebraria o uso offline e poderia
