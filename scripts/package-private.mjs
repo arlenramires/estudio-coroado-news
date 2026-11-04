@@ -39,7 +39,7 @@ goto end
 :python
 python -c "import http.server,webbrowser; s=http.server.ThreadingHTTPServer(('127.0.0.1',8765),http.server.SimpleHTTPRequestHandler); print('Servidor privado ativo em http://127.0.0.1:8765/ - mantenha esta janela aberta'); webbrowser.open('http://127.0.0.1:8765/index.html'); s.serve_forever()"
 :end
-`;
+`.replaceAll('\\"','"');
 const android=String.raw`#!/data/data/com.termux/files/usr/bin/sh
 cd "$(dirname "$0")" || exit 1
 if ! command -v python >/dev/null 2>&1; then
@@ -49,8 +49,8 @@ fi
 echo "Abra http://127.0.0.1:8765/index.html no Chrome."
 echo "Para instalar o PWA: menu do Chrome > Instalar app (quando disponivel)."
 python -m http.server 8765 --bind 127.0.0.1
-`;
-// Evita distribuir iniciadores com aspas escapadas como em strings JavaScript comuns.
+`.replaceAll('\\"','"');
+ // Evita distribuir iniciadores com aspas escapadas como em strings JavaScript comuns.
 // Em CMD e shell, barras antes de aspas alteram o caminho ou os argumentos.
 for(const [name,launcher] of [['Windows',win],['Android',android]]){
   if(launcher.includes('\\\\"'))throw Error('Iniciador '+name+' contém aspas escapadas incorretamente');
