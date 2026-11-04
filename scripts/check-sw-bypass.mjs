@@ -8,8 +8,14 @@ const source=fs.readFileSync('sw.js','utf8');
 const scope='http://127.0.0.1:8765/';
 const cases=[
   {name:'POST para moldura',url:scope+'molduras/original_01.webp',method:'POST',range:false},
+  {name:'PUT para moldura',url:scope+'molduras/original_01.webp',method:'PUT',range:false},
+  {name:'DELETE para moldura',url:scope+'molduras/original_01.webp',method:'DELETE',range:false},
+  {name:'HEAD para manifesto',url:scope+'manifest.webmanifest',method:'HEAD',range:false},
   {name:'Range para moldura',url:scope+'molduras/original_01.webp',method:'GET',range:true},
   {name:'URL com parâmetro',url:scope+'molduras/original_01.webp?token=privado',method:'GET',range:false},
+  {name:'URL com parâmetro no editor',url:scope+'index.html?session=privada',method:'GET',range:false},
+  {name:'URL com parâmetro no manifesto',url:scope+'manifest.webmanifest?v=1',method:'GET',range:false},
+  {name:'arquivo parecido com moldura',url:scope+'molduras/original_23.webp',method:'GET',range:false},
   {name:'arquivo importado',url:scope+'midia-pessoal.mp4',method:'GET',range:false},
   {name:'origem externa',url:'https://example.org/index.html',method:'GET',range:false}
 ];
@@ -32,4 +38,4 @@ for(const test of cases){
   assert.equal(networkCalls,0,test.name+' acionou fetch');
   assert.equal(cacheCalls,0,test.name+' acessou cache');
 }
-console.log('PWA: POST, Range, parâmetros, mídia pessoal e origens externas não são interceptados.');
+console.log('PWA: métodos não GET, Range, parâmetros, arquivos não autorizados, mídia pessoal e origens externas não são interceptados.');
