@@ -16,6 +16,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Proteger etapas obrigatórias e impedir GitHub Pages
+        run: node scripts/check-ci-contract.mjs
       - name: Validar editor e arquivos originais
         run: node scripts/check-editor.mjs
 
