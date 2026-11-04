@@ -23,7 +23,13 @@ for(const file of required){
 }
 const offline=path.join(root,'dist','Estudio_Coroado_Offline.html');
 if(!fs.existsSync(offline))throw Error('Execute primeiro: node scripts/build-offline.mjs');
-fs.copyFileSync(offline,path.join(dest,'Estudio_Coroado_Offline.html'));
+// O HTML autossuficiente é o principal caminho de uso sem servidor.
+// Confere a cópia integral e rejeita um pacote offline vazio ou incompleto.
+const offlineTarget=path.join(dest,'Estudio_Coroado_Offline.html');
+if(fs.statSync(offline).size<10000)throw Error('HTML offline vazio ou inesperadamente pequeno');
+fs.copyFileSync(offline,offlineTarget);
+const digest=file=>crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex');
+if(digest(offline)!==digest(offlineTarget))throw Error('HTML offline diverge do arquivo gerado');
 const win=String.raw`@echo off
 cd /d "%~dp0"
 where py >nul 2>&1
