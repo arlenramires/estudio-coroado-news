@@ -2,6 +2,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 
+// Sempre reconstrói o HTML offline a partir do editor e das molduras atuais.
+// Evita distribuir um HTML antigo quando package-private é executado isoladamente.
+await import('./build-offline.mjs');
+
 const root=process.cwd();
 const dest=path.join(root,'dist','Estudio-Coroado-Privado');
 const required=['index.html','manifest.webmanifest','sw.js','icons/studio.svg','icons/studio-192.png','icons/studio-512.png',
