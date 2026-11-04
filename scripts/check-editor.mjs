@@ -4,6 +4,7 @@ import path from 'node:path';
 // Executa também a validação profunda de CRC/chunks dos ícones PWA em toda
 // execução do check-editor (local e CI), sem depender de etapa separada.
 import './check-png-integrity.mjs';
+import './check-manifest-private.mjs';
 import './check-sw-private.mjs';
 import './check-sw-boundaries.mjs';
 import './check-sw-partial-response.mjs';
