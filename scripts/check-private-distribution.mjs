@@ -40,5 +40,19 @@ for(const name of ['index.html','manifest.webmanifest','sw.js',
   assert.deepEqual(fs.readFileSync(path.join(root,name)),fs.readFileSync(name),
     'Recurso PWA divergente no pacote: '+name);
 }
+// O HTML único precisa funcionar sem acesso ao diretório molduras/.
+// Referências residuais podem deixar a prévia vazia ao abrir o arquivo no Android.
+assert.ok(!/"src":"molduras\\//.test(offline),
+  'HTML offline contém caminho de moldura não incorporada');
+const embedded=[...offline.matchAll(/"src":"data:image\\/webp;base64,([A-Za-z0-9+/=]+)"/g)];
+assert.equal(embedded.length,22,'HTML offline deve conter 22 imagens incorporadas');
+for(let i=0;i<22;i++){
+  const encoded=embedded[i][1];
+  const bytes=Buffer.from(encoded,'base64');
+  assert.equal(bytes.toString('base64'),encoded,'Base64 inválido na moldura '+(i+1));
+  const name='original_'+String(i+1).padStart(2,'0')+'.webp';
+  assert.deepEqual(bytes,fs.readFileSync(path.join(root,'molduras',name)),
+    'Moldura incorporada fora de ordem ou divergente: '+name);
+}
 console.log('Integridade do pacote: 22 molduras e recursos PWA idênticos aos originais.');
 console.log('Pacote: iniciadores restritos a localhost, PWA local e 22 molduras offline.');
