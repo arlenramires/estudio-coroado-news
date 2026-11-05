@@ -23,7 +23,11 @@ for line in manifest.read_text(encoding="utf-8").splitlines():
     target = (root / rel).resolve()
     if not target.is_relative_to(root) or not target.is_file():
         sys.exit("ERRO: arquivo ausente ou fora do pacote: " + name)
-    actual = hashlib.file_digest(target.open("rb"), "sha256").hexdigest()
+    digest = hashlib.sha256()
+    with target.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(chunk)
+    actual = digest.hexdigest()
     if actual != expected:
         sys.exit("ERRO: arquivo alterado ou corrompido: " + name)
     count += 1
