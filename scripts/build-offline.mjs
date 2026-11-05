@@ -23,8 +23,8 @@ for(const asset of paths){
 }
 html=html.replace(/<link rel="manifest"[^>]*>/,'').replace(/<link rel="icon"[^>]*>/,'');
 const out=path.join(root,'dist','Estudio_Coroado_Offline.html');
-fs.mkdirSync(path.dirname(out),{recursive:true});
-fs.writeFileSync(out,html);
+// Só publicar o artefato depois de concluir todas as validações.
+// Uma falha não pode deixar um HTML offline inválido em dist/.
 if(html.includes('"src":"molduras/'))throw Error('Moldura externa restante');
 const embedded=[...html.matchAll(/"src":"data:image\/webp;base64,([A-Za-z0-9+/=]+)"/g)];
 if(embedded.length!==22)throw Error('HTML offline deve conter 22 imagens incorporadas, encontradas '+embedded.length);
@@ -53,4 +53,12 @@ if(/\bimport\s*\(\s*['"`](?:https?:)?\/\//i.test(html))
   throw Error('HTML offline contém importação dinâmica remota');
 if(/<script\b[^>]*\bsrc\s*=/i.test(html))
   throw Error('HTML offline contém script externo');
+fs.mkdirSync(path.dirname(out),{recursive:true});
+const temporary=out+'.tmp-'+process.pid;
+try {
+  fs.writeFileSync(temporary,html);
+  fs.renameSync(temporary,out);
+} finally {
+  if(fs.existsSync(temporary))fs.unlinkSync(temporary);
+}
 console.log('HTML único para PC e celular:',out,fs.statSync(out).size,'bytes; 22 molduras incorporadas.');
