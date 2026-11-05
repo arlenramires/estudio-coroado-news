@@ -40,10 +40,18 @@ echo Python nao encontrado. Abra Estudio_Coroado_Offline.html para usar sem inst
 pause
 exit /b 1
 :py
+py -3 Verificar-integridade.py
+if errorlevel 1 goto invalid
 py -3 -c "import http.server,webbrowser; s=http.server.ThreadingHTTPServer(('127.0.0.1',8765),http.server.SimpleHTTPRequestHandler); print('Servidor privado ativo em http://127.0.0.1:8765/ - mantenha esta janela aberta'); webbrowser.open('http://127.0.0.1:8765/index.html'); s.serve_forever()"
 goto end
 :python
+python Verificar-integridade.py
+if errorlevel 1 goto invalid
 python -c "import http.server,webbrowser; s=http.server.ThreadingHTTPServer(('127.0.0.1',8765),http.server.SimpleHTTPRequestHandler); print('Servidor privado ativo em http://127.0.0.1:8765/ - mantenha esta janela aberta'); webbrowser.open('http://127.0.0.1:8765/index.html'); s.serve_forever()"
+:invalid
+echo Integridade do pacote falhou. Extraia novamente o ZIP original.
+pause
+exit /b 1
 :end
 `.replaceAll('\\"','"');
 const android=String.raw`#!/data/data/com.termux/files/usr/bin/sh
@@ -79,7 +87,7 @@ O arquivo unico inclui as 22 molduras. Ele NAO e um PWA instalavel.
 
 PWA NO WINDOWS (INSTALACAO PELO NAVEGADOR):
 1. Extraia o ZIP inteiro (nao abra arquivos de dentro do ZIP).
-2. Com Python instalado, execute Iniciar-PC-Windows.cmd e mantenha a janela aberta.
+2. Com Python instalado, execute Iniciar-PC-Windows.cmd e mantenha a janela aberta.\n   O iniciador verifica a integridade antes de abrir o servidor.
    O navegador so sera aberto depois de o servidor iniciar.
 3. No Chrome ou Edge, acesse http://127.0.0.1:8765/index.html
 4. Aguarde carregar as 22 molduras e use o menu > Instalar aplicativo.
