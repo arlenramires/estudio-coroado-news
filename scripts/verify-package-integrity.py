@@ -8,6 +8,14 @@ root = Path(__file__).resolve().parent
 manifest = root / "SHA256SUMS.txt"
 if not manifest.is_file():
     sys.exit("ERRO: SHA256SUMS.txt ausente. Extraia o ZIP completo.")
+required = {
+    "index.html", "manifest.webmanifest", "sw.js",
+    "icons/studio.svg", "icons/studio-192.png", "icons/studio-512.png",
+    "Estudio_Coroado_Offline.html", "Iniciar-PC-Windows.cmd",
+    "Iniciar-Android-Termux.sh", "LEIA-ME-PRIMEIRO.txt",
+    "Verificar-integridade.py",
+}
+required.update("molduras/original_{:02d}.webp".format(i) for i in range(1, 23))
 seen = set()
 count = 0
 for line in manifest.read_text(encoding="utf-8").splitlines():
@@ -31,6 +39,17 @@ for line in manifest.read_text(encoding="utf-8").splitlines():
     if actual != expected:
         sys.exit("ERRO: arquivo alterado ou corrompido: " + name)
     count += 1
-if count < 30:
+missing = required - seen
+if missing:
+    sys.exit("ERRO: arquivos obrigatorios ausentes do manifesto: " + ", ".join(sorted(missing)))
+# Rejeita arquivos adicionais sem checksum (inclusive em subpastas).
+actual_files = {
+    p.relative_to(root).as_posix()
+    for p in root.rglob("*") if p.is_file() and p.name != "SHA256SUMS.txt"
+}
+unlisted = actual_files - seen
+if unlisted:
+    sys.exit("ERRO: arquivos sem checksum: " + ", ".join(sorted(unlisted)))
+if count < len(required):
     sys.exit("ERRO: manifesto incompleto (" + str(count) + " arquivos).")
 print("OK: integridade verificada em", count, "arquivos do pacote.")
