@@ -45,5 +45,19 @@ try{
   if(result.status===0)throw Error('Verificador aceitou link simbólico extra');
   console.log('Adulteração rejeitada: link simbólico');
 }finally{if(fs.existsSync(symlink))fs.unlinkSync(symlink)}
+
+// O verificador distribuído em Python também precisa rejeitar a remoção
+// de uma moldura do manifesto, mesmo quando os hashes restantes são válidos.
+const pythonVerify=()=>spawnSync('python3',['Verificar-integridade.py'],{cwd:root,encoding:'utf8'});
+if(pythonVerify().status!==0)throw Error('Verificador Python rejeitou pacote original');
+const manifestText=original.toString('utf8');
+const reduced=manifestText.split('\n').filter(line=>!line.endsWith('  molduras/original_22.webp')).join('\n');
+if(reduced===manifestText)throw Error('Moldura 22 não encontrada no manifesto');
+try{
+  fs.writeFileSync(sums,reduced);
+  if(pythonVerify().status===0)throw Error('Verificador Python aceitou manifesto sem moldura 22');
+  console.log('Adulteração rejeitada: moldura removida do manifesto Python');
+}finally{fs.writeFileSync(sums,original)}
+
 if(verify().status!==0)throw Error('Pacote não foi restaurado após testes negativos');
 console.log('Testes negativos de integridade concluídos.');
