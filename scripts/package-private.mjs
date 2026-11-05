@@ -54,7 +54,7 @@ if ! command -v python >/dev/null 2>&1; then
 fi
 echo "Abra http://127.0.0.1:8765/index.html no Chrome."
 echo "Para instalar o PWA: menu do Chrome > Instalar app (quando disponivel)."
-python -m http.server 8765 --bind 127.0.0.1
+exec python -m http.server 8765 --bind 127.0.0.1
 `.replaceAll('\\"','"');
  // Evita distribuir iniciadores com aspas escapadas como em strings JavaScript comuns.
 // Em CMD e shell, uma única barra antes de aspas já altera o caminho ou os argumentos.
