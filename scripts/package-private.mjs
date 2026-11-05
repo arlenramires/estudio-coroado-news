@@ -48,6 +48,7 @@ goto end
 python Verificar-integridade.py
 if errorlevel 1 goto invalid
 python -c "import http.server,webbrowser; s=http.server.ThreadingHTTPServer(('127.0.0.1',8765),http.server.SimpleHTTPRequestHandler); print('Servidor privado ativo em http://127.0.0.1:8765/ - mantenha esta janela aberta'); webbrowser.open('http://127.0.0.1:8765/index.html'); s.serve_forever()"
+goto end
 :invalid
 echo Integridade do pacote falhou. Extraia novamente o ZIP original.
 pause
