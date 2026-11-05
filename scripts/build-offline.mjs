@@ -42,4 +42,11 @@ if(/<link\b[^>]*\brel\s*=\s*["']manifest["']/i.test(html))
   throw Error('HTML offline não pode depender de manifesto PWA');
 if(/"src":"molduras\//.test(html))
   throw Error('HTML offline ainda referencia moldura no disco');
+// Recursos indiretos em CSS e imports JS também quebram o uso offline.
+const remoteCss=[...html.matchAll(/(?:@import\s+(?:url\s*\(\s*)?|url\s*\(\s*)["']?\s*((?:https?:)?\/\/[^\s"') ;]+)/gi)].map(m=>m[1]);
+if(remoteCss.length)throw Error('HTML offline contém CSS remoto: '+remoteCss.join(', '));
+if(/\bimport\s*\(\s*['"`](?:https?:)?\/\//i.test(html))
+  throw Error('HTML offline contém importação dinâmica remota');
+if(/<script\b[^>]*\bsrc\s*=/i.test(html))
+  throw Error('HTML offline contém script externo');
 console.log('HTML único para PC e celular:',out,fs.statSync(out).size,'bytes; 22 molduras incorporadas.');
