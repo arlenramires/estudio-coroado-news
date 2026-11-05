@@ -32,4 +32,14 @@ for(let i=0;i<embedded.length;i++){
   const original=fs.readFileSync(path.join(root,paths[i]));
   if(!Buffer.from(embedded[i][1],'base64').equals(original))throw Error('Imagem offline divergente: '+paths[i]);
 }
+// O arquivo único deve continuar autossuficiente: nenhuma imagem, fonte, script
+// ou folha de estilo pode depender de uma URL externa ou arquivo local ausente.
+const resourceRefs=[...html.matchAll(/\b(?:src|href|poster)\s*=\s*(["'])(.*?)\1/gi)]
+  .map(match=>match[2]);
+const unexpected=resourceRefs.filter(ref=>!ref.startsWith('data:')&&!ref.startsWith('#')&&!ref.startsWith('blob:'));
+if(unexpected.length)throw Error('HTML offline contém recurso externo: '+unexpected.join(', '));
+if(/<link\b[^>]*\brel\s*=\s*["']manifest["']/i.test(html))
+  throw Error('HTML offline não pode depender de manifesto PWA');
+if(/"src":"molduras\//.test(html))
+  throw Error('HTML offline ainda referencia moldura no disco');
 console.log('HTML único para PC e celular:',out,fs.statSync(out).size,'bytes; 22 molduras incorporadas.');
