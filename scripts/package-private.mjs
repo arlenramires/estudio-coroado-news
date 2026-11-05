@@ -52,6 +52,11 @@ if ! command -v python >/dev/null 2>&1; then
   echo "Instale Python no Termux: pkg install python"
   exit 1
 fi
+# Nunca servir arquivos adulterados ou extraidos parcialmente.
+if ! python Verificar-integridade.py; then
+  echo "Integridade do pacote falhou. Extraia novamente o ZIP original."
+  exit 1
+fi
 echo "Abra http://127.0.0.1:8765/index.html no Chrome."
 echo "Para instalar o PWA: menu do Chrome > Instalar app (quando disponivel)."
 exec python -m http.server 8765 --bind 127.0.0.1
