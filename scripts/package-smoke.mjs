@@ -40,6 +40,8 @@ for(const line of sums){
 const windowsLauncher=fs.readFileSync(path.join(dir,'Iniciar-PC-Windows.cmd'),'utf8');
 if(!windowsLauncher.includes('ThreadingHTTPServer')||!windowsLauncher.includes('webbrowser.open'))throw Error('Inicializador Windows não espera servidor antes de abrir o navegador');
 if(windowsLauncher.includes('start "" "http://127.0.0.1:8765'))throw Error('Inicializador Windows abre navegador antes do servidor');
+// Ambas as rotas Python devem terminar normalmente sem cair no rótulo de pacote inválido.
+if((windowsLauncher.match(/goto end/g)||[]).length!==2)throw Error('Windows exibe falso erro de integridade ao encerrar uma das rotas Python');
 const androidInstructions=fs.readFileSync(path.join(dir,'LEIA-ME-PRIMEIRO.txt'),'utf8');
 if(!androidInstructions.includes('termux-setup-storage')||!androidInstructions.includes('mantenha a janela aberta'))throw Error('Instruções de instalação local incompletas');
 if(androidInstructions.includes(String.raw`\n`))throw Error('Instruções de instalação contêm barras n literais em vez de quebras de linha');
