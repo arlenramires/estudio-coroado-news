@@ -38,7 +38,7 @@ try{
  const secondAudio=spawnSync('ffmpeg',['-hide_banner','-nostdin','-i',output,'-map','0:a:0','-af','volumedetect','-f','null','-'],{encoding:'utf8',maxBuffer:4*1024*1024});
  if(secondAudio.error||secondAudio.status!==0)
    throw new Error('Não foi possível decodificar o áudio da segunda conversão: '+(secondAudio.stderr||secondAudio.error?.message));
- const secondVolume=secondAudio.stderr.match(/max_volume:\\s*(-?[\\d.]+) dB/);
+ const secondVolume=secondAudio.stderr.match(/max_volume:\s*(-?[\d.]+) dB/);
  if(!secondVolume||!Number.isFinite(Number(secondVolume[1]))||Number(secondVolume[1]) < -45)
    throw new Error('Segunda conversão produziu áudio mudo ou inaudível: '+(secondVolume?.[1]??'sem medição'));
  if(readdirSync(dir).some(name=>name.startsWith('.saida.mp4.')))throw new Error('Conversão bem-sucedida deixou arquivo temporário');
