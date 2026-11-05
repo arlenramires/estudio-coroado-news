@@ -28,9 +28,18 @@ for line in manifest.read_text(encoding="utf-8").splitlines():
     if not name or rel.is_absolute() or ".." in rel.parts or name in seen:
         sys.exit("ERRO: caminho inseguro ou duplicado no manifesto.")
     seen.add(name)
-    target = (root / rel).resolve()
-    if not target.is_relative_to(root) or not target.is_file():
-        sys.exit("ERRO: arquivo ausente ou fora do pacote: " + name)
+    raw_target = root / rel
+    # Recusa links simbolicos mesmo quando apontam para dentro do pacote.
+    # Evita que arquivos trocados por links passem na verificacao.
+    if any(part.is_symlink() for part in [raw_target, *raw_target.parents] if part != root.parent):
+        sys.exit("ERRO: link simbolico nao permitido: " + name)
+    target = raw_target.resolve()
+    try:
+        target.relative_to(root)
+    except ValueError:
+        sys.exit("ERRO: caminho fora do pacote: " + name)
+    if not target.is_file():
+        sys.exit("ERRO: arquivo ausente: " + name)
     digest = hashlib.sha256()
     with target.open("rb") as stream:
         for chunk in iter(lambda: stream.read(1024 * 1024), b""):
@@ -43,10 +52,12 @@ missing = required - seen
 if missing:
     sys.exit("ERRO: arquivos obrigatorios ausentes do manifesto: " + ", ".join(sorted(missing)))
 # Rejeita arquivos adicionais sem checksum (inclusive em subpastas).
-actual_files = {
-    p.relative_to(root).as_posix()
-    for p in root.rglob("*") if p.is_file() and p.name != "SHA256SUMS.txt"
-}
+actual_files = set()
+for p in root.rglob("*"):
+    if p.is_symlink():
+        sys.exit("ERRO: link simbolico nao permitido: " + str(p.relative_to(root)))
+    if p.is_file() and p.name != "SHA256SUMS.txt":
+        actual_files.add(p.relative_to(root).as_posix())
 unlisted = actual_files - seen
 if unlisted:
     sys.exit("ERRO: arquivos sem checksum: " + ", ".join(sorted(unlisted)))
