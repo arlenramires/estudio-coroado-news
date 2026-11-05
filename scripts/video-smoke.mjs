@@ -260,6 +260,14 @@ try{
    throw Error('Segunda exportação .webm com contêiner incorreto: '+repeatContainer);
  if(!/\.(mp4|webm)$/i.test(repeat.suggestedFilename()))throw Error('Extensão inesperada na segunda exportação: '+repeat.suggestedFilename());
  if(!repeatTypes.includes('video')||!repeatTypes.includes('audio'))throw Error('Segunda exportação sem vídeo/áudio: '+JSON.stringify(repeatTypes));
+// Uma faixa de áudio presente não garante som audível após a segunda exportação.
+// Mede o áudio decodificado para detectar regressões no AudioContext reutilizado.
+const repeatVolume=spawnSync('ffmpeg',['-hide_banner','-nostats','-i',repeatTarget,'-vn','-af','volumedetect','-f','null','-'],{encoding:'utf8'});
+if(repeatVolume.status!==0)throw Error('Falha ao decodificar áudio da segunda exportação: '+repeatVolume.stderr.slice(-500));
+const repeatMeasured=repeatVolume.stderr.match(/mean_volume:\\s*(-?[0-9.]+) dB/);
+if(!repeatMeasured||Number(repeatMeasured[1])< -55)
+  throw Error('Segunda exportação perdeu áudio audível: '+(repeatMeasured?.[1]||'sem medição'));
+
  // A segunda gravação também precisa manter codecs compatíveis, não apenas faixas presentes.
  if(repeat.suggestedFilename().endsWith('.mp4')){
    const codecStreams=JSON.parse(execFileSync('ffprobe',['-v','error','-show_entries','stream=codec_type,codec_name','-of','json',repeatTarget],{encoding:'utf8'})).streams||[];
