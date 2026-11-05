@@ -90,7 +90,7 @@ PWA NO ANDROID (SEM HOSPEDAGEM PUBLICA):
 6. Aguarde as 22 molduras; menu > Instalar app/Adicionar a tela inicial.
 7. Se o Chrome nao oferecer instalacao, use o HTML offline como alternativa.
 
-IMPORTANTE: nenhum arquivo e enviado a um servidor externo pelo editor.
+VERIFICAR ARQUIVOS EXTRAIDOS (OPCIONAL):\nExecute python Verificar-integridade.py na pasta extraida.\nO resultado OK confirma que os arquivos conferem com SHA256SUMS.txt.\n\nIMPORTANTE: nenhum arquivo e enviado a um servidor externo pelo editor.
 MP4 so se o navegador suportar MediaRecorder MP4; caso contrario, WebM.
 Teste exportacao com audio no seu aparelho antes de publicar.
 Nao e APK; a instalacao Android fisica ainda precisa de validacao.
@@ -98,6 +98,10 @@ Nao use IP HTTP do PC para instalar PWA no Android.
 Se o Termux nao encontrar a pasta Downloads, execute termux-setup-storage, autorize e use ~/storage/downloads.
 Se o PWA nao abrir offline, acesse-o com servidor ativo uma vez e aguarde o aviso de cache pronto.
 `);
+// Verificador portátil: roda com Python no Windows, Linux e Termux, sem rede.
+// O próprio verificador entra no manifesto para impedir alterações silenciosas.
+fs.copyFileSync(path.join(root,'scripts','verify-package-integrity.py'),
+  path.join(dest,'Verificar-integridade.py'));
 // Lista verificável de integridade para detectar ZIP extraído parcialmente ou alterado.
 const files=[];
 function collect(dir){for(const entry of fs.readdirSync(dir,{withFileTypes:true})){
