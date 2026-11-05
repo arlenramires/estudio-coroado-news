@@ -87,7 +87,16 @@ try{
   if(!reopened)throw Error('PWA não restaura as 22 molduras após fechar e reabrir offline');
   const d=page.waitForEvent('download',{timeout:15000});
   await page.locator('#savePNG').tap();
-  if(!(await d).suggestedFilename().endsWith('.png'))throw Error('PNG indisponível offline');
+  const download=await d;
+  if(!download.suggestedFilename().toLowerCase().endsWith('.png'))throw Error('PNG indisponível offline');
+  // Confere os bytes reais: extensão .png não garante imagem exportada corretamente.
+  const saved=await download.path();
+  const png=fs.readFileSync(saved);
+  const signature=Buffer.from([137,80,78,71,13,10,26,10]);
+  if(png.length<45||!png.subarray(0,8).equals(signature))throw Error('Exportação offline não gerou PNG válido');
+  if(png.toString('ascii',12,16)!=='IHDR')throw Error('PNG exportado não contém cabeçalho IHDR');
+  const width=png.readUInt32BE(16),height=png.readUInt32BE(20);
+  if(width<100||height<100)throw Error('PNG exportado possui dimensões inválidas: '+width+'x'+height);
   if(errors.length)throw Error('Erros no PWA empacotado: '+errors.join(' | '));
   console.log('Pacote privado aprovado: 22 molduras íntegras, PWA em localhost, reabertura offline em nova aba e PNG em tela móvel.');
 }finally{
