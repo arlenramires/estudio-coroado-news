@@ -87,7 +87,8 @@ O arquivo unico inclui as 22 molduras. Ele NAO e um PWA instalavel.
 
 PWA NO WINDOWS (INSTALACAO PELO NAVEGADOR):
 1. Extraia o ZIP inteiro (nao abra arquivos de dentro do ZIP).
-2. Com Python instalado, execute Iniciar-PC-Windows.cmd e mantenha a janela aberta.\n   O iniciador verifica a integridade antes de abrir o servidor.
+2. Com Python instalado, execute Iniciar-PC-Windows.cmd e mantenha a janela aberta.
+   O iniciador verifica a integridade antes de abrir o servidor.
    O navegador so sera aberto depois de o servidor iniciar.
 3. No Chrome ou Edge, acesse http://127.0.0.1:8765/index.html
 4. Aguarde carregar as 22 molduras e use o menu > Instalar aplicativo.
