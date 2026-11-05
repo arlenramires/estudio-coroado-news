@@ -45,6 +45,10 @@ if(/"src":"molduras\//.test(html))
 // Recursos indiretos em CSS e imports JS também quebram o uso offline.
 const remoteCss=[...html.matchAll(/(?:@import\s+(?:url\s*\(\s*)?|url\s*\(\s*)["']?\s*((?:https?:)?\/\/[^\s"') ;]+)/gi)].map(m=>m[1]);
 if(remoteCss.length)throw Error('HTML offline contém CSS remoto: '+remoteCss.join(', '));
+// Importações CSS relativas também exigem arquivos externos e invalidam o HTML único.
+// Não basta bloquear URLs HTTP: @import './estilos.css' falharia sem internet.
+if(/@import\s+(?:url\s*\(|["'])/i.test(html))
+  throw Error('HTML offline contém @import CSS que depende de outro arquivo');
 if(/\bimport\s*\(\s*['"`](?:https?:)?\/\//i.test(html))
   throw Error('HTML offline contém importação dinâmica remota');
 if(/<script\b[^>]*\bsrc\s*=/i.test(html))
