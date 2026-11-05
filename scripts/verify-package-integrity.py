@@ -1,0 +1,32 @@
+#!/usr/bin/env python3
+"""Confere arquivos extraidos do pacote privado sem enviar dados pela rede."""
+from pathlib import Path
+import hashlib
+import sys
+
+root = Path(__file__).resolve().parent
+manifest = root / "SHA256SUMS.txt"
+if not manifest.is_file():
+    sys.exit("ERRO: SHA256SUMS.txt ausente. Extraia o ZIP completo.")
+seen = set()
+count = 0
+for line in manifest.read_text(encoding="utf-8").splitlines():
+    if len(line) < 67 or line[64:66] != "  ":
+        sys.exit("ERRO: linha invalida no manifesto de integridade.")
+    expected, name = line[:64], line[66:]
+    if len(expected) != 64 or any(c not in "0123456789abcdef" for c in expected):
+        sys.exit("ERRO: hash invalido no manifesto.")
+    rel = Path(name)
+    if not name or rel.is_absolute() or ".." in rel.parts or name in seen:
+        sys.exit("ERRO: caminho inseguro ou duplicado no manifesto.")
+    seen.add(name)
+    target = (root / rel).resolve()
+    if not target.is_relative_to(root) or not target.is_file():
+        sys.exit("ERRO: arquivo ausente ou fora do pacote: " + name)
+    actual = hashlib.file_digest(target.open("rb"), "sha256").hexdigest()
+    if actual != expected:
+        sys.exit("ERRO: arquivo alterado ou corrompido: " + name)
+    count += 1
+if count < 30:
+    sys.exit("ERRO: manifesto incompleto (" + str(count) + " arquivos).")
+print("OK: integridade verificada em", count, "arquivos do pacote.")
