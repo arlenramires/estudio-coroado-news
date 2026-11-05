@@ -13,10 +13,10 @@ for(const file of assets){
   if(!fs.existsSync(path.join(dir,file)))throw Error('Arquivo não incluído: '+file);
   if(hash(path.join(dir,file))!==hash(path.join(root,file)))throw Error('Pacote alterou o arquivo: '+file);
 }
-for(const file of ['Estudio_Coroado_Offline.html','Iniciar-PC-Windows.cmd','Iniciar-Android-Termux.sh','LEIA-ME-PRIMEIRO.txt'])
+for(const file of ['Estudio_Coroado_Offline.html','Iniciar-PC-Windows.cmd','Iniciar-Android-Termux.sh','LEIA-ME-PRIMEIRO.txt','Verificar-integridade.py'])
   if(!fs.existsSync(path.join(dir,file)))throw Error('Instalação incompleta: '+file);
 // Pacotes anteriores nao podem deixar arquivos extras na nova entrega.
-const expected=new Set([...assets,'Estudio_Coroado_Offline.html','Iniciar-PC-Windows.cmd','Iniciar-Android-Termux.sh','LEIA-ME-PRIMEIRO.txt','SHA256SUMS.txt']);
+const expected=new Set([...assets,'Estudio_Coroado_Offline.html','Iniciar-PC-Windows.cmd','Iniciar-Android-Termux.sh','LEIA-ME-PRIMEIRO.txt','Verificar-integridade.py','SHA256SUMS.txt']);
 function scan(directory){
   for(const entry of fs.readdirSync(directory,{withFileTypes:true})){
     const absolute=path.join(directory,entry.name);
