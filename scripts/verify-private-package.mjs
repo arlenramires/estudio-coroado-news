@@ -111,6 +111,14 @@ const offline=fs.readFileSync(path.join(dir,'Estudio_Coroado_Offline.html'),'utf
 // Uma página offline pode citar as 22 molduras e ainda estar sem as imagens.
 const embedded=[...offline.matchAll(/"src":"data:image\/webp;base64,([A-Za-z0-9+/=]+)"/g)];
 if(embedded.length!==22)throw Error('HTML offline deve incorporar exatamente 22 imagens WebP: '+embedded.length);
+// A ordem visual é parte do catálogo aprovado: um pacote com as mesmas
+// 22 imagens, mas permutadas, exibiria a moldura errada para cada editoria.
+for(let i=0;i<embedded.length;i++){
+  const expected=fs.readFileSync(path.join(dir,'molduras/original_'+String(i+1).padStart(2,'0')+'.webp'));
+  const actual=Buffer.from(embedded[i][1],'base64');
+  if(!actual.equals(expected))
+    throw Error('Ordem ou conteúdo da moldura offline divergente na posição '+(i+1));
+}
 const embeddedHashes=new Map();
 for(const match of embedded){
   const encoded=match[1];
