@@ -25,7 +25,7 @@ for line in manifest.read_text(encoding="utf-8").splitlines():
     if len(expected) != 64 or any(c not in "0123456789abcdef" for c in expected):
         sys.exit("ERRO: hash invalido no manifesto.")
     rel = Path(name)
-    if not name or rel.is_absolute() or ".." in rel.parts or name in seen:
+    if (not name or "\\" in name or ":" in name or name.startswith("/")\n            or any(part in ("", ".", "..") for part in name.split("/"))\n            or rel.is_absolute() or name in seen):
         sys.exit("ERRO: caminho inseguro ou duplicado no manifesto.")
     seen.add(name)
     raw_target = root / rel
