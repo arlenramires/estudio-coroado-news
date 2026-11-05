@@ -90,7 +90,11 @@ PWA NO ANDROID (SEM HOSPEDAGEM PUBLICA):
 6. Aguarde as 22 molduras; menu > Instalar app/Adicionar a tela inicial.
 7. Se o Chrome nao oferecer instalacao, use o HTML offline como alternativa.
 
-VERIFICAR ARQUIVOS EXTRAIDOS (OPCIONAL):\nExecute python Verificar-integridade.py na pasta extraida.\nO resultado OK confirma que os arquivos conferem com SHA256SUMS.txt.\n\nIMPORTANTE: nenhum arquivo e enviado a um servidor externo pelo editor.
+VERIFICAR ARQUIVOS EXTRAIDOS (OPCIONAL):
+Execute python Verificar-integridade.py na pasta extraida.
+O resultado OK confirma que os arquivos conferem com SHA256SUMS.txt.
+
+IMPORTANTE: nenhum arquivo e enviado a um servidor externo pelo editor.
 MP4 so se o navegador suportar MediaRecorder MP4; caso contrario, WebM.
 Teste exportacao com audio no seu aparelho antes de publicar.
 Nao e APK; a instalacao Android fisica ainda precisa de validacao.
