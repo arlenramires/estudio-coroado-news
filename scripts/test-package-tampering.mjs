@@ -59,5 +59,19 @@ try{
   console.log('Adulteração rejeitada: moldura removida do manifesto Python');
 }finally{fs.writeFileSync(sums,original)}
 
+// Caminhos com barras Windows ou segmentos ambiguos nao podem passar no verificador distribuido.
+for(const [label, altered] of [
+  ['barra invertida Windows', manifestText.replace(first, 'molduras\\\\original_01.webp')],
+  ['segmento atual', manifestText.replace(first, 'molduras/./original_01.webp')],
+  ['unidade Windows', manifestText.replace(first, 'C:/molduras/original_01.webp')],
+]) {
+  if(altered===manifestText)throw Error('Caso negativo nao alterou o manifesto: '+label);
+  try {
+    fs.writeFileSync(sums,altered);
+    if(pythonVerify().status===0)throw Error('Verificador Python aceitou '+label);
+    console.log('Adulteracao rejeitada pelo Python: '+label);
+  } finally { fs.writeFileSync(sums,original); }
+}
+
 if(verify().status!==0)throw Error('Pacote não foi restaurado após testes negativos');
 console.log('Testes negativos de integridade concluídos.');
