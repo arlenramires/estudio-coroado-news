@@ -34,6 +34,13 @@ try{
  if(!replaced.streams.some(s=>s.codec_type==='video'&&s.codec_name==='h264')||
     !replaced.streams.some(s=>s.codec_type==='audio'&&s.codec_name==='aac')||
     !(Number(replaced.format.duration)>0))throw new Error('Segunda conversão não substituiu MP4 anterior por H.264/AAC válido');
+ // A segunda conversão deve manter áudio audível, não apenas declarar uma faixa AAC.
+ const secondAudio=spawnSync('ffmpeg',['-hide_banner','-nostdin','-i',output,'-map','0:a:0','-af','volumedetect','-f','null','-'],{encoding:'utf8',maxBuffer:4*1024*1024});
+ if(secondAudio.error||secondAudio.status!==0)
+   throw new Error('Não foi possível decodificar o áudio da segunda conversão: '+(secondAudio.stderr||secondAudio.error?.message));
+ const secondVolume=secondAudio.stderr.match(/max_volume:\\s*(-?[\\d.]+) dB/);
+ if(!secondVolume||!Number.isFinite(Number(secondVolume[1]))||Number(secondVolume[1]) < -45)
+   throw new Error('Segunda conversão produziu áudio mudo ou inaudível: '+(secondVolume?.[1]??'sem medição'));
  if(readdirSync(dir).some(name=>name.startsWith('.saida.mp4.')))throw new Error('Conversão bem-sucedida deixou arquivo temporário');
  const silent=join(dir,'sem-audio.webm');
  run('ffmpeg',['-hide_banner','-loglevel','error','-f','lavfi','-i','color=c=black:s=160x120:r=12:d=1','-c:v','libvpx',silent]);
