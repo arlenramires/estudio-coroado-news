@@ -31,6 +31,32 @@ try {
   assert.equal(fs.readdirSync(path.join(temp,'dist')).length,1,
     'Falha não deve deixar arquivo temporário distribuível');
   console.log('OK: WebP truncado rejeitado sem sobrescrever o pacote offline anterior.');
+
+  // Regressões CSS: URLs externas/relativas em atributos style precisam ser
+  // rejeitadas, sem apagar a última entrega válida.
+  fs.writeFileSync(frame,original);
+  const htmlPath=path.join(temp,'index.html');
+  const cleanHtml=fs.readFileSync(htmlPath,'utf8');
+  for(const [label,fragment] of [
+    ['CSS remoto','<div style="background-image:url(https://example.org/x.png)"></div>'],
+    ['CSS relativo','<div style="background-image:url(./missing.png)"></div>'],
+    ['CSS importado','<style>@import "./missing.css";</style>']
+  ]){
+    fs.writeFileSync(htmlPath,cleanHtml.replace('</body>',fragment+'</body>'));
+    const failure=spawnSync(process.execPath,['scripts/build-offline.mjs'],{cwd:temp,encoding:'utf8'});
+    assert.notEqual(failure.status,0,label+' deve bloquear o HTML offline');
+    assert.match(failure.stderr,/CSS externo|@import CSS/,label+' deve indicar a dependência');
+    assert.equal(fs.readFileSync(target,'utf8'),'PACOTE_ANTERIOR_VALIDO');
+    assert.equal(fs.readdirSync(path.join(temp,'dist')).length,1);
+  }
+
+  // Uma string JavaScript contendo url() não é CSS e não deve bloquear o pacote.
+  fs.writeFileSync(htmlPath,cleanHtml.replace('</body>',
+    '<script>const cssExample = "url(https://example.org/example.png)";</script></body>'));
+  const success=spawnSync(process.execPath,['scripts/build-offline.mjs'],{cwd:temp,encoding:'utf8'});
+  assert.equal(success.status,0,'String JavaScript não pode causar falso positivo: '+success.stderr);
+  assert.match(fs.readFileSync(target,'utf8'),/data:image\\/webp;base64,/);
+  console.log('OK: CSS externo rejeitado, pacote preservado e string JS aceita.');
 } finally {
   fs.rmSync(temp,{recursive:true,force:true});
 }
