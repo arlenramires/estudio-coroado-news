@@ -47,7 +47,7 @@ const remoteCss=[...html.matchAll(/(?:@import\s+(?:url\s*\(\s*)?|url\s*\(\s*)["'
 if(remoteCss.length)throw Error('HTML offline contém CSS remoto: '+remoteCss.join(', '));
 // Referências CSS url(...) relativas (fontes, imagens e cursores) também
 // quebram um HTML único, mesmo quando não são URLs HTTP.
-const cssUrls=[...html.matchAll(/\\burl\\s*\\(\\s*(["']?)([^)"']+)\\1\\s*\\)/gi)]
+const cssUrls=[...html.matchAll(/\burl\s*\(\s*(["']?)([^)"']+)\1\s*\)/gi)]
   .map(match=>match[2].trim());
 const externalCssUrls=cssUrls.filter(ref=>!ref.startsWith('data:')&&!ref.startsWith('blob:')&&!ref.startsWith('#'));
 if(externalCssUrls.length)throw Error('HTML offline contém url() CSS externo: '+externalCssUrls.join(', '));
