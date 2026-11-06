@@ -10,16 +10,16 @@ const root=process.cwd();
 const dest=path.join(root,'dist','Estudio-Coroado-Privado');
 const required=['index.html','manifest.webmanifest','sw.js','icons/studio.svg','icons/studio-192.png','icons/studio-512.png',
   ...Array.from({length:22},(_,i)=>'molduras/original_'+String(i+1).padStart(2,'0')+'.webp')];
-// Valida todas as entradas ANTES de apagar o pacote anterior. Uma extração
+// Recusa links simbólicos: o pacote privado não pode copiar conteúdo de fora\n// da árvore do projeto por meio de entradas apontando para outros caminhos.\n// Valida todas as entradas ANTES de apagar o pacote anterior. Uma extração
 // incompleta ou ícone ausente não deve destruir uma entrega utilizável.
 const offlineSource=path.join(root,'dist','Estudio_Coroado_Offline.html');
 const verifierSource=path.join(root,'scripts','verify-package-integrity.py');
 for(const file of [...required,'scripts/verify-package-integrity.py']){
   const source=path.join(root,file);
-  if(!fs.existsSync(source)||!fs.statSync(source).isFile()||fs.statSync(source).size===0)
+  if(!fs.existsSync(source)||!fs.lstatSync(source).isFile()||fs.lstatSync(source).size===0)
     throw Error('Arquivo necessário ausente ou vazio; pacote anterior preservado: '+file);
 }
-if(!fs.existsSync(offlineSource)||fs.statSync(offlineSource).size<10000)
+if(!fs.existsSync(offlineSource)||!fs.lstatSync(offlineSource).isFile()||fs.lstatSync(offlineSource).size<10000)
   throw Error('HTML offline ausente ou incompleto; pacote anterior preservado');
 // Preserva a ultima entrega ate que a nova passe por todas as verificacoes.
 // Uma falha de copia, permissao ou teste nao pode destruir o pacote anterior.
