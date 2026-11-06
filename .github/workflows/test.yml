@@ -59,6 +59,8 @@ jobs:
 
       - name: Gerar HTML offline único com 22 molduras
         run: node scripts/build-offline.mjs
+      - name: Rejeitar moldura WebP truncada sem sobrescrever pacote anterior
+        run: node scripts/test-build-offline-integrity.mjs
       - name: Testar HTML offline sem servidor
         run: node scripts/offline-smoke.mjs
       - name: Testar exportação de vídeo com áudio no arquivo offline
