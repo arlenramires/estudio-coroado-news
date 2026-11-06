@@ -61,8 +61,8 @@ if(/<link\b[^>]*\brel\s*=\s*["']manifest["']/i.test(html))
 if(/"src":"molduras\//.test(html))
   throw Error('HTML offline ainda referencia moldura no disco');
 // Recursos indiretos em CSS e imports JS também quebram o uso offline.
-const remoteCss=[...html.matchAll(/(?:@import\s+(?:url\s*\(\s*)?|url\s*\(\s*)["']?\s*((?:https?:)?\/\/[^\s"') ;]+)/gi)].map(m=>m[1]);
-if(remoteCss.length)throw Error('HTML offline contém CSS remoto: '+remoteCss.join(', '));
+// Examinar somente CSS real abaixo: varrer todo o HTML produz falsos positivos
+// quando scripts contêm strings com `url(https://...)` ou `@import`.
 // Referências CSS url(...) relativas (fontes, imagens e cursores) também
 // quebram um HTML único, mesmo quando não são URLs HTTP.
 const cssText=[
