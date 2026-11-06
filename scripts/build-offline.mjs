@@ -52,13 +52,14 @@ const remoteCss=[...html.matchAll(/(?:@import\s+(?:url\s*\(\s*)?|url\s*\(\s*)["'
 if(remoteCss.length)throw Error('HTML offline contém CSS remoto: '+remoteCss.join(', '));
 // Referências CSS url(...) relativas (fontes, imagens e cursores) também
 // quebram um HTML único, mesmo quando não são URLs HTTP.
-const cssUrls=[...html.matchAll(/\burl\s*\(\s*(["']?)([^)"']+)\1\s*\)/gi)]
+const cssText=[...html.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style\s*>/gi)].map(m=>m[1]).join('\n');
+const cssUrls=[...cssText.matchAll(/\burl\s*\(\s*(["']?)([^)"']+)\1\s*\)/gi)]
   .map(match=>match[2].trim());
 const externalCssUrls=cssUrls.filter(ref=>!ref.startsWith('data:')&&!ref.startsWith('blob:')&&!ref.startsWith('#'));
 if(externalCssUrls.length)throw Error('HTML offline contém url() CSS externo: '+externalCssUrls.join(', '));
 // Importações CSS relativas também exigem arquivos externos e invalidam o HTML único.
 // Não basta bloquear URLs HTTP: @import './estilos.css' falharia sem internet.
-if(/@import\s+(?:url\s*\(|["'])/i.test(html))
+if(/@import\s+(?:url\s*\(|["'])/i.test(cssText))
   throw Error('HTML offline contém @import CSS que depende de outro arquivo');
 if(/\bimport\s*\(\s*['"`](?:https?:)?\/\//i.test(html))
   throw Error('HTML offline contém importação dinâmica remota');
