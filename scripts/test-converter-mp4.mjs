@@ -26,6 +26,22 @@ try{
    throw new Error('Áudio AAC ausente ou praticamente mudo após conversão: '+(volume?.[1]??'sem medição'));
 
  if(!info.streams.some(s=>s.codec_type==='video'&&s.codec_name==='h264')||!info.streams.some(s=>s.codec_type==='audio'&&s.codec_name==='aac')||!(Number(info.format.duration)>0))throw new Error('MP4 sem H.264/AAC ou duração');
+ // Caminhos com espaços e caracteres Unicode são comuns em Downloads no Windows/Android.
+ // O conversor deve aceitar esses nomes sem invocar shell e preservar o original.
+ const unicodeInput=join(dir,'vídeo de entrada ção.webm');
+ const unicodeOutput=join(dir,'resultado com áudio ção.mp4');
+ writeFileSync(unicodeInput,readFileSync(input));
+ const unicodeOriginal=readFileSync(unicodeInput);
+ run('node',['scripts/converter-mp4.mjs',unicodeInput,unicodeOutput]);
+ const unicodeInfo=JSON.parse(run('ffprobe',['-v','error','-show_entries','stream=codec_type,codec_name:format=duration','-of','json',unicodeOutput]));
+ if(!unicodeInfo.streams.some(s=>s.codec_type==='video'&&s.codec_name==='h264')||
+    !unicodeInfo.streams.some(s=>s.codec_type==='audio'&&s.codec_name==='aac')||
+    !(Number(unicodeInfo.format.duration)>0))
+   throw new Error('Conversão com nome Unicode/espaços não produziu MP4 H.264/AAC válido');
+ if(!readFileSync(unicodeInput).equals(unicodeOriginal))
+   throw new Error('Conversão com nome Unicode alterou o vídeo original');
+ if(readdirSync(dir).some(name=>name.startsWith('.resultado com áudio ção.mp4.')))
+   throw new Error('Conversão com nome Unicode deixou temporários');
  // Repetir a conversão para a mesma saída deve substituir o MP4 antigo
  // apenas depois de validar o novo arquivo, sem deixar temporários.
  writeFileSync(output,'arquivo anterior');
