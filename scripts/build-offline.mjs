@@ -13,6 +13,11 @@ if(allFrameRefs.length!==22||allFrameRefs.some((asset,i)=>asset!==expected[i]))
   throw Error('Editor contém moldura externa, duplicada ou não aprovada');
 for(const asset of paths){
   const bytes=fs.readFileSync(path.join(root,asset));
+  // Recusa molduras vazias ou arquivos renomeados como WebP antes de empacotar.
+  if(bytes.length<16||bytes.toString('ascii',0,4)!=='RIFF'||
+     bytes.toString('ascii',8,12)!=='WEBP'||
+     bytes.readUInt32LE(4)+8!==bytes.length)
+    throw Error('Moldura WebP inválida ou truncada: '+asset);
   const data='data:image/webp;base64,'+bytes.toString('base64');
   const token='"src":"'+asset+'"';
   if(!html.includes(token))throw Error('Moldura ausente no editor: '+asset);
