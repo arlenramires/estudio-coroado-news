@@ -27,6 +27,9 @@ jobs:
       - name: Testar ciclo de vida e isolamento do cache PWA
         run: node scripts/check-sw-lifecycle.mjs
 
+      - name: Verificar iniciadores privados Windows e Android
+        run: node scripts/check-private-launchers.mjs
+
       - name: Instalar Playwright Core
         run: npm install --no-save playwright-core@1.56.1
       - name: Servir o estúdio por HTTP
