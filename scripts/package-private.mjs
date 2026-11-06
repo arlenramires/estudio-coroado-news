@@ -31,9 +31,13 @@ try {
 fs.mkdirSync(dest,{recursive:true});
 for(const file of required){
   const source=path.join(root,file),target=path.join(dest,file);
-  if(!fs.existsSync(source))throw Error('Arquivo necessário ausente: '+file);
+  // Revalida imediatamente antes da cópia: uma entrada substituída por symlink
+  // depois do pré-voo não pode introduzir arquivos externos no pacote.
+  const sourceStat=fs.lstatSync(source,{throwIfNoEntry:false});
+  if(!sourceStat?.isFile()||sourceStat.size===0)
+    throw Error('Entrada alterada, ausente ou simbólica durante empacotamento: '+file);
   fs.mkdirSync(path.dirname(target),{recursive:true});
-  fs.copyFileSync(source,target);
+  fs.copyFileSync(source,target,fs.constants.COPYFILE_EXCL);
   const sha=p=>crypto.createHash('sha256').update(fs.readFileSync(p)).digest('hex');
   if(sha(source)!==sha(target))throw Error('Cópia divergente: '+file);
 }
