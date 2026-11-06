@@ -10,6 +10,17 @@ const root=process.cwd();
 const dest=path.join(root,'dist','Estudio-Coroado-Privado');
 const required=['index.html','manifest.webmanifest','sw.js','icons/studio.svg','icons/studio-192.png','icons/studio-512.png',
   ...Array.from({length:22},(_,i)=>'molduras/original_'+String(i+1).padStart(2,'0')+'.webp')];
+// Valida todas as entradas ANTES de apagar o pacote anterior. Uma extração
+// incompleta ou ícone ausente não deve destruir uma entrega utilizável.
+const offlineSource=path.join(root,'dist','Estudio_Coroado_Offline.html');
+const verifierSource=path.join(root,'scripts','verify-package-integrity.py');
+for(const file of [...required,'scripts/verify-package-integrity.py']){
+  const source=path.join(root,file);
+  if(!fs.existsSync(source)||!fs.statSync(source).isFile()||fs.statSync(source).size===0)
+    throw Error('Arquivo necessário ausente ou vazio; pacote anterior preservado: '+file);
+}
+if(!fs.existsSync(offlineSource)||fs.statSync(offlineSource).size<10000)
+  throw Error('HTML offline ausente ou incompleto; pacote anterior preservado');
 // Recria o pacote do zero para impedir arquivos obsoletos de entregas anteriores.
 fs.rmSync(dest,{recursive:true,force:true});
 fs.mkdirSync(dest,{recursive:true});
