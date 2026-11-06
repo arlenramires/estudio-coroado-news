@@ -59,6 +59,13 @@ if(/\bimport\s*\(\s*['"`](?:https?:)?\/\//i.test(html))
   throw Error('HTML offline contém importação dinâmica remota');
 if(/<script\b[^>]*\bsrc\s*=/i.test(html))
   throw Error('HTML offline contém script externo');
+// Um elemento <base> altera a resolução de URLs e pode redirecionar recursos
+// ou navegação para fora do arquivo local. Conteúdo incorporado também não
+// pertence ao pacote único privado, mesmo quando usa srcdoc.
+if(/<base\b/i.test(html))
+  throw Error('HTML offline não pode definir base URL');
+if(/<(?:iframe|frame|frameset|object|embed)\b/i.test(html))
+  throw Error('HTML offline não pode incorporar documentos externos');
 fs.mkdirSync(path.dirname(out),{recursive:true});
 const temporary=out+'.tmp-'+process.pid;
 try {
