@@ -65,3 +65,45 @@ for(let i=0;i<22;i++){
 }
 console.log('Integridade do pacote: 22 molduras e recursos PWA idênticos aos originais.');
 console.log('Pacote: iniciadores restritos a localhost, PWA local e 22 molduras offline.');
+
+
+ // Exercita o verificador Python distribuído: não basta conferir os hashes
+ // em JavaScript, pois Windows/Termux executam especificamente este script.
+ const pythonCandidates=process.platform==='win32'?['py','python']:['python3','python'];
+ const python=pythonCandidates.find(bin=>{
+   const probe=spawnSync(bin,bin==='py'?['-3','--version']:['--version'],{encoding:'utf8'});
+   return !probe.error&&probe.status===0;
+ });
+ if(python){
+   const args=python==='py'?['-3','Verificar-integridade.py']:['Verificar-integridade.py'];
+   const valid=spawnSync(python,args,{cwd:root,encoding:'utf8'});
+   assert.equal(valid.status,0,'Verificador Python rejeitou pacote válido: '+valid.stderr+valid.stdout);
+   // Usa cópia temporária mínima para testar adulteração sem tocar na entrega.
+   const os=await import('node:os');
+   const crypto=await import('node:crypto');
+   const tmp=fs.mkdtempSync(path.join(os.tmpdir(),'estudio-integridade-'));
+   try{
+     const fixture=path.join(tmp,'Verificar-integridade.py');
+     fs.copyFileSync(path.join(root,'Verificar-integridade.py'),fixture);
+     const required=['index.html','manifest.webmanifest','sw.js','icons/studio.svg','icons/studio-192.png','icons/studio-512.png',
+       'Estudio_Coroado_Offline.html','Iniciar-PC-Windows.cmd','Iniciar-Android-Termux.sh','LEIA-ME-PRIMEIRO.txt','Verificar-integridade.py',
+       ...Array.from({length:22},(_,i)=>'molduras/original_'+String(i+1).padStart(2,'0')+'.webp')];
+     for(const name of required){
+       const dest=path.join(tmp,name);
+       fs.mkdirSync(path.dirname(dest),{recursive:true});
+       if(name!=='Verificar-integridade.py')fs.writeFileSync(dest,'conteudo de teste: '+name);
+     }
+     const sums=required.map(name=>crypto.createHash('sha256').update(fs.readFileSync(path.join(tmp,name))).digest('hex')+'  '+name).sort().join('\n')+'\n';
+     fs.writeFileSync(path.join(tmp,'SHA256SUMS.txt'),sums);
+     const verify=()=>spawnSync(python,args,{cwd:tmp,encoding:'utf8'});
+     assert.equal(verify().status,0,'Verificador Python rejeitou fixture íntegra');
+     fs.appendFileSync(path.join(tmp,'index.html'),'alterado');
+     assert.notEqual(verify().status,0,'Verificador Python aceitou arquivo adulterado');
+     fs.writeFileSync(path.join(tmp,'index.html'),'conteudo de teste: index.html');
+     fs.writeFileSync(path.join(tmp,'arquivo-extra.txt'),'nao listado');
+     assert.notEqual(verify().status,0,'Verificador Python aceitou arquivo sem checksum');
+   }finally{fs.rmSync(tmp,{recursive:true,force:true});}
+   console.log('Verificador Python aprovado: pacote real, alteração de conteúdo e arquivo extra.');
+ }else{
+   console.warn('Python não encontrado: testes do verificador portátil ignorados neste ambiente Node.');
+ }
