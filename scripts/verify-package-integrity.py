@@ -58,7 +58,8 @@ actual_files = set()
 for p in root.rglob("*"):
     if p.is_symlink():
         sys.exit("ERRO: link simbolico nao permitido: " + str(p.relative_to(root)))
-    if p.is_file() and p.name != "SHA256SUMS.txt":
+    # Apenas o manifesto da raiz fica fora da lista; um homônimo em subpasta é arquivo extra.
+    if p.is_file() and p != manifest:
         actual_files.add(p.relative_to(root).as_posix())
 unlisted = actual_files - seen
 if unlisted:
