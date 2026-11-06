@@ -18,6 +18,19 @@ for(const asset of paths){
      bytes.toString('ascii',8,12)!=='WEBP'||
      bytes.readUInt32LE(4)+8!==bytes.length)
     throw Error('Moldura WebP inválida ou truncada: '+asset);
+  // Confere todos os chunks RIFF, inclusive padding de tamanho impar.
+  // Um cabecalho RIFF correto nao garante que o WebP seja decodificavel.
+  let offset=12;
+  while(offset<bytes.length){
+    if(offset+8>bytes.length)throw Error('Chunk WebP sem cabecalho completo: '+asset);
+    const size=bytes.readUInt32LE(offset+4);
+    const end=offset+8+size+(size%2);
+    if(end>bytes.length)throw Error('Chunk WebP truncado ou sem padding: '+asset);
+    offset=end;
+  }
+  if(offset!==bytes.length)throw Error('Chunks WebP nao cobrem o arquivo: '+asset);
+  if(!['VP8 ','VP8L','VP8X'].includes(bytes.toString('ascii',12,16)))
+    throw Error('Codec WebP nao reconhecido: '+asset);
   const data='data:image/webp;base64,'+bytes.toString('base64');
   const token='"src":"'+asset+'"';
   if(!html.includes(token))throw Error('Moldura ausente no editor: '+asset);
