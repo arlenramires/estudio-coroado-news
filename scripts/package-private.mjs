@@ -21,8 +21,13 @@ for(const file of [...required,'scripts/verify-package-integrity.py']){
 }
 if(!fs.existsSync(offlineSource)||fs.statSync(offlineSource).size<10000)
   throw Error('HTML offline ausente ou incompleto; pacote anterior preservado');
-// Recria o pacote do zero para impedir arquivos obsoletos de entregas anteriores.
-fs.rmSync(dest,{recursive:true,force:true});
+// Preserva a ultima entrega ate que a nova passe por todas as verificacoes.
+// Uma falha de copia, permissao ou teste nao pode destruir o pacote anterior.
+const backup=dest+'.backup-'+process.pid;
+if(fs.existsSync(backup))throw Error('Backup temporario ja existe: '+backup);
+const hadPrevious=fs.existsSync(dest);
+if(hadPrevious)fs.renameSync(dest,backup);
+try {
 fs.mkdirSync(dest,{recursive:true});
 for(const file of required){
   const source=path.join(root,file),target=path.join(dest,file);
@@ -156,3 +161,9 @@ console.log('Pacote privado gerado:',dest,'com',required.length,'arquivos do PWA
 // Valida o pacote final independentemente da etapa de cópia.
 await import('./verify-private-package.mjs');
 await import('./check-private-distribution.mjs');
+} catch(error) {
+  fs.rmSync(dest,{recursive:true,force:true});
+  if(hadPrevious)fs.renameSync(backup,dest);
+  throw error;
+}
+if(hadPrevious)fs.rmSync(backup,{recursive:true,force:true});
