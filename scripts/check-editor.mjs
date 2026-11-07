@@ -13,6 +13,9 @@ import './check-sw-manifest-json.mjs';
 import './check-sw-bypass.mjs';
 import './check-sw-allowlist.mjs';
 const html=fs.readFileSync('index.html','utf8');
+// O contador visível deve acompanhar o catálogo real; evita voltar a anunciar 23 molduras.
+if(!/<h3>22 molduras disponíveis<\/h3>/.test(html))
+  throw new Error('Contador visível de molduras deve indicar exatamente 22');
 // Privacidade: o editor privado não pode carregar scripts, estilos, imagens ou
 // fontes de terceiros. Uma dependência remota quebraria o uso offline e poderia
 // transmitir informações de acesso a um servidor externo.
