@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Teste real do conversor local: WebM com áudio -> MP4 H.264/AAC.
-import {mkdtempSync,rmSync,existsSync,readFileSync,writeFileSync,readdirSync,symlinkSync} from 'node:fs';
+import {mkdtempSync,rmSync,existsSync,readFileSync,writeFileSync,readdirSync,symlinkSync,lstatSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {spawnSync} from 'node:child_process';
@@ -94,6 +94,11 @@ try{
  if(readFileSync(unrelated,'utf8')!=='conteudo protegido')
    throw new Error('Conversão alterou o alvo de um link simbólico de saída');
  if(!existsSync(linkedOutput))throw new Error('Conversão removeu link simbólico de saída');
+ // Um link simbólico pendente não aparece em existsSync, mas ainda é uma saída proibida.
+ const dangling=join(dir,'link-pendente.mp4');
+ symlinkSync(join(dir,'alvo-inexistente.mp4'),dangling);
+ run('node',['scripts/converter-mp4.mjs',input,dangling],2);
+ if(!lstatSync(dangling).isSymbolicLink())throw new Error('Conversão substituiu link simbólico pendente');
  run('node',['scripts/converter-mp4.mjs',input,input],2);
  run('node',['scripts/converter-mp4.mjs',join(dir,'inexistente.webm'),join(dir,'ausente.mp4')],2);
  run('node',['scripts/converter-mp4.mjs',input,join(dir,'extensao.webm')],2);
