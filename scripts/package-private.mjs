@@ -142,8 +142,13 @@ Se o PWA nao abrir offline, acesse-o com servidor ativo uma vez e aguarde o avis
 `);
 // Verificador portátil: roda com Python no Windows, Linux e Termux, sem rede.
 // O próprio verificador entra no manifesto para impedir alterações silenciosas.
-fs.copyFileSync(path.join(root,'scripts','verify-package-integrity.py'),
-  path.join(dest,'Verificar-integridade.py'));
+const verifierStat=fs.lstatSync(verifierSource,{throwIfNoEntry:false});
+if(!verifierStat?.isFile()||verifierStat.size===0)
+  throw Error('Verificador de integridade alterado ou substituído por link simbólico durante o empacotamento');
+const verifierTarget=path.join(dest,'Verificar-integridade.py');
+fs.copyFileSync(verifierSource,verifierTarget,fs.constants.COPYFILE_EXCL);
+if(digest(verifierSource)!==digest(verifierTarget))
+  throw Error('Cópia divergente do verificador de integridade');
 // Lista verificável de integridade para detectar ZIP extraído parcialmente ou alterado.
 const files=[];
 function collect(dir){for(const entry of fs.readdirSync(dir,{withFileTypes:true})){
