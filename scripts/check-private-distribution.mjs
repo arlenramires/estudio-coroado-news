@@ -107,3 +107,31 @@ console.log('Pacote: iniciadores restritos a localhost, PWA local e 22 molduras 
  }else{
    console.warn('Python não encontrado: testes do verificador portátil ignorados neste ambiente Node.');
  }
+
+
+// Teste funcional do iniciador Android com diretório contendo espaços.
+// Simula Python local sem abrir portas ou depender de um aparelho físico.
+if(process.platform!=='win32'){
+  const os=await import('node:os');
+  const tmp=fs.mkdtempSync(path.join(os.tmpdir(),'estudio android com espacos '));
+  try{
+    const bin=path.join(tmp,'bin');
+    const app=path.join(tmp,'pacote com espacos');
+    fs.mkdirSync(bin);
+    fs.mkdirSync(app);
+    fs.copyFileSync(path.join(root,'Iniciar-Android-Termux.sh'),path.join(app,'Iniciar-Android-Termux.sh'));
+    fs.writeFileSync(path.join(app,'Verificar-integridade.py'),'# fixture de teste\\n');
+    const fake=path.join(bin,'python');
+    fs.writeFileSync(fake,'#!/bin/sh\\nprintf "%s\\\\n" "$*" >> "$ESTUDIO_TEST_LOG"\\n');
+    fs.chmodSync(fake,0o755);
+    const log=path.join(tmp,'python.log');
+    const run=spawnSync('sh',[path.join(app,'Iniciar-Android-Termux.sh')],{
+      cwd:tmp,encoding:'utf8',env:{...process.env,PATH:bin+path.delimiter+process.env.PATH,ESTUDIO_TEST_LOG:log}
+    });
+    assert.equal(run.status,0,'Iniciador Android falhou com espaços no caminho: '+run.stderr);
+    assert.deepEqual(fs.readFileSync(log,'utf8').trim().split('\\n'),[
+      'Verificar-integridade.py','-m http.server 8765 --bind 127.0.0.1'
+    ],'Iniciador Android não verificou integridade antes de servir somente localhost');
+    console.log('Iniciador Android aprovado em execução simulada com espaços no caminho.');
+  }finally{fs.rmSync(tmp,{recursive:true,force:true});}
+}
