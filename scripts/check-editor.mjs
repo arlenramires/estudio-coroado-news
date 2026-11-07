@@ -91,6 +91,10 @@ for(let i=1;i<=22;i++){
   if(asset.status!=='publicado'||catalogPaths.has(asset.target))throw new Error('Moldura duplicada ou não publicada: '+expected);
   catalogPaths.add(asset.target);
   if(!fs.existsSync(expected))throw new Error('Moldura offline ausente: '+expected);
+  // O validador não deve aceitar links simbólicos, mesmo que apontem para um WebP válido.
+  // O pacote privado já os rejeita; esta checagem antecipa o erro antes dos testes de navegador.
+  if(!fs.lstatSync(expected).isFile()||fs.lstatSync('molduras').isSymbolicLink())
+    throw new Error('Moldura não regular ou diretório simbólico: '+expected);
   // Lê as dimensões reais do contêiner WebP (VP8, VP8L ou VP8X).
   // Impede que um arquivo trocado ou truncado passe só por existir no disco.
   const webp=fs.readFileSync(expected);
