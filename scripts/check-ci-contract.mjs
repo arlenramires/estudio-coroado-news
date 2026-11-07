@@ -14,6 +14,7 @@ for(const name of files){
 const ci=fs.readFileSync(dir+'/test.yml','utf8');
 const required=[
  'node scripts/check-editor.mjs',
+ 'node scripts/check-manifest-private.mjs',
  'node scripts/check-sw-privacy.mjs',
  'node scripts/check-sw-lifecycle.mjs',
  'node scripts/check-private-launchers.mjs',
