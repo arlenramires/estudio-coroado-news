@@ -12,6 +12,13 @@ const required=['index.html','manifest.webmanifest','sw.js','icons/studio.svg','
   ...Array.from({length:22},(_,i)=>'molduras/original_'+String(i+1).padStart(2,'0')+'.webp')];
 // Recusa links simbólicos: o pacote privado não pode copiar conteúdo de fora\n// da árvore do projeto por meio de entradas apontando para outros caminhos.\n// Valida todas as entradas ANTES de apagar o pacote anterior. Uma extração
 // incompleta ou ícone ausente não deve destruir uma entrega utilizável.
+// Rejeita diretórios simbólicos também: lstat do arquivo isolado não detecta
+// quando um diretório ancestral aponta para fora do repositório.
+for(const directory of ['molduras','icons','scripts','dist']){
+  const stat=fs.lstatSync(path.join(root,directory),{throwIfNoEntry:false});
+  if(!stat?.isDirectory()||stat.isSymbolicLink())
+    throw Error('Diretório necessário ausente ou simbólico; pacote anterior preservado: '+directory);
+}
 const offlineSource=path.join(root,'dist','Estudio_Coroado_Offline.html');
 const verifierSource=path.join(root,'scripts','verify-package-integrity.py');
 for(const file of [...required,'scripts/verify-package-integrity.py']){
