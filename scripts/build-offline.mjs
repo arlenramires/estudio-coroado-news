@@ -12,7 +12,11 @@ const allFrameRefs=[...html.matchAll(/"src":"(molduras\/[^"]+)"/g)].map(m=>m[1])
 if(allFrameRefs.length!==22||allFrameRefs.some((asset,i)=>asset!==expected[i]))
   throw Error('Editor contém moldura externa, duplicada ou não aprovada');
 for(const asset of paths){
-  const bytes=fs.readFileSync(path.join(root,asset));
+  const source=path.join(root,asset);
+  const stat=fs.lstatSync(source,{throwIfNoEntry:false});
+  if(!stat?.isFile()||stat.size===0)
+    throw Error('Moldura ausente, vazia ou link simbólico não autorizado: '+asset);
+  const bytes=fs.readFileSync(source);
   // Recusa molduras vazias ou arquivos renomeados como WebP antes de empacotar.
   if(bytes.length<16||bytes.toString('ascii',0,4)!=='RIFF'||
      bytes.toString('ascii',8,12)!=='WEBP'||
@@ -47,7 +51,10 @@ if(html.includes('"src":"molduras/'))throw Error('Moldura externa restante');
 const embedded=[...html.matchAll(/"src":"data:image\/webp;base64,([A-Za-z0-9+/=]+)"/g)];
 if(embedded.length!==22)throw Error('HTML offline deve conter 22 imagens incorporadas, encontradas '+embedded.length);
 for(let i=0;i<embedded.length;i++){
-  const original=fs.readFileSync(path.join(root,paths[i]));
+  const source=path.join(root,paths[i]);
+  if(!fs.lstatSync(source,{throwIfNoEntry:false})?.isFile())
+    throw Error('Moldura substituída por link simbólico durante a geração: '+paths[i]);
+  const original=fs.readFileSync(source);
   if(!Buffer.from(embedded[i][1],'base64').equals(original))throw Error('Imagem offline divergente: '+paths[i]);
 }
 // O arquivo único deve continuar autossuficiente: nenhuma imagem, fonte, script
