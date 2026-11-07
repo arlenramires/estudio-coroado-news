@@ -86,6 +86,14 @@ try{
  const original=readFileSync(input);
  run('node',['scripts/converter-mp4.mjs',input,alias],2);
  if(!readFileSync(input).equals(original))throw new Error('Alias da entrada foi alterado');
+ // A saída não pode ser um link simbólico para outro arquivo do usuário.
+ const unrelated=join(dir,'documento-importante.txt'),linkedOutput=join(dir,'link-saida.mp4');
+ writeFileSync(unrelated,'conteudo protegido');
+ symlinkSync(unrelated,linkedOutput);
+ run('node',['scripts/converter-mp4.mjs',input,linkedOutput],2);
+ if(readFileSync(unrelated,'utf8')!=='conteudo protegido')
+   throw new Error('Conversão alterou o alvo de um link simbólico de saída');
+ if(!existsSync(linkedOutput))throw new Error('Conversão removeu link simbólico de saída');
  run('node',['scripts/converter-mp4.mjs',input,input],2);
  run('node',['scripts/converter-mp4.mjs',join(dir,'inexistente.webm'),join(dir,'ausente.mp4')],2);
  run('node',['scripts/converter-mp4.mjs',input,join(dir,'extensao.webm')],2);
