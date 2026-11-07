@@ -47,7 +47,10 @@ if(!fs.existsSync(offline))throw Error('Execute primeiro: node scripts/build-off
 // Confere a cópia integral e rejeita um pacote offline vazio ou incompleto.
 const offlineTarget=path.join(dest,'Estudio_Coroado_Offline.html');
 if(fs.statSync(offline).size<10000)throw Error('HTML offline vazio ou inesperadamente pequeno');
-fs.copyFileSync(offline,offlineTarget);
+const offlineStat=fs.lstatSync(offline,{throwIfNoEntry:false});
+if(!offlineStat?.isFile()||offlineStat.size<10000)
+  throw Error('HTML offline alterado ou substituído por link simbólico durante o empacotamento');
+fs.copyFileSync(offline,offlineTarget,fs.constants.COPYFILE_EXCL);
 const digest=file=>crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex');
 if(digest(offline)!==digest(offlineTarget))throw Error('HTML offline diverge do arquivo gerado');
 const win=String.raw`@echo off
