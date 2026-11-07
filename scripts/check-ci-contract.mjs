@@ -36,7 +36,12 @@ const required=[
  'actions/upload-artifact@v4',
  'Estudio-Coroado-Privado-PC-Android'
 ];
-for(const step of required)assert(ci.includes(step),'Missing CI acceptance stage: '+step);
+// Check executable run steps, not command names merely mentioned in comments.
+const runCommands=ci.split('\n').filter(line=>/^\s*run:\s*/.test(line)).map(line=>line.replace(/^\s*run:\s*/,''));
+for(const step of required.filter(s=>s.startsWith('node ')||s.startsWith('STUDIO_')))
+  assert(runCommands.includes(step),'Missing executable CI acceptance stage: '+step);
+for(const step of required.filter(s=>!s.startsWith('node ')&&!s.startsWith('STUDIO_')))
+  assert(ci.includes(step),'Missing CI acceptance stage: '+step);
 // The package must only be uploaded after all acceptance checks have run.
 const artifactPosition=ci.indexOf('actions/upload-artifact@v4');
 for(const step of required.filter(s=>s!=='actions/upload-artifact@v4'&&s!=='Estudio-Coroado-Privado-PC-Android'))
