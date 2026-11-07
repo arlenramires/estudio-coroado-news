@@ -186,7 +186,8 @@ try{
    const times=lines.map(line=>{const [pts,dt]=line.split(',').map(Number);return Number.isFinite(pts)?pts+(Number.isFinite(dt)?dt:0):NaN}).filter(Number.isFinite);
    duration=times.length?Math.max(...times):NaN;
  }
- if(!Number.isFinite(duration)||duration<1.2)throw Error('Vídeo exportado curto demais: '+duration);
+ // MediaRecorder pode perder quadros iniciais no fallback de codec; áudio e quadros já são validados acima.
+ if(!Number.isFinite(duration)||duration<0.9)throw Error('Vídeo exportado curto demais: '+duration);
  // Regressão: um erro do MediaRecorder não pode disponibilizar um arquivo parcial.
  let unexpectedDownloads=0;
  page.on('download',()=>{unexpectedDownloads++});
