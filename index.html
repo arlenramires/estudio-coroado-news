@@ -47,7 +47,7 @@ if(location.protocol==='file:'){
     navigator.serviceWorker.register('./sw.js').then(()=>navigator.serviceWorker.ready).then(async()=>{
       const complete=await verifyOfflineCache();
       offlineReady.textContent=complete
-        ? 'Cache offline preparado: 23 molduras disponíveis sem internet neste navegador.'
+        ? 'Cache offline preparado: 22 molduras disponíveis sem internet neste navegador.'
         : 'Cache offline incompleto: uma ou mais molduras não estão salvas. Conecte-se à internet e recarregue.';
     }).catch(e=>{
       offlineReady.textContent='Cache offline indisponível. Use o HTML offline do pacote.';
