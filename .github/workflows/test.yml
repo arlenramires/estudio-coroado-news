@@ -21,6 +21,9 @@ jobs:
       - name: Validar editor e arquivos originais
         run: node scripts/check-editor.mjs
 
+      - name: Validar manifesto PWA privado
+        run: node scripts/check-manifest-private.mjs
+
       - name: Verificar privacidade do cache PWA
         run: node scripts/check-sw-privacy.mjs
 
