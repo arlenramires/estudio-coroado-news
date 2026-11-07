@@ -9,7 +9,7 @@ const [inputArg,outputArg]=process.argv.slice(2);
 if(!inputArg||!outputArg){console.error('Uso: node scripts/converter-mp4.mjs entrada.webm saida.mp4 (requer FFmpeg e FFprobe)');process.exit(2)}
 const input=resolve(inputArg),output=resolve(outputArg);
 if(input===output||extname(output).toLowerCase()!=='.mp4'||!existsSync(input)||!statSync(input).isFile()||
-   lstatSync(input).isSymbolicLink()||(existsSync(output)&&lstatSync(output).isSymbolicLink())||
+   lstatSync(input).isSymbolicLink()||(lstatSync(output,{throwIfNoEntry:false})?.isSymbolicLink()===true)||
    (existsSync(output)&&realpathSync(input)===realpathSync(output))){
  console.error('Entrada inexistente, saída inválida ou caminhos iguais.');process.exit(2);
 }
