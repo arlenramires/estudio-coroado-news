@@ -51,6 +51,10 @@ const missing=[...new Set(sources)].filter(p=>!fs.existsSync(p));
 if(missing.length)throw new Error('Molduras ausentes: '+missing.join(', '));
 for(const p of new Set(sources)){const b=fs.readFileSync(p);if(b.length<1000)throw new Error('Imagem vazia: '+p);if(p.endsWith('.png')&&b.subarray(1,4).toString()!=='PNG')throw new Error('PNG inválido: '+p);if(p.endsWith('.webp')&&b.subarray(8,12).toString()!=='WEBP')throw new Error('WebP inválido: '+p);}
 if(!html.includes("captureStream")||!html.includes("MediaRecorder"))throw new Error('Exportação de vídeo ausente');
+// Com áudio habilitado, oferecer MP4 nativo com AAC antes do fallback WebM.
+// Sem essa ordem, navegadores capazes de MP4 geravam sempre WebM com áudio.
+if(!/const mimes=\$\('audio'\)\.checked\?\['video\/mp4;codecs=avc1\.42E01E,mp4a\.40\.2','video\/mp4','video\/webm;codecs=vp8,opus','video\/webm'\]/.test(html))
+  throw new Error('Exportação com áudio deve tentar MP4 nativo antes do fallback WebM');
 // Em navegadores móveis, captureStream(0) pode lançar exceção mesmo com captura a 30 fps disponível.
 if(!/try\{stream=recordCanvas\.captureStream\(0\)\}catch\(err\)\{[\s\S]*?stream=recordCanvas\.captureStream\(30\)\}/.test(html))
   throw new Error('Exportação deve usar captura a 30 fps se captureStream(0) falhar');
