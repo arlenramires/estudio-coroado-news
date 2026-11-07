@@ -2,13 +2,14 @@
 // Conversão local opcional para navegadores que exportam WebM.
 // Uso: node scripts/converter-mp4.mjs entrada.webm saida.mp4
 import {spawnSync} from 'node:child_process';
-import {existsSync,statSync,renameSync,rmSync,realpathSync} from 'node:fs';
+import {existsSync,statSync,lstatSync,renameSync,rmSync,realpathSync} from 'node:fs';
 import {resolve,extname,dirname,basename,join} from 'node:path';
 import {randomUUID} from 'node:crypto';
 const [inputArg,outputArg]=process.argv.slice(2);
 if(!inputArg||!outputArg){console.error('Uso: node scripts/converter-mp4.mjs entrada.webm saida.mp4 (requer FFmpeg e FFprobe)');process.exit(2)}
 const input=resolve(inputArg),output=resolve(outputArg);
 if(input===output||extname(output).toLowerCase()!=='.mp4'||!existsSync(input)||!statSync(input).isFile()||
+   lstatSync(input).isSymbolicLink()||(existsSync(output)&&lstatSync(output).isSymbolicLink())||
    (existsSync(output)&&realpathSync(input)===realpathSync(output))){
  console.error('Entrada inexistente, saída inválida ou caminhos iguais.');process.exit(2);
 }
