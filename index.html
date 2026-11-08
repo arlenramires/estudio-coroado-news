@@ -32,7 +32,7 @@ async function verifyOfflineCache(){
   for(const name of names){
     const cache=await caches.open(name);
     const found=await Promise.all(required.map(url=>cache.match(url)));
-    if(found.every(Boolean))return true;
+    if(found.every(response=>response&&response.ok&&response.status===200&&response.type==='basic'))return true;
   }
   return false;
 }
