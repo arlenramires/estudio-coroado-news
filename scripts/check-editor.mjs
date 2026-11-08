@@ -179,6 +179,14 @@ for(let i=0;i<22;i++){
     throw new Error('Mascote fora dos limites da moldura: '+expected);
   editorPaths.add(asset.src);
 }
+// O diagnóstico offline deve examinar somente o cache da versão ativa.
+const activeCacheMatch=sw.match(/const CACHE='([^']+)'/);
+if(!activeCacheMatch)throw new Error('Versão do cache PWA não encontrada');
+if(!html.includes("name==='"+activeCacheMatch[1]+"'"))
+  throw new Error('Diagnóstico offline usa cache antigo ou não acompanha a versão ativa do service worker');
+if(/filter\(name=>name\.startsWith\('estudio-coroado-offline-'\)\)/.test(html))
+  throw new Error('Diagnóstico offline aceita cache de versões antigas');
+
 // Executa a declaração do service worker em um contexto isolado para verificar
 // a lista real de pré-cache, sem depender de uma substring no código-fonte.
 const swContext=vm.createContext({
