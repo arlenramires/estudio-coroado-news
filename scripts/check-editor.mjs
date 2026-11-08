@@ -25,6 +25,13 @@ if(!/<h3>22 molduras disponíveis<\/h3>/.test(html))
 const remoteAttributes=[...html.matchAll(/\b(?:src|href|poster|action)\s*=\s*(["'])(.*?)\1/gi)]
   .map(match=>match[2]).filter(value=>/^(?:https?:)?\/\//i.test(value));
 if(remoteAttributes.length)throw new Error('Recurso remoto não autorizado no editor privado: '+remoteAttributes.join(', '));
+// Atributos sem aspas também podem apontar para domínios externos.
+// Restringir a checagem à tag evita confundir URLs em texto e JavaScript.
+const unquotedRemoteAttributes=[...html.matchAll(/<[^>]+?\s(?:src|href|poster|action|formaction|ping)\s*=\s*((?:https?:)?\/\/[^\s>"']+)/gi)]
+  .map(match=>match[1]);
+if(unquotedRemoteAttributes.length)
+  throw new Error('Referência externa sem aspas no editor privado: '+unquotedRemoteAttributes.join(', '));
+
 if(/<script\b[^>]*\bsrc\s*=/i.test(html))
   throw new Error('JavaScript externo não autorizado: manter editor autossuficiente e offline');
 if(/<link\b[^>]*\brel\s*=\s*["'](?:stylesheet|preload|modulepreload)["']/i.test(html))
