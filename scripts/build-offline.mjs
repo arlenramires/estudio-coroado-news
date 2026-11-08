@@ -70,6 +70,11 @@ const resourceRefs=[...html.matchAll(/\b(?:src|href|poster)\s*=\s*(["'])(.*?)\1/
   .map(match=>match[2]);
 const unexpected=resourceRefs.filter(ref=>!ref.startsWith('data:')&&!ref.startsWith('#')&&!ref.startsWith('blob:'));
 if(unexpected.length)throw Error('HTML offline contém recurso externo: '+unexpected.join(', '));
+// srcset pode requisitar imagens remotas mesmo quando src aponta para data:.
+// Em HTML único, cada candidato precisa ser incorporado; bloquear srcset
+// evita que o navegador escolha uma URL externa conforme a densidade da tela.
+if(/\bsrcset\s*=/i.test(html))
+  throw Error('HTML offline não pode conter srcset dependente de recursos externos');
 if(/<link\b[^>]*\brel\s*=\s*["']manifest["']/i.test(html))
   throw Error('HTML offline não pode depender de manifesto PWA');
 if(/"src":"molduras\//.test(html))
