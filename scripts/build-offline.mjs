@@ -70,6 +70,13 @@ const resourceRefs=[...html.matchAll(/\b(?:src|href|poster)\s*=\s*(["'])(.*?)\1/
   .map(match=>match[2]);
 const unexpected=resourceRefs.filter(ref=>!ref.startsWith('data:')&&!ref.startsWith('#')&&!ref.startsWith('blob:'));
 if(unexpected.length)throw Error('HTML offline contém recurso externo: '+unexpected.join(', '));
+// Atributos HTML sem aspas também são válidos. A verificação anterior só
+// examinava valores entre aspas e podia deixar uma URL remota passar.
+const unquotedRefs=[...html.matchAll(/<(?:a|audio|embed|iframe|img|link|script|source|track|video)\b[^>]*?\b(?:src|href|poster)\s*=\s*([^\s"'=`<>]+)/gi)]
+  .map(match=>match[1]);
+const unquotedExternal=unquotedRefs.filter(ref=>!ref.startsWith('data:')&&!ref.startsWith('#')&&!ref.startsWith('blob:'));
+if(unquotedExternal.length)
+  throw Error('HTML offline contém recurso não incorporado sem aspas: '+unquotedExternal.join(', '));
 // srcset pode requisitar imagens remotas mesmo quando src aponta para data:.
 // Em HTML único, cada candidato precisa ser incorporado; bloquear srcset
 // evita que o navegador escolha uma URL externa conforme a densidade da tela.
