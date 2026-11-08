@@ -63,9 +63,15 @@ if(digest(offline)!==digest(offlineTarget))throw Error('HTML offline diverge do 
 const win=String.raw`@echo off
 cd /d "%~dp0"
 where py >nul 2>&1
-if %errorlevel%==0 goto py
+if not errorlevel 1 (
+  py -3 --version >nul 2>&1
+  if not errorlevel 1 goto py
+)
 where python >nul 2>&1
-if %errorlevel%==0 goto python
+if not errorlevel 1 (
+  python --version >nul 2>&1
+  if not errorlevel 1 goto python
+)
 echo Python nao encontrado. Abra Estudio_Coroado_Offline.html para usar sem instalar.
 pause
 exit /b 1
