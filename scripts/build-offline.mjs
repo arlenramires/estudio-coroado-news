@@ -107,9 +107,9 @@ if(/<form\b[^>]*\baction\s*=/i.test(html))
   throw Error('HTML offline não pode enviar formulários para destinos externos');
 // Botões com formaction podem contornar a ausência de action no <form>.
 // O atributo ping de links envia requisições POST de rastreamento ao clicar.
-if(/\\bformaction\\s*=/i.test(html))
+if(/\bformaction\s*=/i.test(html))
   throw Error('HTML offline não pode definir destino de envio em botões');
-if(/<a\\b[^>]*\\bping\\s*=/i.test(html))
+if(/<a\b[^>]*\bping\s*=/i.test(html))
   throw Error('HTML offline não pode enviar pings de rastreamento');
 // Meta refresh pode redirecionar o editor privado sem interação do usuário.
 if(/<meta\b(?=[^>]*\bhttp-equiv\s*=\s*["']?refresh\b)[^>]*>/i.test(html))
