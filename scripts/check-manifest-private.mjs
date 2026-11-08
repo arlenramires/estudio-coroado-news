@@ -10,6 +10,13 @@ assert.equal(manifest.id,'./');
 assert.equal(manifest.scope,'./');
 assert.equal(manifest.start_url,'./index.html');
 assert.equal(manifest.display,'standalone');
+assert.equal(manifest.lang,'pt-BR', 'Idioma do PWA deve ser português brasileiro');
+for (const field of ['name','short_name','description']) {
+  assert.ok(typeof manifest[field] === 'string' && manifest[field].trim(), 'Metadado obrigatório ausente: '+field);
+}
+for (const field of ['background_color','theme_color']) {
+  assert.match(manifest[field] ?? '', /^#[0-9a-fA-F]{6}$/, 'Cor inválida no manifesto: '+field);
+}
 for(const field of ['shortcuts','screenshots','related_applications','protocol_handlers','file_handlers','share_target','url_handlers','scope_extensions']){
   assert.ok(!(field in manifest), 'Manifesto privado não deve declarar '+field);
 }
@@ -21,6 +28,7 @@ for(const icon of manifest.icons){
   assert.ok(!seen.has(icon.src), 'Ícone duplicado: '+icon.src);
   seen.add(icon.src);
   assert.equal(icon.type, icon.src.endsWith('.png') ? 'image/png' : 'image/svg+xml', 'MIME incorreto: '+icon.src);
+  assert.equal(icon.purpose, icon.src.endsWith('.png') ? 'any maskable' : 'any', 'Finalidade do ícone incorreta: '+icon.src);
   assert.equal(icon.sizes, icon.src.endsWith('.svg') ? 'any' : icon.src === 'icons/studio-192.png' ? '192x192' : icon.src === 'icons/studio-512.png' ? '512x512' : '', 'Dimensões inesperadas: '+icon.src);
 
   assert.match(icon.src,/^icons\/[a-z0-9-]+\.(?:png|svg)$/i,'Ícone fora do diretório local');
