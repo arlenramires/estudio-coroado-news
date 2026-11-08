@@ -2,6 +2,14 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 
+// Antes de gerar qualquer saída, impeça que dist/ seja um link simbólico.
+// A checagem posterior ao build seria tardia: o gerador já poderia gravar
+// fora da árvore do Estúdio ao seguir esse link.
+const outputDir=path.resolve('dist');
+const outputStat=fs.lstatSync(outputDir,{throwIfNoEntry:false});
+if(outputStat && (!outputStat.isDirectory() || outputStat.isSymbolicLink()))
+  throw Error('Saída dist/ não é diretório regular; geração privada interrompida');
+
 // Sempre reconstrói o HTML offline a partir do editor e das molduras atuais.
 // Evita distribuir um HTML antigo quando package-private é executado isoladamente.
 await import('./build-offline.mjs');
