@@ -102,7 +102,7 @@ const externalCssUrls=cssUrls.filter(ref=>!ref.startsWith('data:')&&!ref.startsW
 if(externalCssUrls.length)throw Error('HTML offline contém url() CSS externo: '+externalCssUrls.join(', '));
 // Importações CSS relativas também exigem arquivos externos e invalidam o HTML único.
 // Não basta bloquear URLs HTTP: @import './estilos.css' falharia sem internet.
-if(/@import\s+(?:url\s*\(|["'])/i.test(cssText))
+if(/@import\s+(?:url\s*\(|["']|(?:https?:)?\/\/|[^\s;"']+\.css\b)/i.test(cssText))
   throw Error('HTML offline contém @import CSS que depende de outro arquivo');
 if(/\bimport\s*\(\s*['"`](?:https?:)?\/\//i.test(html))
   throw Error('HTML offline contém importação dinâmica remota');
