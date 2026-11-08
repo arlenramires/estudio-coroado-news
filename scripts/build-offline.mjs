@@ -101,6 +101,13 @@ if(/\bimport\s*\(\s*['"`](?:https?:)?\/\//i.test(html))
   throw Error('HTML offline contém importação dinâmica remota');
 if(/<script\b[^>]*\bsrc\s*=/i.test(html))
   throw Error('HTML offline contém script externo');
+// Um formulário pode transmitir conteúdo editado para fora do arquivo mesmo
+// sem carregar recursos externos. O pacote único é exclusivamente local.
+if(/<form\\b[^>]*\\baction\\s*=/i.test(html))
+  throw Error('HTML offline não pode enviar formulários para destinos externos');
+// Meta refresh pode redirecionar o editor privado sem interação do usuário.
+if(/<meta\\b(?=[^>]*\\bhttp-equiv\\s*=\\s*[\"']?refresh\\b)[^>]*>/i.test(html))
+  throw Error('HTML offline não pode usar redirecionamento meta refresh');
 // Um elemento <base> altera a resolução de URLs e pode redirecionar recursos
 // ou navegação para fora do arquivo local. Conteúdo incorporado também não
 // pertence ao pacote único privado, mesmo quando usa srcdoc.
