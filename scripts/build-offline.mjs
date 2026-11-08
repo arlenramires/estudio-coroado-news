@@ -1,6 +1,13 @@
 import fs from 'node:fs';
 import path from 'node:path';
 const root=process.cwd();
+// Não seguir diretórios simbólicos ao ler molduras nem ao gravar o HTML.
+// Esta rotina também pode ser executada isoladamente, fora do empacotador.
+for(const directory of ['molduras','dist']){
+  const stat=fs.lstatSync(path.join(root,directory),{throwIfNoEntry:false});
+  if(stat && (!stat.isDirectory() || stat.isSymbolicLink()))
+    throw Error('Diretório inválido ou simbólico: '+directory);
+}
 let html=fs.readFileSync(path.join(root,'index.html'),'utf8');
 const paths=[...new Set([...html.matchAll(/"src":"(molduras\/original_\d{2}\.webp)"/g)].map(m=>m[1]))];
 if(paths.length!==22)throw Error('Esperadas 22 molduras, encontradas '+paths.length);
