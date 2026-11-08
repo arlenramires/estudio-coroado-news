@@ -21,12 +21,21 @@ try{
  const source=probe(input);
  if(!source.streams?.some(s=>s.codec_type==='video'))throw new Error('Entrada sem faixa de vídeo');
  if(!source.streams.some(s=>s.codec_type==='audio'))throw new Error('Entrada sem faixa de áudio: não é possível recuperar som ausente');
+ const sourceDuration=Number(source.format?.duration);
+ if(!Number.isFinite(sourceDuration)||sourceDuration<=0)
+   throw new Error('Duração da entrada ausente ou inválida');
  run('ffmpeg',['-hide_banner','-loglevel','error','-nostdin','-y','-i',input,'-map','0:v:0','-map','0:a:0','-map_metadata','-1','-map_chapters','-1','-c:v','libx264','-pix_fmt','yuv420p','-crf','20','-preset','medium','-c:a','aac','-b:a','192k','-movflags','+faststart',temporary]);
  const result=probe(temporary);
  if(!result.format?.format_name?.split(',').includes('mp4')||
     !result.streams.some(s=>s.codec_type==='video'&&s.codec_name==='h264')||
     !result.streams.some(s=>s.codec_type==='audio'&&s.codec_name==='aac')||
     !(Number(result.format.duration)>0))throw new Error('Arquivo convertido não passou na validação H.264/AAC');
+ // Evita entregar um MP4 aparentemente válido, porém truncado ou com duração
+ // incompatível com a gravação original. Pequenas diferenças de encoder são normais.
+ const outputDuration=Number(result.format.duration);
+ const tolerance=Math.max(0.75,sourceDuration*0.02);
+ if(Math.abs(outputDuration-sourceDuration)>tolerance)
+   throw new Error('Duração do MP4 diverge da entrada: '+sourceDuration+'s → '+outputDuration+'s');
  renameSync(temporary,output);
  console.log('MP4 H.264/AAC validado: '+output);
 }catch(err){console.error('Conversão falhou: '+err.message);process.exitCode=1}
