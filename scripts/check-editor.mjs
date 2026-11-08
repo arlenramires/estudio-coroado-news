@@ -62,10 +62,12 @@ if(!/const generation=\+\+pngGeneration/.test(html)||!/if\(generation!==pngGener
 if(!/if\(!blob\)\{status\('Falha ao gerar PNG\./.test(html))
   throw new Error('Exportação PNG deve rejeitar blob vazio');
 if(!html.includes("captureStream")||!html.includes("MediaRecorder"))throw new Error('Exportação de vídeo ausente');
-// Com áudio habilitado, oferecer MP4 nativo com AAC antes do fallback WebM.
-// Sem essa ordem, navegadores capazes de MP4 geravam sempre WebM com áudio.
-if(!/const mimes=\$\('audio'\)\.checked\?\['video\/mp4;codecs=avc1\.42E01E,mp4a\.40\.2','video\/mp4','video\/webm;codecs=vp8,opus','video\/webm'\]/.test(html))
-  throw new Error('Exportação com áudio deve tentar MP4 nativo antes do fallback WebM');
+// A ordem dos MIME deve acompanhar a política real de compatibilidade:
+// Chromium pode anunciar MP4 e gravar VP9/Opus, que não é MP4 H.264/AAC.
+// Preferir WebM com áudio verificável, mantendo MP4 como alternativa.
+const audioMimes="const mimes=$('audio').checked?['video/webm;codecs=vp8,opus','video/webm','video/mp4;codecs=avc1.42E01E,mp4a.40.2','video/mp4']";
+if(!html.includes(audioMimes))
+  throw new Error('Exportação com áudio deve priorizar WebM verificável antes do MP4 nativo');
 // Em navegadores móveis, captureStream(0) pode lançar exceção mesmo com captura a 30 fps disponível.
 if(!/try\{stream=recordCanvas\.captureStream\(0\)\}catch\(err\)\{[\s\S]*?stream=recordCanvas\.captureStream\(30\)\}/.test(html))
   throw new Error('Exportação deve usar captura a 30 fps se captureStream(0) falhar');
