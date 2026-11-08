@@ -3,6 +3,8 @@ import fs from 'node:fs';
 
 // Impede que futuras alterações no manifesto enviem o usuário para uma
 // instalação externa ou registrem atalhos/handlers fora do Estúdio local.
+// O manifesto deve ser um arquivo local regular: links simbólicos podem escapar do pacote privado.
+assert.ok(fs.lstatSync('manifest.webmanifest').isFile(), 'Manifesto deve ser arquivo regular, não link simbólico');
 const manifest=JSON.parse(fs.readFileSync('manifest.webmanifest','utf8'));
 assert.equal(manifest.id,'./');
 assert.equal(manifest.scope,'./');
