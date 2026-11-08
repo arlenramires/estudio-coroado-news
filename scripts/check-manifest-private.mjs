@@ -14,6 +14,7 @@ for(const field of ['shortcuts','screenshots','related_applications','protocol_h
 for(const icon of manifest.icons||[]){
   assert.match(icon.src,/^icons\/[a-z0-9-]+\.(?:png|svg)$/i,'Ícone fora do diretório local');
   assert.ok(!icon.src.includes('..'),'Ícone com travessia de diretório');
-  assert.ok(fs.statSync(icon.src).isFile(),'Ícone inexistente');
+  assert.ok(!fs.lstatSync('icons').isSymbolicLink(),'Diretório de ícones não pode ser link simbólico');
+  assert.ok(fs.lstatSync(icon.src).isFile(),'Ícone deve ser arquivo regular, não link simbólico');
 }
 console.log('Manifesto privado: sem destinos externos, handlers ou atalhos inesperados.');
