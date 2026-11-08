@@ -49,3 +49,12 @@ Para gerar localmente com Node.js: `node scripts/build-offline.mjs && node scrip
 O botão **Salvar PNG** gera uma imagem estática, não um vídeo. A opção **Feed** usa 1080 × 1350; **Reels/Story** usa 1080 × 1920. Para evitar texto tremido ou imagem esticada, selecione o formato final **antes** de exportar, use foto/vídeo de origem com resolução suficiente e confira o arquivo baixado em tamanho real (100%), não apenas a miniatura do aplicativo de mensagens. Enviar uma imagem como foto por mensageiros pode recomprimir o arquivo; prefira enviar o PNG como documento/arquivo.
 
 Se o nome aparecer como **PNG4**, verifique a extensão real do arquivo: o formato correto de imagem é **.png**. Para publicação com movimento e áudio, use **Exportar vídeo**; o editor não transforma um PNG em vídeo. Se o navegador só disponibilizar WebM, não renomeie o arquivo para MP4: isso não converte o codec. Para obter MP4 universal, converta o WebM com um codificador H.264/AAC externo e confira o áudio antes da publicação.
+
+## Converter WebM para MP4 H.264/AAC no PC
+Se o navegador salvar `.webm`, **não renomeie a extensão**. O repositório inclui o conversor local `scripts/converter-mp4.mjs`, que usa FFmpeg e FFprobe instalados no PC e exige que o WebM original contenha vídeo **e** uma faixa de áudio. Ele produz H.264/AAC, verifica contêiner, codecs e duração e só substitui a saída depois da validação; o WebM de entrada permanece intacto.
+
+1. Instale Node.js e FFmpeg com `ffmpeg` e `ffprobe` acessíveis no terminal (`ffmpeg -version` e `ffprobe -version`).
+2. Na pasta extraída do projeto, execute `node scripts/converter-mp4.mjs "caminho/entrada.webm" "caminho/saida.mp4"` (no Windows, use os caminhos Windows entre aspas).
+3. Abra o MP4 gerado, confira imagem, som, duração e sincronização antes de publicar. Para validar automaticamente a conversão com áudio de teste, execute `node scripts/test-converter-mp4.mjs`.
+
+**Limites:** a conversão não recupera áudio que não foi gravado, requer FFmpeg/FFprobe no computador e não roda diretamente no HTML offline ou no PWA Android. Para o celular, transfira o WebM ao PC para converter, ou use um editor local confiável que exporte H.264/AAC. O conversor não garante que o áudio original seja audível: confira a prévia e o arquivo final. Não há upload do vídeo para servidor nesse fluxo.
