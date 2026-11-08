@@ -179,6 +179,9 @@ for(let i=0;i<22;i++){
     throw new Error('Mascote fora dos limites da moldura: '+expected);
   editorPaths.add(asset.src);
 }
+// Não anunciar disponibilidade offline se o cache contiver erro HTTP ou resposta opaca.
+if(!/found\.every\(response=>response&&response\.ok&&response\.status===200&&response\.type==='basic'\)/.test(html))
+  throw new Error('Diagnóstico offline deve rejeitar respostas HTTP inválidas ou opacas');
 // O diagnóstico offline deve examinar somente o cache da versão ativa.
 const activeCacheMatch=sw.match(/const CACHE='([^']+)'/);
 if(!activeCacheMatch)throw new Error('Versão do cache PWA não encontrada');
