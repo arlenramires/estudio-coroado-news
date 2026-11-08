@@ -53,6 +53,14 @@ const sources=[...html.matchAll(/molduras\/[a-zA-Z0-9_.-]+\.(?:webp|png|jpg)/g)]
 const missing=[...new Set(sources)].filter(p=>!fs.existsSync(p));
 if(missing.length)throw new Error('Molduras ausentes: '+missing.join(', '));
 for(const p of new Set(sources)){const b=fs.readFileSync(p);if(b.length<1000)throw new Error('Imagem vazia: '+p);if(p.endsWith('.png')&&b.subarray(1,4).toString()!=='PNG')throw new Error('PNG inválido: '+p);if(p.endsWith('.webp')&&b.subarray(8,12).toString()!=='WEBP')throw new Error('WebP inválido: '+p);}
+// Regressão PNG: o arquivo precisa ser gerado explicitamente como PNG e não pode
+// ser entregue se uma exportação antiga terminar após uma nova solicitação.
+if(!/canvas\.toBlob\(blob=>\{[\s\S]*?\},'image\/png'\)/.test(html))
+  throw new Error('Exportação PNG deve usar Canvas.toBlob com MIME image/png');
+if(!/const generation=\+\+pngGeneration/.test(html)||!/if\(generation!==pngGeneration\)return/.test(html))
+  throw new Error('Exportação PNG deve descartar callbacks de gerações anteriores');
+if(!/if\(!blob\)\{status\('Falha ao gerar PNG\./.test(html))
+  throw new Error('Exportação PNG deve rejeitar blob vazio');
 if(!html.includes("captureStream")||!html.includes("MediaRecorder"))throw new Error('Exportação de vídeo ausente');
 // Com áudio habilitado, oferecer MP4 nativo com AAC antes do fallback WebM.
 // Sem essa ordem, navegadores capazes de MP4 geravam sempre WebM com áudio.
