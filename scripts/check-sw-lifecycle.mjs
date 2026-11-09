@@ -43,26 +43,27 @@ async function fire(name){
   assert.ok(pending,name+' não chamou waitUntil');
   return pending;
 }
-// Sem pré-cache, a instalação prossegue para permitir uso online.
-await fire('install');
-assert.equal(skipWaitingCalls,1,'Falha de pré-cache não deve bloquear o uso online');
+// Falha no pré-cache deve rejeitar a instalação, sem substituir o SW anterior.
+await assert.rejects(fire('install'),/Falha simulada no pré-cache/);
+assert.equal(skipWaitingCalls,0,'Instalação incompleta não pode chamar skipWaiting');
 assert.equal(stored.has(cacheName),false,'Cache parcial deve ser excluído');
-// Falha na limpeza do cache parcial também não pode bloquear a instalação online.
+// Mesmo se a limpeza falhar, a instalação incompleta deve continuar rejeitada.
 failCacheCleanup=true;
-await fire('install');
-assert.equal(skipWaitingCalls,2,'Falha ao excluir cache parcial não deve bloquear instalação');
+await assert.rejects(fire('install'),/Falha simulada no pré-cache/);
+assert.equal(skipWaitingCalls,0,'Falha de limpeza não autoriza ativação incompleta');
+assert.equal(stored.has(cacheName),true,'Falha simulada de exclusão preserva cache parcial');
 failCacheCleanup=false;
 stored.delete(cacheName); // Isola o cenário seguinte da tentativa de pré-cache anterior.
 failInstall=false;
 await fire('install');
-assert.equal(skipWaitingCalls,3,'Instalação após recuperação deve prosseguir');
+assert.equal(skipWaitingCalls,1,'Instalação após recuperação deve prosseguir');
 await fire('activate');
 assert.equal(claimCalls,1);
 assert.equal(stored.has('estudio-coroado-offline-antigo'),false);
 assert.equal(stored.has('cache-de-outro-aplicativo'),true,'Cache de outro app não pode ser excluído');
 assert.equal(stored.has(cacheName),true);
 assert.deepEqual(removed.sort(),['estudio-coroado-offline-antigo',cacheName].sort());
-console.log('PWA: falha de pré-cache permite uso online, remove cache parcial e preserva caches de terceiros.');
+console.log('PWA: pré-cache incompleto rejeita instalação, tenta limpar cache parcial e preserva caches de terceiros.');
 
 // Mesmo com CacheStorage parcialmente bloqueado, o SW deve ativar e controlar clientes.
 failCacheListing=true;
