@@ -24,7 +24,7 @@ self.addEventListener('install',event=>{
           asset.endsWith('.webmanifest')?'application/manifest+json':'text/html';
         const validType=expected==='application/manifest+json'
           ? /^application\/(?:manifest\+json|json)(?:\s*;|\s*$)/i.test(type)
-          : new RegExp('^'+expected+'(?:\\s*;|\\s*$)','i').test(type);
+          : new RegExp('^'+expected.replaceAll('+','\\+')+'(?:\\s*;|\\s*$)','i').test(type);
         if(!response.ok||response.status===206||response.type==='opaque'||
            response.type==='opaqueredirect'||response.url!==url||!validType){
           throw new Error('Recurso offline inválido: '+asset+' ('+response.status+', '+type+')');
