@@ -144,6 +144,9 @@ async function releaseExportWakeLock(){
 }
 // Não oferecer um arquivo antigo depois de editar a arte ou trocar a mídia.
 function invalidateDownload(){
+ // Qualquer edição (inclusive tarja/capa e posição) invalida PNG ainda em toBlob.
+ // Sem isso, o callback assíncrono pode baixar uma arte anterior à última alteração.
+ pngGeneration++;
  const a=$('download'),preview=$('videoPreview');
  a.style.display='none';
  a.removeAttribute('href');
