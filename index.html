@@ -206,7 +206,7 @@ async function seekForExport(v,seconds,signal){
 // PNG é assíncrono: não entregar uma arte antiga depois de trocar moldura, mídia ou manchete.
 $('savePNG').onclick=()=>{
  if(!framesReady()||!frames[selected]){status('Aguarde o carregamento das molduras antes de salvar PNG.');return}
- if(mediaLoading){status('Aguarde o carregamento da mídia antes de salvar PNG.');return}
+ if(mediaLoading||mediaInvalid){status('Aguarde uma mídia válida terminar de carregar antes de salvar PNG.');return}
  const generation=++pngGeneration,name='Coroado_'+(selected+1)+'_arte.png';
  try{
   draw();
