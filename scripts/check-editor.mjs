@@ -68,6 +68,11 @@ if(!/const generation=\+\+pngGeneration/.test(html)||!/if\(generation!==pngGener
   throw new Error('Exportação PNG deve descartar callbacks de gerações anteriores');
 if(!/if\(!blob\)\{status\('Falha ao gerar PNG\./.test(html))
   throw new Error('Exportação PNG deve rejeitar blob vazio');
+// Não iniciar gravação antes da moldura e da mídia estarem prontas.
+if(!/\$\('saveVideo'\)\.onclick=async\(\)=>\{if\(!framesReady\(\)\|\|!frames\[selected\]\)/.test(html))
+  throw new Error('Exportação de vídeo deve aguardar a moldura selecionada');
+if(!/if\(mediaLoading\|\|mediaInvalid\)\{status\('Aguarde uma mídia válida terminar de carregar antes de exportar vídeo\./.test(html))
+  throw new Error('Exportação de vídeo deve rejeitar mídia pendente ou inválida');
 if(!html.includes("captureStream")||!html.includes("MediaRecorder"))throw new Error('Exportação de vídeo ausente');
 // A ordem dos MIME deve acompanhar a política real de compatibilidade:
 // Chromium pode anunciar MP4 e gravar VP9/Opus, que não é MP4 H.264/AAC.
