@@ -31,4 +31,31 @@ for(const variant of [
   assert.equal(await pending,response,'Resposta de rede alterada');
   assert.deepEqual(events,[],'Resposta parcial, opaca ou redirecionada persistida em cache');
 }
+
+// Regressão positiva: tipos MIME legítimos, inclusive parâmetros de charset,
+// precisam continuar funcionando e ficar disponíveis após perda de conexão.
+for(const [path,mime] of [
+  ['index.html','text/html; charset=utf-8'],
+  ['manifest.webmanifest','application/manifest+json; charset=utf-8'],
+  ['manifest.webmanifest','application/json'],
+  ['icons/studio-192.png','image/png'],
+  ['icons/studio.svg','image/svg+xml'],
+  ['molduras/original_01.webp','image/webp; charset=binary']
+]){
+  const handlers=new Map(),saved=new Map();
+  const url=scope+path;
+  const response={status:200,type:'basic',url,headers:{get:()=>mime},clone(){return this}};
+  let online=true;
+  const cache={match:async request=>saved.get(typeof request==='string'?new URL(request,scope).href:request.url),put:async (request,value)=>saved.set(typeof request==='string'?new URL(request,scope).href:request.url,value)};
+  const context=vm.createContext({URL,console:{warn(){}},self:{registration:{scope},addEventListener:(name,fn)=>handlers.set(name,fn)},caches:{open:async()=>cache},fetch:async()=>{if(!online)throw new Error('offline');return response},Response:{error:()=>({status:0})}});
+  new vm.Script(source).runInContext(context);
+  const request={url,method:'GET',mode:path==='index.html'?'navigate':'no-cors',headers:{has:()=>false}};
+  const dispatch=async()=>{let pending;handlers.get('fetch')({request,respondWith:p=>pending=p});return await pending};
+  assert.equal(await dispatch(),response,'MIME legítimo rejeitado: '+path);
+  assert.equal(saved.get(url),response,'Recurso legítimo não armazenado: '+path);
+  online=false;
+  assert.equal(await dispatch(),response,'Recurso válido indisponível offline: '+path);
+}
+console.log('PWA: MIME legítimo aceito e recurso preservado offline.');
+
 console.log('PWA: MIME incompatível, resposta parcial e redirecionamento não contaminam o cache.');
