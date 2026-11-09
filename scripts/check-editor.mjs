@@ -85,6 +85,10 @@ if(!/try\{stream=recordCanvas\.captureStream\(0\)\}catch\(err\)\{[\s\S]*?stream=
   throw new Error('Exportação deve usar captura a 30 fps se captureStream(0) falhar');
 if(!/if\(!frameTrack\)throw new Error/.test(html))
   throw new Error('Exportação deve verificar se o navegador criou uma faixa de vídeo');
+// Regressão Android/Chromium: sem requestFrame, recriar a captura a 30 fps
+// e verificar que o novo stream realmente contém uma faixa de vídeo.
+if(!/if\(!manualFrame\)\{stream\.getVideoTracks\(\)\.forEach\(t=>t\.stop\(\)\);stream=recordCanvas\.captureStream\(30\);frameTrack=stream\.getVideoTracks\(\)\[0\];if\(!frameTrack\)throw new Error/.test(html))
+  throw new Error('Exportação deve recriar captura a 30 fps quando requestFrame não estiver disponível');
 // Cancelamento durante preparação não deve deixar o vídeo original reproduzindo em segundo plano.
 if(!/catch\(err\)\{recording=false;[\s\S]*?video\.pause\(\);setExportBusy\(false\)/.test(html))
   throw new Error('Falha/cancelamento de exportação deve pausar o vídeo original');
