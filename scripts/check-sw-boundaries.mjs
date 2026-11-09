@@ -334,3 +334,34 @@ console.log('PWA: redirecionamento interno não contamina cache de molduras.');
   assert.deepEqual(events,['match','fetch'],'HTML não pode contaminar cache de molduras');
 }
 console.log('PWA: resposta HTML 200 não é armazenada como moldura WebP.');
+
+
+// Regressão: uma resposta HTTP 200 com MIME adulterado não pode entrar
+// no cache de execução, nem substituir uma moldura válida no modo offline.
+for (const [filename,mime] of [
+  ['molduras/original_08.webp','image/webp-malicious'],
+  ['icons/studio-192.png','image/png-malicious'],
+  ['icons/studio.svg','image/svg+xml-malicious'],
+  ['manifest.webmanifest','application/json-malicious']
+]) {
+  const handlers=new Map();
+  const target=new URL(filename,scope).href;
+  let writes=0;
+  const response={ok:true,status:200,type:'basic',url:target,
+    headers:{get:()=>mime},clone(){return this}};
+  const context=vm.createContext({
+    URL,console:{warn(){}},
+    self:{registration:{scope},addEventListener:(name,handler)=>handlers.set(name,handler)},
+    caches:{open:async()=>({match:async()=>undefined,put:async()=>{writes++}})},
+    fetch:async()=>response,
+    Response:{error:()=>({ok:false})}
+  });
+  new vm.Script(source,{filename:'sw.js'}).runInContext(context);
+  let pending;
+  handlers.get('fetch')({request:{url:target,method:'GET',mode:'no-cors',
+    headers:{has:()=>false}},respondWith:value=>{pending=value}});
+  assert.ok(pending,'Recurso autorizado não interceptado: '+filename);
+  assert.equal(await pending,response,'Resposta de rede alterada: '+filename);
+  assert.equal(writes,0,'MIME adulterado persistido no cache: '+filename);
+}
+console.log('PWA: MIME adulterado de WebP, PNG, SVG e manifesto não entra no cache.');
