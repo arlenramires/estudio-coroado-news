@@ -45,7 +45,7 @@ console.log('Privacidade PWA: URLs externas, parâmetros, POST e Range não inte
   const handlers=new Map();
   const target=scope+'molduras/original_01.webp';
   const events=[];
-  const response={ok:true,type:'basic',url:target,clone(){return this}};
+  const response={ok:true,status:200,type:'basic',url:target,headers:{get:()=>target.endsWith('.webp')?'image/webp':'text/html; charset=utf-8'},clone(){return this}};
   const cache={
     match:async()=>{events.push('match');throw new Error('Leitura do cache bloqueada')},
     put:async()=>{events.push('put')}
@@ -76,7 +76,7 @@ console.log('PWA: falha de leitura do cache preserva carregamento de molduras pe
   const handlers=new Map();
   const target=scope+'index.html';
   const events=[];
-  const response={ok:true,type:'basic',url:target,clone(){return this}};
+  const response={ok:true,status:200,type:'basic',url:target,headers:{get:()=>target.endsWith('.webp')?'image/webp':'text/html; charset=utf-8'},clone(){return this}};
   const context=vm.createContext({
     URL,console:{warn(){}},
     self:{registration:{scope},addEventListener:(name,handler)=>handlers.set(name,handler)},
@@ -103,7 +103,7 @@ console.log('PWA: falha ao abrir CacheStorage não bloqueia navegação online.'
   const handlers=new Map();
   const target=scope+'molduras/original_02.webp';
   const events=[];
-  const response={ok:true,type:'basic',url:target,clone(){return this}};
+  const response={ok:true,status:200,type:'basic',url:target,headers:{get:()=>target.endsWith('.webp')?'image/webp':'text/html; charset=utf-8'},clone(){return this}};
   const cache={
     match:async()=>{events.push('match');return undefined},
     put:async()=>{events.push('put');throw new Error('QuotaExceededError')}
