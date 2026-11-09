@@ -247,8 +247,8 @@ if(!/if\(\$\('audio'\)\.checked&&!stream\.getAudioTracks\(\)\.some\(t=>t\.readyS
 
 
 
-// Uma falha de pré-cache não deve bloquear o editor online.
-// A limpeza é tentada, mas falha de CacheStorage também é tolerada.
+// Regressão: pré-cache incompleto NÃO pode instalar uma nova versão.
+// Mesmo que a limpeza do cache parcial falhe, o worker antigo deve permanecer ativo.
 {
   const listeners=new Map();
   const operations=[];
@@ -262,15 +262,19 @@ if(!/if\(\$\('audio'\)\.checked&&!stream\.getAudioTracks\(\)\.some\(t=>t\.readyS
   const worker={registration:{scope:'http://127.0.0.1:8765/'},
     addEventListener:(type,callback)=>listeners.set(type,callback),
     skipWaiting:async()=>{operations.push('skipWaiting')}};
-  const context=vm.createContext({URL,self:worker,caches:fakeCaches,console:{warn(){}}});
+  const context=vm.createContext({URL,self:worker,caches:fakeCaches,console:{warn(){},error(){}}});
   new vm.Script(sw,{filename:'sw.js'}).runInContext(context);
   let installation;
   listeners.get('install')({waitUntil:promise=>{installation=promise}});
   if(!installation)throw new Error('Instalação não aguarda tentativa de pré-cache');
-  await installation;
-  if(operations.join(',')!=='addAll:'+requiredPrecache.length+',delete,skipWaiting')
-    throw new Error('Fallback online após falha do cache não funcionou: '+operations.join(','));
-  console.log('Fallback online aprovado após falha de pré-cache e limpeza.');
+  let rejected=false;
+  try{await installation}catch(error){
+    rejected=error.message==='falha simulada de download';
+  }
+  if(!rejected)throw new Error('Falha de pré-cache não rejeitou a instalação');
+  if(operations.join(',')!=='addAll:'+requiredPrecache.length+',delete')
+    throw new Error('Instalação incompleta assumiu controle ou não limpou cache: '+operations.join(','));
+  console.log('Instalação incompleta rejeitada; worker anterior preservado.');
 }
 
 // Teste funcional de instalação bem-sucedida: todos os arquivos essenciais
