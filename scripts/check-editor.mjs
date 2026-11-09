@@ -284,7 +284,7 @@ console.log('Pré-cache validado: 22 molduras, MIME inválido, rede interrompida
 
 
 // Cache privado não deve persistir redirecionamentos nem respostas de origem diferente.
-if((sw.match(/response\.ok&&response\.status!==206&&response\.type==='basic'&&response\.url===req\.url/g)||[]).length!==2)
+if((sw.match(/response\.status===200&&response\.type==='basic'&&response\.url===req\.url/g)||[]).length!==2)
   throw new Error('Cache PWA deve rejeitar respostas redirecionadas ou de outra origem');
 
 
