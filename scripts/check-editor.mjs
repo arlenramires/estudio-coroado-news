@@ -60,7 +60,10 @@ const sources=[...html.matchAll(/molduras\/[a-zA-Z0-9_.-]+\.(?:webp|png|jpg)/g)]
 const missing=[...new Set(sources)].filter(p=>!fs.existsSync(p));
 if(missing.length)throw new Error('Molduras ausentes: '+missing.join(', '));
 for(const p of new Set(sources)){const b=fs.readFileSync(p);if(b.length<1000)throw new Error('Imagem vazia: '+p);if(p.endsWith('.png')&&b.subarray(1,4).toString()!=='PNG')throw new Error('PNG inválido: '+p);if(p.endsWith('.webp')&&b.subarray(8,12).toString()!=='WEBP')throw new Error('WebP inválido: '+p);}
-// Não permitir PNG com upload inválido (ex.: imagem corrompida ou vídeo sem decodificação).\nif(!/\$\('savePNG'\)\.onclick=\(\)=>\{[\s\S]*?if\(mediaLoading\|\|mediaInvalid\)\{status\('Aguarde uma mídia válida terminar de carregar antes de salvar PNG\./.test(html))\n  throw new Error('Exportação PNG deve rejeitar mídia pendente ou inválida');\n// Regressão PNG: o arquivo precisa ser gerado explicitamente como PNG e não pode
+// Não permitir PNG com upload inválido (ex.: imagem corrompida ou vídeo sem decodificação).
+if(!/\$\('savePNG'\)\.onclick=\(\)=>\{[\s\S]*?if\(mediaLoading\|\|mediaInvalid\)\{status\('Aguarde uma mídia válida terminar de carregar antes de salvar PNG\./.test(html))
+  throw new Error('Exportação PNG deve rejeitar mídia pendente ou inválida');
+// Regressão PNG: o arquivo precisa ser gerado explicitamente como PNG e não pode
 // ser entregue se uma exportação antiga terminar após uma nova solicitação.
 if(!/canvas\.toBlob\(blob=>\{[\s\S]*?\},'image\/png'\)/.test(html))
   throw new Error('Exportação PNG deve usar Canvas.toBlob com MIME image/png');
