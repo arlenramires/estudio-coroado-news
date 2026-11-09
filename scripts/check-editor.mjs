@@ -217,11 +217,9 @@ if(precache.length!==requiredPrecache.length||
    requiredPrecache.some(asset=>!precache.includes(asset)))
   throw new Error('Pré-cache PWA incompleto, duplicado ou divergente das 22 molduras');
 for(const size of [192,512]){const b=fs.readFileSync('icons/studio-'+size+'.png');if(b.length<24||!b.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10]))||b.readUInt32BE(16)!==size||b.readUInt32BE(20)!==size)throw new Error('Ícone PNG inválido: '+size)}
-if(!sw.includes('cache.addAll(ASSETS)'))throw new Error('Pré-cache offline não configurado');
-// O PWA pode permanecer online se o pré-cache falhar; não deve afirmar
-// disponibilidade offline antes de todos os arquivos estarem armazenados.
-if(!sw.includes('cache.addAll(ASSETS)')||!sw.includes('await self.skipWaiting()'))
-  throw new Error('Instalação PWA não configurada');
+// O pré-cache atual valida cada resposta antes de armazená-la; não usa cache.addAll.
+if(!sw.includes('await cache.put(url,response)')||!sw.includes('await self.skipWaiting()'))
+  throw new Error('Instalação PWA não valida e armazena os recursos obrigatórios');
 
 // Bloqueia publicação por Pages mesmo quando o workflow usa outro nome.
 const workflowsDir='.github/workflows';
@@ -247,64 +245,43 @@ if(!/if\(\$\('audio'\)\.checked&&!stream\.getAudioTracks\(\)\.some\(t=>t\.readyS
 
 
 
-// Regressão: pré-cache incompleto NÃO pode instalar uma nova versão.
-// Mesmo que a limpeza do cache parcial falhe, o worker antigo deve permanecer ativo.
-{
-  const listeners=new Map();
-  const operations=[];
-  const fakeCaches={
-    open:async()=>({addAll:async assets=>{
-      operations.push('addAll:'+assets.length);
-      throw new Error('falha simulada de download');
-    }}),
-    delete:async()=>{operations.push('delete');throw new Error('cache bloqueado')}
-  };
-  const worker={registration:{scope:'http://127.0.0.1:8765/'},
-    addEventListener:(type,callback)=>listeners.set(type,callback),
+// Instalação valida cada recurso, rejeita MIME incorreto e preserva o worker antigo.
+for(const failure of ['none','mime','network','cleanup']){
+  const listeners=new Map(), operations=[];
+  const base='http://127.0.0.1:8765/';
+  const worker={registration:{scope:base},addEventListener:(type,fn)=>listeners.set(type,fn),
     skipWaiting:async()=>{operations.push('skipWaiting')}};
-  const context=vm.createContext({URL,self:worker,caches:fakeCaches,console:{warn(){},error(){}}});
+  const cache={put:async(url,response)=>{operations.push('put:'+new URL(url).pathname)}};
+  const fakeCaches={open:async()=>cache,delete:async()=>{operations.push('delete');if(failure==='cleanup')throw Error('cleanup blocked');return true}};
+  let count=0;
+  const fetch=async url=>{
+    count++;
+    if(failure==='network'&&count===3)throw Error('falha simulada de download');
+    const pathname=new URL(url).pathname;
+    let type=pathname.endsWith('.webp')?'image/webp':
+      pathname.endsWith('.png')?'image/png':
+      pathname.endsWith('.svg')?'image/svg+xml':
+      pathname.endsWith('.webmanifest')?'application/manifest+json':'text/html';
+    if(failure==='mime'&&pathname.endsWith('original_01.webp'))type='text/html';
+    return {ok:true,status:200,type:'basic',url,headers:{get:()=>type}};
+  };
+  const context=vm.createContext({URL,self:worker,caches:fakeCaches,fetch,console:{warn(){},error(){}}});
   new vm.Script(sw,{filename:'sw.js'}).runInContext(context);
   let installation;
   listeners.get('install')({waitUntil:promise=>{installation=promise}});
-  if(!installation)throw new Error('Instalação não aguarda tentativa de pré-cache');
-  let rejected=false;
-  try{await installation}catch(error){
-    rejected=error.message==='falha simulada de download';
+  if(!installation)throw Error('Instalação não aguardada');
+  let error;
+  try{await installation}catch(e){error=e}
+  if(failure==='none'){
+    if(error||count!==requiredPrecache.length||operations.filter(x=>x.startsWith('put:')).length!==requiredPrecache.length||
+       operations.at(-1)!=='skipWaiting')throw Error('Pré-cache completo não instalou corretamente');
+  }else{
+    if(!error||operations.includes('skipWaiting')||!operations.includes('delete'))
+      throw Error('Instalação incompleta assumiu controle: '+failure);
   }
-  if(!rejected)throw new Error('Falha de pré-cache não rejeitou a instalação');
-  if(operations.join(',')!=='addAll:'+requiredPrecache.length+',delete')
-    throw new Error('Instalação incompleta assumiu controle ou não limpou cache: '+operations.join(','));
-  console.log('Instalação incompleta rejeitada; worker anterior preservado.');
 }
+console.log('Pré-cache validado: 22 molduras, MIME inválido, rede interrompida e limpeza bloqueada.');
 
-// Teste funcional de instalação bem-sucedida: todos os arquivos essenciais
-// precisam ser pré-carregados antes de liberar o controle ao novo service worker.
-{
-  const listeners=new Map();
-  const operations=[];
-  const fakeCaches={
-    open:async name=>({addAll:async assets=>{
-      operations.push('addAll:'+assets.length);
-      if(assets.length!==requiredPrecache.length)throw new Error('Pré-cache incompleto');
-    }}),
-    delete:async name=>{operations.push('delete:'+name);return true}
-  };
-  const worker={
-    registration:{scope:'http://127.0.0.1:8765/'},
-    addEventListener:(type,callback)=>listeners.set(type,callback),
-    skipWaiting:async()=>{operations.push('skipWaiting')}
-  };
-  const context=vm.createContext({URL,self:worker,caches:fakeCaches});
-  new vm.Script(sw,{filename:'sw.js'}).runInContext(context);
-  let installation;
-  listeners.get('install')({waitUntil:promise=>{installation=promise}});
-  if(!installation||typeof installation.then!=='function')
-    throw new Error('Instalação bem-sucedida não aguardou o pré-cache');
-  await installation;
-  if(operations.join(',')!=='addAll:'+requiredPrecache.length+',skipWaiting')
-    throw new Error('Instalação bem-sucedida não aguardou os arquivos: '+operations.join(','));
-  console.log('Instalação offline aprovada: pré-cache completo antes de skipWaiting.');
-}
 
 // Cache privado não deve persistir redirecionamentos nem respostas de origem diferente.
 if((sw.match(/response\.ok&&response\.status!==206&&response\.type==='basic'&&response\.url===req\.url/g)||[]).length!==2)
