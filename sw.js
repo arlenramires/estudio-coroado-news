@@ -1,6 +1,6 @@
 'use strict';
 // Somente arquivos públicos do próprio estúdio: mídia importada pelo usuário nunca é armazenada.
-const CACHE='estudio-coroado-offline-v42';
+const CACHE='estudio-coroado-offline-v43';
 const ASSETS=['./','./index.html','./manifest.webmanifest','./icons/studio.svg','./icons/studio-192.png','./icons/studio-512.png',
   ...Array.from({length:22},(_,i)=>'./molduras/original_'+String(i+1).padStart(2,'0')+'.webp')];
 // Somente arquivos declarados do aplicativo podem entrar no cache.
@@ -12,7 +12,25 @@ self.addEventListener('install',event=>{
     // A rejeição da instalação mantém o service worker anterior ativo para uso offline.
     try{
       const cache=await caches.open(CACHE);
-      await cache.addAll(ASSETS);
+      // Validar cada resposta antes de confirmar o pré-cache: servidores podem
+      // devolver uma página HTML de erro com status 200 no lugar de uma moldura.
+      for(const asset of ASSETS){
+        const url=new URL(asset,self.registration.scope).href;
+        const response=await fetch(url,{cache:'no-store'});
+        const type=(response.headers.get('content-type')||'').toLowerCase();
+        const expected=asset.endsWith('.webp')?'image/webp':
+          asset.endsWith('.png')?'image/png':
+          asset.endsWith('.svg')?'image/svg+xml':
+          asset.endsWith('.webmanifest')?'application/manifest+json':'text/html';
+        const validType=expected==='application/manifest+json'
+          ? /^application\/(?:manifest\+json|json)(?:\s*;|\s*$)/i.test(type)
+          : type.startsWith(expected);
+        if(!response.ok||response.status===206||response.type==='opaque'||
+           response.type==='opaqueredirect'||response.url!==url||!validType){
+          throw new Error('Recurso offline inválido: '+asset+' ('+response.status+', '+type+')');
+        }
+        await cache.put(url,response);
+      }
     }catch(error){
       console.error('Instalação offline incompleta; mantendo a versão anterior',error);
       try{await caches.delete(CACHE)}catch(cleanupError){console.warn('Limpeza do cache incompleto falhou',cleanupError)}
