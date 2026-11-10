@@ -48,11 +48,19 @@ try{
      'packet=stream_index,pts_time,duration_time','-of','json',input]));
    const streamIndexes=source.streams.map((s,i)=>({type:s.codec_type,index:s.index??i}))
      .filter(s=>s.type==='video'||s.type==='audio').map(s=>s.index);
-   const endpoints=(packetData.packets||[])
-     .filter(p=>streamIndexes.includes(p.stream_index))
-     .map(p=>Number(p.pts_time)+(Number.isFinite(Number(p.duration_time))?Number(p.duration_time):0))
-     .filter(t=>Number.isFinite(t)&&t>=0);
-   sourceDuration=endpoints.length?Math.max(...endpoints):NaN;
+   // Não espalhar todos os timestamps em Math.max(...array): gravações
+   // longas podem conter centenas de milhares de pacotes e estourar a pilha.
+   const allowedIndexes=new Set(streamIndexes);
+   let latest=NaN;
+   for(const packet of packetData.packets||[]){
+     if(!allowedIndexes.has(packet.stream_index))continue;
+     const pts=Number(packet.pts_time);
+     const duration=packet.duration_time==null?0:Number(packet.duration_time);
+     if(!Number.isFinite(pts)||!Number.isFinite(duration)||duration<0)continue;
+     const end=pts+duration;
+     if(Number.isFinite(end)&&end>=0&&(Number.isNaN(latest)||end>latest))latest=end;
+   }
+   sourceDuration=latest;
  }
  if(!Number.isFinite(sourceDuration)||sourceDuration<=0)
    throw new Error('Duração da entrada ausente ou inválida, inclusive nos timestamps dos pacotes');
