@@ -39,9 +39,23 @@ try{
  // Assim, uma entrada corrompida falha sem tocar no MP4 anterior.
  run('ffmpeg',['-hide_banner','-loglevel','error','-nostdin','-xerror','-err_detect','explode','-i',input,
    '-map','0:v:0','-map','0:a:0','-f','null','-']);
- const sourceDuration=Number(source.format?.duration);
+ // Gravações WebM do MediaRecorder frequentemente não trazem duration no
+ // cabeçalho. Calcular a duração pelos timestamps reais dos pacotes evita
+ // rejeitar vídeos válidos exportados pelo Estúdio.
+ let sourceDuration=Number(source.format?.duration);
+ if(!Number.isFinite(sourceDuration)||sourceDuration<=0){
+   const packetData=JSON.parse(run('ffprobe',['-v','error','-show_packets','-show_entries',
+     'packet=stream_index,pts_time,duration_time','-of','json',input]));
+   const streamIndexes=source.streams.map((s,i)=>({type:s.codec_type,index:s.index??i}))
+     .filter(s=>s.type==='video'||s.type==='audio').map(s=>s.index);
+   const endpoints=(packetData.packets||[])
+     .filter(p=>streamIndexes.includes(p.stream_index))
+     .map(p=>Number(p.pts_time)+(Number.isFinite(Number(p.duration_time))?Number(p.duration_time):0))
+     .filter(t=>Number.isFinite(t)&&t>=0);
+   sourceDuration=endpoints.length?Math.max(...endpoints):NaN;
+ }
  if(!Number.isFinite(sourceDuration)||sourceDuration<=0)
-   throw new Error('Duração da entrada ausente ou inválida');
+   throw new Error('Duração da entrada ausente ou inválida, inclusive nos timestamps dos pacotes');
  run('ffmpeg',['-hide_banner','-loglevel','error','-nostdin','-y','-i',input,'-map','0:v:0','-map','0:a:0','-map_metadata','-1','-map_chapters','-1','-c:v','libx264','-pix_fmt','yuv420p','-crf','20','-preset','medium','-c:a','aac','-b:a','192k','-movflags','+faststart',temporary]);
  const result=probe(temporary);
  if(!result.format?.format_name?.split(',').includes('mp4')||
