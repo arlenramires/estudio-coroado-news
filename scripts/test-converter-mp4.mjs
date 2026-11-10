@@ -85,6 +85,27 @@ try{
    throw new Error('Entrada corrompida sobrescreveu MP4 anterior');
  if(readdirSync(dir).some(name=>name.startsWith('.preservado.mp4.')))
    throw new Error('Entrada corrompida deixou arquivo temporário');
+ // Uma gravação WebM truncada deve falhar sem substituir uma exportação anterior.
+ // Testa especificamente o caminho em que o cabeçalho existe, mas faltam dados.
+ const truncated=join(dir,'truncado.webm'),truncatedOutput=join(dir,'truncado.mp4');
+ const completeWebm=readFileSync(input);
+ writeFileSync(truncated,completeWebm.subarray(0,Math.min(128,completeWebm.length)));
+ writeFileSync(truncatedOutput,'exportacao anterior preservada');
+ run('node',['scripts/converter-mp4.mjs',truncated,truncatedOutput],1);
+ if(readFileSync(truncatedOutput,'utf8')!=='exportacao anterior preservada')
+   throw new Error('WebM truncado substituiu exportação anterior');
+ if(readdirSync(dir).some(name=>name.startsWith('.truncado.mp4.')))
+   throw new Error('WebM truncado deixou arquivo temporário');
+ // Um link simbólico de entrada deve ser recusado, inclusive quando aponta
+ // para uma gravação WebM legítima, sem tocar no destino existente.
+ const linkedInput=join(dir,'entrada-link.webm'),linkedInputOutput=join(dir,'entrada-link.mp4');
+ symlinkSync(input,linkedInput);
+ writeFileSync(linkedInputOutput,'saida anterior');
+ run('node',['scripts/converter-mp4.mjs',linkedInput,linkedInputOutput],2);
+ if(readFileSync(linkedInputOutput,'utf8')!=='saida anterior')
+   throw new Error('Link simbólico de entrada substituiu saída anterior');
+ if(readdirSync(dir).some(name=>name.startsWith('.entrada-link.mp4.')))
+   throw new Error('Link simbólico de entrada deixou temporário');
  // Falha de conversão por diretório de destino inexistente também deve preservar a entrada.
  const inputBeforeFailure=readFileSync(input);
  run('node',['scripts/converter-mp4.mjs',input,join(dir,'diretorio-ausente','saida.mp4')],1);
