@@ -17,7 +17,7 @@ if(input===output||extname(input).toLowerCase()!=='.webm'||extname(output).toLow
 // Converte em arquivo temporário no mesmo diretório: falhas não deixam MP4 parcial.
 const temporary=join(dirname(output),'.'+basename(output)+'.'+randomUUID()+'.mp4');
 function run(cmd,args){const r=spawnSync(cmd,args,{encoding:'utf8',maxBuffer:4*1024*1024});if(r.error)throw new Error(cmd+': '+r.error.message);if(r.status!==0)throw new Error(cmd+': '+(r.stderr||r.stdout).slice(-1200));return r.stdout}
-function probe(file){return JSON.parse(run('ffprobe',['-v','error','-show_entries','stream=codec_type,codec_name,duration:format=format_name,duration','-of','json',file]))}
+function probe(file){return JSON.parse(run('ffprobe',['-v','error','-show_entries','stream=index,codec_type,codec_name,duration:format=format_name,duration','-of','json',file]))}
 try{
  const source=probe(input);
  // Não aceitar um MP4 ou outro contêiner renomeado para .webm: a conversão
