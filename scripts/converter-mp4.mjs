@@ -15,7 +15,7 @@ if(input===output||extname(input).toLowerCase()!=='.webm'||extname(output).toLow
 }
 // Converte em arquivo temporário no mesmo diretório: falhas não deixam MP4 parcial.
 const temporary=join(dirname(output),'.'+basename(output)+'.'+randomUUID()+'.mp4');
-function run(cmd,args){const r=spawnSync(cmd,args,{encoding:'utf8',maxBuffer:4*1024*1024});if(r.error)throw new Error(cmd+': '+r.error.message);if(r.status!==0)throw new Error(cmd+': '+(r.stderr||r.stdout).slice(-1200));return r.stdout}
+function run(cmd,args,{maxBuffer=4*1024*1024}={}){const r=spawnSync(cmd,args,{encoding:'utf8',maxBuffer});if(r.error)throw new Error(cmd+': '+r.error.message);if(r.status!==0)throw new Error(cmd+': '+(r.stderr||r.stdout).slice(-1200));return r.stdout}
 function probe(file){return JSON.parse(run('ffprobe',['-v','error','-show_entries','stream=index,codec_type,codec_name,duration:format=format_name,duration','-of','json',file]))}
 try{
  const source=probe(input);
@@ -43,8 +43,8 @@ try{
  // rejeitar vídeos válidos exportados pelo Estúdio.
  let sourceDuration=Number(source.format?.duration);
  if(!Number.isFinite(sourceDuration)||sourceDuration<=0){
-   const packetData=JSON.parse(run('ffprobe',['-v','error','-show_packets','-show_entries',
-     'packet=stream_index,pts_time,duration_time','-of','json',input]));
+   // O JSON de timestamps pode ultrapassar 4 MiB em gravações longas.\n   // Reservar limite maior somente para esta consulta, mantendo os demais comandos restritos.\n   const packetData=JSON.parse(run('ffprobe',['-v','error','-show_packets','-show_entries',
+     'packet=stream_index,pts_time,duration_time','-of','json',input],{maxBuffer:64*1024*1024}));
    const streamIndexes=source.streams.map((s,i)=>({type:s.codec_type,index:s.index??i}))
      .filter(s=>s.type==='video'||s.type==='audio').map(s=>s.index);
    // Não espalhar todos os timestamps em Math.max(...array): gravações
