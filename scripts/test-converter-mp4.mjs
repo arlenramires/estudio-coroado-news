@@ -119,7 +119,9 @@ try{
    throw new Error('Link pendente de entrada deixou temporário');
  // Falha de conversão por diretório de destino inexistente também deve preservar a entrada.
  const inputBeforeFailure=readFileSync(input);
- run('node',['scripts/converter-mp4.mjs',input,join(dir,'diretorio-ausente','saida.mp4')],1);
+ // Destino inexistente deve ser rejeitado na validação dos argumentos,
+ // antes de iniciar FFmpeg (código 2), sem alterar a gravação original.
+ run('node',['scripts/converter-mp4.mjs',input,join(dir,'diretorio-ausente','saida.mp4')],2);
  if(!readFileSync(input).equals(inputBeforeFailure))
    throw new Error('Falha no destino alterou o vídeo original');
  const alias=join(dir,'alias.mp4');
