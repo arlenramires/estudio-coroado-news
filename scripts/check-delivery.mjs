@@ -41,7 +41,7 @@ walk(root);
 for(const file of files)if(!listed.has(file))throw Error('Arquivo não registrado no checksum: '+file);
 if(files.length!==listed.size)throw Error('Quantidade de arquivos divergente');
 const offline=fs.readFileSync(path.join(root,'Estudio_Coroado_Offline.html'),'utf8');
-const embedded=[...offline.matchAll(/"src":"data:image\\/webp;base64,([A-Za-z0-9+/]+={0,2})"/g)];
+const embedded=[...offline.matchAll(/"src":"data:image\/webp;base64,([A-Za-z0-9+/]+={0,2})"/g)];
 if(embedded.length!==22)throw Error('HTML offline não incorpora exatamente 22 molduras: '+embedded.length);
 for(const [index,match] of embedded.entries()){
   const encoded=match[1];
