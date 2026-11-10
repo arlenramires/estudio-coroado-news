@@ -41,7 +41,17 @@ walk(root);
 for(const file of files)if(!listed.has(file))throw Error('Arquivo não registrado no checksum: '+file);
 if(files.length!==listed.size)throw Error('Quantidade de arquivos divergente');
 const offline=fs.readFileSync(path.join(root,'Estudio_Coroado_Offline.html'),'utf8');
-const embedded=[...offline.matchAll(/"src":"data:image\/webp;base64,/g)].length;
-if(embedded!==22)throw Error('HTML offline não incorpora exatamente 22 molduras: '+embedded);
+const embedded=[...offline.matchAll(/"src":"data:image\\/webp;base64,([A-Za-z0-9+/]+={0,2})"/g)];
+if(embedded.length!==22)throw Error('HTML offline não incorpora exatamente 22 molduras: '+embedded.length);
+for(const [index,match] of embedded.entries()){
+  const encoded=match[1];
+  const bytes=Buffer.from(encoded,'base64');
+  if(bytes.length<30||bytes.toString('ascii',0,4)!=='RIFF'||bytes.toString('ascii',8,12)!=='WEBP')
+    throw Error('Moldura incorporada não é um WebP válido: '+(index+1));
+  if(bytes.readUInt32LE(4)+8!==bytes.length)
+    throw Error('Tamanho RIFF inconsistente na moldura: '+(index+1));
+  if(!['VP8 ','VP8L','VP8X'].includes(bytes.toString('ascii',12,16)))
+    throw Error('Chunk WebP inválido na moldura: '+(index+1));
+}
 if(/"src":"molduras\/original_/.test(offline))throw Error('HTML offline depende de molduras externas');
 console.log('Entrega validada: '+files.length+' arquivos íntegros e 22 molduras incorporadas no HTML offline.');
