@@ -129,6 +129,20 @@ try{
  symlinkSync(join(dir,'alvo-inexistente.mp4'),dangling);
  run('node',['scripts/converter-mp4.mjs',input,dangling],2);
  if(!lstatSync(dangling).isSymbolicLink())throw new Error('Conversão substituiu link simbólico pendente');
+ // Rejeitar extensão de entrada enganosa e destino que seja diretório,
+ // antes de chamar FFmpeg ou alterar arquivos existentes.
+ const renamedInput=join(dir,'entrada.mp4');
+ writeFileSync(renamedInput,readFileSync(input));
+ const rejectedOutput=join(dir,'rejeitado.mp4');
+ run('node',['scripts/converter-mp4.mjs',renamedInput,rejectedOutput],2);
+ if(existsSync(rejectedOutput))throw new Error('Entrada sem extensão WebM gerou saída');
+ run('node',['scripts/converter-mp4.mjs',input,dir],2);
+ // O caminho de destino pode terminar em .mp4 e ainda assim ser um diretório.
+ const {mkdirSync}=await import('node:fs');
+ const directoryOutput=join(dir,'pasta.mp4');
+ mkdirSync(directoryOutput);
+ run('node',['scripts/converter-mp4.mjs',input,directoryOutput],2);
+ if(!lstatSync(directoryOutput).isDirectory())throw new Error('Diretório de saída foi alterado');
  run('node',['scripts/converter-mp4.mjs',input,input],2);
  run('node',['scripts/converter-mp4.mjs',join(dir,'inexistente.webm'),join(dir,'ausente.mp4')],2);
  run('node',['scripts/converter-mp4.mjs',input,join(dir,'extensao.webm')],2);
