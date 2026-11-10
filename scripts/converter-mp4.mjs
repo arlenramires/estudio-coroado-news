@@ -25,6 +25,14 @@ try{
    throw new Error('Entrada não é um contêiner WebM válido');
  if(!source.streams?.some(s=>s.codec_type==='video'))throw new Error('Entrada sem faixa de vídeo');
  if(!source.streams.some(s=>s.codec_type==='audio'))throw new Error('Entrada sem faixa de áudio: não é possível recuperar som ausente');
+ // Faixas anunciadas no cabeçalho podem estar vazias: verificar pacotes reais
+ // antes de gastar tempo convertendo e antes de tocar na saída existente.
+ const inputPackets=JSON.parse(run('ffprobe',['-v','error','-count_packets','-show_entries','stream=codec_type,nb_read_packets','-of','json',input]));
+ for(const type of ['video','audio']){
+   const stream=inputPackets.streams?.find(s=>s.codec_type===type);
+   if(!stream||!(Number(stream.nb_read_packets)>0))
+     throw new Error('WebM de entrada sem pacotes de '+type);
+ }
  const sourceDuration=Number(source.format?.duration);
  if(!Number.isFinite(sourceDuration)||sourceDuration<=0)
    throw new Error('Duração da entrada ausente ou inválida');
