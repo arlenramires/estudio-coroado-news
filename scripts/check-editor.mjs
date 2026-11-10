@@ -83,6 +83,11 @@ if(!html.includes("captureStream")||!html.includes("MediaRecorder"))throw new Er
 const audioMimes="const mimes=$('audio').checked?['video/webm;codecs=vp8,opus','video/webm','video/mp4;codecs=avc1.42E01E,mp4a.40.2','video/mp4']";
 if(!html.includes(audioMimes))
   throw new Error('Exportação com áudio deve priorizar WebM verificável antes do MP4 nativo');
+// O tipo MIME do arquivo entregue deve refletir o contêiner detectado pelo cabeçalho,
+// e não apenas o MIME anunciado pelo MediaRecorder (que pode estar incorreto).
+if(!html.includes("const verifiedBlob=new Blob(chunks,{type:mp4?'video/mp4':'video/webm'});")||
+   !html.includes("deliver(verifiedBlob,'Coroado_'+(selected+1)+'_video.'+ext)"))
+  throw new Error('Vídeo exportado deve corrigir o MIME do Blob conforme o contêiner real');
 // Em navegadores móveis, captureStream(0) pode lançar exceção mesmo com captura a 30 fps disponível.
 if(!/try\{stream=recordCanvas\.captureStream\(0\)\}catch\(err\)\{[\s\S]*?stream=recordCanvas\.captureStream\(30\)\}/.test(html))
   throw new Error('Exportação deve usar captura a 30 fps se captureStream(0) falhar');
