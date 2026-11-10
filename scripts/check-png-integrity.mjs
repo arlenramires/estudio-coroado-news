@@ -30,7 +30,14 @@ function verifyPNG(buffer,size){
       assert.equal(length,13,'IHDR deve ter 13 bytes');
       assert.equal(buffer.readUInt32BE(offset+8),size,'Largura incorreta');
       assert.equal(buffer.readUInt32BE(offset+12),size,'Altura incorreta');
-      // Ícones PWA devem usar PNG com parâmetros de codificação válidos.\n      const depth=buffer[offset+16], color=buffer[offset+17];\n      const allowed={0:[1,2,4,8,16],2:[8,16],3:[1,2,4,8],4:[8,16],6:[8,16]};\n      assert.ok(allowed[color]?.includes(depth),'Profundidade/cor PNG inválidas');\n      assert.equal(buffer[offset+18],0,'Compressão PNG inválida');\n      assert.equal(buffer[offset+19],0,'Filtro PNG inválido');\n      assert.ok([0,1].includes(buffer[offset+20]),'Entrelaçamento PNG inválido');\n      ihdr=true;
+      // Ícones PWA devem usar PNG com parâmetros de codificação válidos.
+      const depth=buffer[offset+16], color=buffer[offset+17];
+      const allowed={0:[1,2,4,8,16],2:[8,16],3:[1,2,4,8],4:[8,16],6:[8,16]};
+      assert.ok(allowed[color]?.includes(depth),'Profundidade/cor PNG inválidas');
+      assert.equal(buffer[offset+18],0,'Compressão PNG inválida');
+      assert.equal(buffer[offset+19],0,'Filtro PNG inválido');
+      assert.ok([0,1].includes(buffer[offset+20]),'Entrelaçamento PNG inválido');
+      ihdr=true;
     }
     if(type==='IHDR'&&ihdr&&offset!==8)assert.fail('IHDR duplicado');
     if(type==='IDAT'){
@@ -55,7 +62,12 @@ for(const size of [192,512]){
   // Um bit alterado no IHDR não pode passar pelo teste.
   tampered[16]^=1;
   assert.throws(()=>verifyPNG(tampered,size));
-  // Parâmetros IHDR inválidos devem ser rejeitados mesmo com CRC recalculado.\n  const invalidColor=Buffer.from(buffer);\n  invalidColor[25]=7; // tipo de cor inexistente\n  invalidColor.writeUInt32BE(crc32(invalidColor.subarray(12,29)),29);\n  assert.throws(()=>verifyPNG(invalidColor,size),/Profundidade\\/cor PNG inválidas/);\n  // Um byte de dados alterado deve invalidar o CRC do respectivo chunk.
+  // Parâmetros IHDR inválidos devem ser rejeitados mesmo com CRC recalculado.
+  const invalidColor=Buffer.from(buffer);
+  invalidColor[25]=7; // tipo de cor inexistente
+  invalidColor.writeUInt32BE(crc32(invalidColor.subarray(12,29)),29);
+  assert.throws(()=>verifyPNG(invalidColor,size),/Profundidade\\/cor PNG inválidas/);
+  // Um byte de dados alterado deve invalidar o CRC do respectivo chunk.
   const idat=buffer.indexOf(Buffer.from('IDAT'));
   assert.ok(idat>=12,'IDAT não encontrado');
   const corruptedData=Buffer.from(buffer);
