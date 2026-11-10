@@ -22,7 +22,7 @@ if(!/<h3>22 molduras disponíveis<\/h3>/.test(html))
 // Privacidade: o editor privado não pode carregar scripts, estilos, imagens ou
 // fontes de terceiros. Uma dependência remota quebraria o uso offline e poderia
 // transmitir informações de acesso a um servidor externo.
-const remoteAttributes=[...html.matchAll(/\b(?:src|href|poster|action)\s*=\s*(["'])(.*?)\1/gi)]
+const remoteAttributes=[...html.matchAll(/\b(?:src|href|poster|action|formaction|ping|srcset)\s*=\s*(["'])(.*?)\1/gi)]
   .map(match=>match[2]).filter(value=>/^(?:https?:)?\/\//i.test(value));
 if(remoteAttributes.length)throw new Error('Recurso remoto não autorizado no editor privado: '+remoteAttributes.join(', '));
 // Atributos sem aspas também podem apontar para domínios externos.
