@@ -58,6 +58,15 @@ try{
  if(!secondVolume||!Number.isFinite(Number(secondVolume[1]))||Number(secondVolume[1]) < -45)
    throw new Error('Segunda conversão produziu áudio mudo ou inaudível: '+(secondVolume?.[1]??'sem medição'));
  if(readdirSync(dir).some(name=>name.startsWith('.saida.mp4.')))throw new Error('Conversão bem-sucedida deixou arquivo temporário');
+ // Um MP4 renomeado para .webm não deve passar por WebM legítimo.
+ const disguised=join(dir,'mp4-disfarcado.webm'),protectedOutput=join(dir,'saida-protegida.mp4');
+ writeFileSync(disguised,readFileSync(output));
+ writeFileSync(protectedOutput,'arquivo anterior preservado');
+ run('node',['scripts/converter-mp4.mjs',disguised,protectedOutput],1);
+ if(readFileSync(protectedOutput,'utf8')!=='arquivo anterior preservado')
+   throw new Error('Contêiner disfarçado sobrescreveu o MP4 anterior');
+ if(readdirSync(dir).some(name=>name.startsWith('.saida-protegida.mp4.')))
+   throw new Error('Contêiner disfarçado deixou arquivo temporário');
  const silent=join(dir,'sem-audio.webm');
  run('ffmpeg',['-hide_banner','-loglevel','error','-f','lavfi','-i','color=c=black:s=160x120:r=12:d=1','-c:v','libvpx',silent]);
  const invalid=join(dir,'invalido.mp4');
