@@ -34,6 +34,11 @@ try{
    if(!stream||!(Number(stream.nb_read_packets)>0))
      throw new Error('WebM de entrada sem pacotes de '+type);
  }
+ // Verifica o WebM original inteiro antes de codificar. Um cabeçalho e pacotes
+ // presentes não garantem que o conteúdo esteja decodificável até o final.
+ // Assim, uma entrada corrompida falha sem tocar no MP4 anterior.
+ run('ffmpeg',['-hide_banner','-loglevel','error','-nostdin','-xerror','-err_detect','explode','-i',input,
+   '-map','0:v:0','-map','0:a:0','-f','null','-']);
  const sourceDuration=Number(source.format?.duration);
  if(!Number.isFinite(sourceDuration)||sourceDuration<=0)
    throw new Error('Duração da entrada ausente ou inválida');
