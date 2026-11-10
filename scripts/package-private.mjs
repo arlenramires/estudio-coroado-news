@@ -16,6 +16,11 @@ await import('./build-offline.mjs');
 
 const root=process.cwd();
 const dest=path.join(root,'dist','Estudio-Coroado-Privado');
+// Não mova nem substitua uma entrega anterior que seja link simbólico ou arquivo.
+// O backup/rollback só deve operar sobre um diretório real dentro de dist/.
+const previousStat=fs.lstatSync(dest,{throwIfNoEntry:false});
+if(previousStat && (!previousStat.isDirectory() || previousStat.isSymbolicLink()))
+  throw Error('Destino privado não é diretório regular; entrega anterior preservada');
 const required=['index.html','manifest.webmanifest','sw.js','icons/studio.svg','icons/studio-192.png','icons/studio-512.png',
   ...Array.from({length:22},(_,i)=>'molduras/original_'+String(i+1).padStart(2,'0')+'.webp')];
 // Recusa links simbólicos: o pacote privado não pode copiar conteúdo de fora\n// da árvore do projeto por meio de entradas apontando para outros caminhos.\n// Valida todas as entradas ANTES de apagar o pacote anterior. Uma extração
