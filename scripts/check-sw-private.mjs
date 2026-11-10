@@ -11,6 +11,7 @@ const assets=new Map();
 let networkCalls=0;
 let serverUnavailable=false;
 let serverErrorStatus=null;
+let serverWrongMime=false;
 const cache={
   match:async request=>assets.get(typeof request==='string'?new URL(request,scope).href:request.url),
   put:async(request,response)=>{assets.set(request.url,response)}
@@ -21,7 +22,7 @@ const context=vm.createContext({
   caches:{open:async()=>cache},
   fetch:async request=>{networkCalls++;if(serverUnavailable)throw new Error('Falha de conexão simulada');
     if(serverErrorStatus!==null)return {ok:false,status:serverErrorStatus,type:'basic',url:request.url};
-    return {ok:true,status:200,type:'basic',url:request.url,headers:{get:()=>request.url.endsWith('.webp')?'image/webp':'text/html; charset=utf-8'},clone(){return this}}},
+    return {ok:true,status:200,type:'basic',url:request.url,headers:{get:()=>serverWrongMime?'application/octet-stream':request.url.endsWith('.webp')?'image/webp':'text/html; charset=utf-8'},clone(){return this}}},
   Response:{error:()=>({error:true})}
 });
 new vm.Script(source,{filename:'sw.js'}).runInContext(context);
@@ -61,10 +62,18 @@ assert.equal(offlineHome.url,root,'Navegação inicial deve recuperar index.html
 assert.equal(offlineHome.ok,true,'Página inicial deve permanecer utilizável sem conexão');
 assert.equal(networkCalls,4,'Cada navegação deve tentar atualização antes do fallback');
 serverUnavailable=false;
+// Um servidor pode responder 200 com bytes/tipo incorretos após uma publicação
+// incompleta. Não substituir o editor offline válido por essa resposta.
+serverWrongMime=true;
+const invalidHtml=await dispatch(request(root));
+assert.equal(invalidHtml.url,root,'HTML com MIME inválido deve recuperar o editor do cache');
+assert.equal(invalidHtml.ok,true,'Resposta 200 inválida não pode quebrar o editor offline');
+serverWrongMime=false;
+serverUnavailable=false;
 serverErrorStatus=503;
 const httpError=await dispatch(request(root));
 assert.equal(httpError.status,503,'Erro HTTP 503 legítimo não pode ser mascarado pelo cache');
-assert.equal(networkCalls,5,'Erro HTTP deve ser obtido pela rede');
+assert.equal(networkCalls,6,'Erro HTTP deve ser obtido pela rede');
 console.log('Service worker: fallback somente em falha de conexão e preservação de HTTP 503.');
 
 
