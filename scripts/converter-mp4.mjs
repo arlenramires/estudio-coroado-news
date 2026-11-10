@@ -50,6 +50,11 @@ try{
    if(!stream||!(Number(stream.nb_read_packets)>0))
      throw new Error('MP4 sem pacotes decodificáveis de '+type);
  }
+ // Pacotes existentes não garantem quadros e amostras decodificáveis.
+ // Decodificar ambas as faixas até o fim antes de substituir o MP4 anterior.
+ // -xerror interrompe em erros de decodificação, e -nostdin evita bloqueios.
+ run('ffmpeg',['-hide_banner','-loglevel','error','-nostdin','-xerror','-err_detect','explode','-i',temporary,
+   '-map','0:v:0','-map','0:a:0','-f','null','-']);
  if(!(statSync(temporary).size>0))throw new Error('MP4 convertido está vazio');
  // Evita entregar um MP4 aparentemente válido, porém truncado ou com duração
  // incompatível com a gravação original. Pequenas diferenças de encoder são normais.
