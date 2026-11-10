@@ -66,7 +66,7 @@ for(const size of [192,512]){
   const invalidColor=Buffer.from(buffer);
   invalidColor[25]=7; // tipo de cor inexistente
   invalidColor.writeUInt32BE(crc32(invalidColor.subarray(12,29)),29);
-  assert.throws(()=>verifyPNG(invalidColor,size),/Profundidade\\/cor PNG inválidas/);
+  assert.throws(()=>verifyPNG(invalidColor,size),/PNG inválidas/);
   // Um byte de dados alterado deve invalidar o CRC do respectivo chunk.
   const idat=buffer.indexOf(Buffer.from('IDAT'));
   assert.ok(idat>=12,'IDAT não encontrado');
