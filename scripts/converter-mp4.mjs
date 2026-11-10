@@ -43,7 +43,9 @@ try{
  // rejeitar vídeos válidos exportados pelo Estúdio.
  let sourceDuration=Number(source.format?.duration);
  if(!Number.isFinite(sourceDuration)||sourceDuration<=0){
-   // O JSON de timestamps pode ultrapassar 4 MiB em gravações longas.\n   // Reservar limite maior somente para esta consulta, mantendo os demais comandos restritos.\n   const packetData=JSON.parse(run('ffprobe',['-v','error','-show_packets','-show_entries',
+   // O JSON de timestamps pode ultrapassar 4 MiB em gravações longas.
+   // Reservar limite maior somente para esta consulta, mantendo os demais comandos restritos.
+   const packetData=JSON.parse(run('ffprobe',['-v','error','-show_packets','-show_entries',
      'packet=stream_index,pts_time,duration_time','-of','json',input],{maxBuffer:64*1024*1024}));
    const streamIndexes=source.streams.map((s,i)=>({type:s.codec_type,index:s.index??i}))
      .filter(s=>s.type==='video'||s.type==='audio').map(s=>s.index);
