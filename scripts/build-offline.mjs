@@ -8,7 +8,13 @@ for(const directory of ['molduras','dist']){
   if(stat && (!stat.isDirectory() || stat.isSymbolicLink()))
     throw Error('Diretório inválido ou simbólico: '+directory);
 }
-let html=fs.readFileSync(path.join(root,'index.html'),'utf8');
+// Não incorporar um index.html que tenha sido substituído por link simbólico.
+// O gerador é executado também isoladamente, sem o pré-voo do empacotador.
+const editorSource=path.join(root,'index.html');
+const editorStat=fs.lstatSync(editorSource,{throwIfNoEntry:false});
+if(!editorStat?.isFile()||editorStat.size===0)
+  throw Error('Editor ausente, vazio ou link simbólico não autorizado');
+let html=fs.readFileSync(editorSource,'utf8');
 const paths=[...new Set([...html.matchAll(/"src":"(molduras\/original_\d{2}\.webp)"/g)].map(m=>m[1]))];
 if(paths.length!==22)throw Error('Esperadas 22 molduras, encontradas '+paths.length);
 const expected=Array.from({length:22},(_,i)=>'molduras/original_'+String(i+1).padStart(2,'0')+'.webp');
