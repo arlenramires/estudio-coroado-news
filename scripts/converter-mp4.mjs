@@ -19,6 +19,10 @@ function run(cmd,args){const r=spawnSync(cmd,args,{encoding:'utf8',maxBuffer:4*1
 function probe(file){return JSON.parse(run('ffprobe',['-v','error','-show_entries','stream=codec_type,codec_name,duration:format=format_name,duration','-of','json',file]))}
 try{
  const source=probe(input);
+ // Não aceitar um MP4 ou outro contêiner renomeado para .webm: a conversão
+ // destina-se especificamente a gravações WebM do navegador.
+ if(!source.format?.format_name?.split(',').includes('webm'))
+   throw new Error('Entrada não é um contêiner WebM válido');
  if(!source.streams?.some(s=>s.codec_type==='video'))throw new Error('Entrada sem faixa de vídeo');
  if(!source.streams.some(s=>s.codec_type==='audio'))throw new Error('Entrada sem faixa de áudio: não é possível recuperar som ausente');
  const sourceDuration=Number(source.format?.duration);
