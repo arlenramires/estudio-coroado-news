@@ -106,6 +106,17 @@ try{
    throw new Error('Link simbólico de entrada substituiu saída anterior');
  if(readdirSync(dir).some(name=>name.startsWith('.entrada-link.mp4.')))
    throw new Error('Link simbólico de entrada deixou temporário');
+ // Link simbólico pendente de entrada deve falhar como argumento inválido,
+ // sem lançar exceção não tratada nem modificar uma saída anterior.
+ const danglingInput=join(dir,'entrada-pendente.webm');
+ const danglingInputOutput=join(dir,'pendente-saida.mp4');
+ symlinkSync(join(dir,'webm-que-nao-existe.webm'),danglingInput);
+ writeFileSync(danglingInputOutput,'saida intacta');
+ run('node',['scripts/converter-mp4.mjs',danglingInput,danglingInputOutput],2);
+ if(readFileSync(danglingInputOutput,'utf8')!=='saida intacta')
+   throw new Error('Link pendente de entrada alterou saída anterior');
+ if(readdirSync(dir).some(name=>name.startsWith('.pendente-saida.mp4.')))
+   throw new Error('Link pendente de entrada deixou temporário');
  // Falha de conversão por diretório de destino inexistente também deve preservar a entrada.
  const inputBeforeFailure=readFileSync(input);
  run('node',['scripts/converter-mp4.mjs',input,join(dir,'diretorio-ausente','saida.mp4')],1);
