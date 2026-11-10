@@ -16,7 +16,7 @@ if(input===output||extname(output).toLowerCase()!=='.mp4'||!existsSync(input)||!
 // Converte em arquivo temporário no mesmo diretório: falhas não deixam MP4 parcial.
 const temporary=join(dirname(output),'.'+basename(output)+'.'+randomUUID()+'.mp4');
 function run(cmd,args){const r=spawnSync(cmd,args,{encoding:'utf8',maxBuffer:4*1024*1024});if(r.error)throw new Error(cmd+': '+r.error.message);if(r.status!==0)throw new Error(cmd+': '+(r.stderr||r.stdout).slice(-1200));return r.stdout}
-function probe(file){return JSON.parse(run('ffprobe',['-v','error','-show_entries','stream=codec_type,codec_name:format=format_name,duration','-of','json',file]))}
+function probe(file){return JSON.parse(run('ffprobe',['-v','error','-show_entries','stream=codec_type,codec_name,duration:format=format_name,duration','-of','json',file]))}
 try{
  const source=probe(input);
  if(!source.streams?.some(s=>s.codec_type==='video'))throw new Error('Entrada sem faixa de vídeo');
@@ -30,6 +30,15 @@ try{
     !result.streams.some(s=>s.codec_type==='video'&&s.codec_name==='h264')||
     !result.streams.some(s=>s.codec_type==='audio'&&s.codec_name==='aac')||
     !(Number(result.format.duration)>0))throw new Error('Arquivo convertido não passou na validação H.264/AAC');
+ // A presença de um stream no cabeçalho não comprova que o codificador
+ // escreveu amostras: verificar pacotes reais de vídeo e áudio no MP4.
+ const packets=JSON.parse(run('ffprobe',['-v','error','-count_packets','-show_entries','stream=codec_type,nb_read_packets','-of','json',temporary]));
+ for(const type of ['video','audio']){
+   const stream=packets.streams?.find(s=>s.codec_type===type);
+   if(!stream||!(Number(stream.nb_read_packets)>0))
+     throw new Error('MP4 sem pacotes decodificáveis de '+type);
+ }
+ if(!(statSync(temporary).size>0))throw new Error('MP4 convertido está vazio');
  // Evita entregar um MP4 aparentemente válido, porém truncado ou com duração
  // incompatível com a gravação original. Pequenas diferenças de encoder são normais.
  const outputDuration=Number(result.format.duration);
