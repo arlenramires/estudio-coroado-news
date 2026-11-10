@@ -83,6 +83,12 @@ if(!html.includes("captureStream")||!html.includes("MediaRecorder"))throw new Er
 const audioMimes="const mimes=$('audio').checked?['video/webm;codecs=vp8,opus','video/webm','video/mp4;codecs=avc1.42E01E,mp4a.40.2','video/mp4']";
 if(!html.includes(audioMimes))
   throw new Error('Exportação com áudio deve priorizar WebM verificável antes do MP4 nativo');
+// Regressão: não confiar apenas no MIME anunciado pelo MediaRecorder.
+// A assinatura real deve distinguir MP4 (ftyp) de WebM (EBML) e rejeitar lixo.
+if(!html.includes("String.fromCharCode(...bytes.slice(4,8))==='ftyp'")||
+   !html.includes('bytes[0]===26&&bytes[1]===69&&bytes[2]===223&&bytes[3]===163')||
+   !html.includes("if(!mp4&&!webm){status('O navegador gerou um vídeo inválido. Nenhum arquivo foi entregue.');return}"))
+  throw new Error('Exportação deve verificar assinatura MP4/WebM e rejeitar vídeo inválido');
 // O tipo MIME do arquivo entregue deve refletir o contêiner detectado pelo cabeçalho,
 // e não apenas o MIME anunciado pelo MediaRecorder (que pode estar incorreto).
 if(!html.includes("const verifiedBlob=new Blob(chunks,{type:mp4?'video/mp4':'video/webm'});")||
