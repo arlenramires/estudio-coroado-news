@@ -6,10 +6,11 @@ import vm from 'node:vm';
 
 const source=fs.readFileSync('sw.js','utf8');
 const scope='http://127.0.0.1:8765/';
-for(const status of [404,500,503]){
+for(const status of [401,403,404,429,500,502,503,504]){
+ for(const route of ['', 'index.html']){
   const handlers=new Map();
   const cached={status:200,marker:'editor-antigo'};
-  const response={status,type:'basic',url:scope,marker:'erro-servidor'};
+  const response={status,type:'basic',url:scope+route,marker:'erro-servidor'};
   let writes=0;
   const context=vm.createContext({
     URL,console:{warn(){}},
@@ -27,11 +28,12 @@ for(const status of [404,500,503]){
   new vm.Script(source,{filename:'sw.js'}).runInContext(context);
   let pending;
   handlers.get('fetch')({
-    request:{url:scope,method:'GET',mode:'navigate',headers:{has:()=>false}},
+    request:{url:scope+route,method:'GET',mode:'navigate',headers:{has:()=>false}},
     respondWith:promise=>{pending=promise}
   });
   assert.ok(pending,'Navegação na raiz não interceptada');
   assert.equal(await pending,response,'HTTP '+status+' foi ocultado pelo editor antigo');
   assert.equal(writes,0,'HTTP '+status+' foi gravado no cache');
+ }
 }
-console.log('PWA: erros HTTP 404/500/503 na raiz são preservados.');
+console.log('PWA: erros HTTP 401/403/404/429/5xx na raiz e index.html são preservados.');
