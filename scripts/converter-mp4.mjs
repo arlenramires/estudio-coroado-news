@@ -19,7 +19,7 @@ function hasSymbolicDirectoryAncestor(directory){
   current=parent;
  }
 }
-if(input===output||extname(input).toLowerCase()!=='.webm'||extname(output).toLowerCase()!=='.mp4'||!existsSync(input)||!lstatSync(input).isFile()||
+if(input===output||extname(input).toLowerCase()!=='.webm'||extname(output).toLowerCase()!=='.mp4'||!existsSync(input)||!lstatSync(input).isFile()||hasSymbolicDirectoryAncestor(dirname(input))||
    !existsSync(dirname(output))||!lstatSync(dirname(output)).isDirectory()||hasSymbolicDirectoryAncestor(dirname(output))||
    (lstatSync(output,{throwIfNoEntry:false})!==undefined&&!lstatSync(output).isFile())||
    (existsSync(output)&&realpathSync(input)===realpathSync(output))){
