@@ -28,11 +28,14 @@ try{
  if(!source.streams.some(s=>s.codec_type==='audio'))throw new Error('Entrada sem faixa de áudio: não é possível recuperar som ausente');
  // Faixas anunciadas no cabeçalho podem estar vazias: verificar pacotes reais
  // antes de gastar tempo convertendo e antes de tocar na saída existente.
- const inputPackets=JSON.parse(run('ffprobe',['-v','error','-count_packets','-show_entries','stream=codec_type,nb_read_packets','-of','json',input]));
+ const inputPackets=JSON.parse(run('ffprobe',['-v','error','-count_packets','-show_entries','stream=index,codec_type,nb_read_packets','-of','json',input]));
+ // A conversão usa somente 0:v:0 e 0:a:0. Não basta haver pacotes em
+ // outra faixa do mesmo tipo se a primeira estiver vazia.
  for(const type of ['video','audio']){
-   const stream=inputPackets.streams?.find(s=>s.codec_type===type);
+   const selected=source.streams.find(s=>s.codec_type===type);
+   const stream=inputPackets.streams?.find(s=>s.index===selected?.index);
    if(!stream||!(Number(stream.nb_read_packets)>0))
-     throw new Error('WebM de entrada sem pacotes de '+type);
+     throw new Error('WebM de entrada sem pacotes na primeira faixa de '+type);
  }
  // Verifica o WebM original inteiro antes de codificar. Um cabeçalho e pacotes
  // presentes não garantem que o conteúdo esteja decodificável até o final.
