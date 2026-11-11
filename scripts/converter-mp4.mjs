@@ -9,7 +9,7 @@ const [inputArg,outputArg]=process.argv.slice(2);
 if(!inputArg||!outputArg){console.error('Uso: node scripts/converter-mp4.mjs entrada.webm saida.mp4 (requer FFmpeg e FFprobe)');process.exit(2)}
 const input=resolve(inputArg),output=resolve(outputArg);
 if(input===output||extname(input).toLowerCase()!=='.webm'||extname(output).toLowerCase()!=='.mp4'||!existsSync(input)||!lstatSync(input).isFile()||
-   !existsSync(dirname(output))||!statSync(dirname(output)).isDirectory()||
+   !existsSync(dirname(output))||!lstatSync(dirname(output)).isDirectory()||
    (lstatSync(output,{throwIfNoEntry:false})!==undefined&&!lstatSync(output).isFile())||
    (existsSync(output)&&realpathSync(input)===realpathSync(output))){
  console.error('Entrada inexistente, saída inválida ou caminhos iguais.');process.exit(2);
