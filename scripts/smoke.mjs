@@ -35,13 +35,13 @@ try{
  if(!(await page.locator('#status').textContent()).includes('Aguarde o carregamento das molduras'))throw Error('Clique programático ignorou a proteção de PNG incompleto');
  if(typeof releaseFirstFrame!=='function')throw Error('A primeira moldura não foi interceptada');
  releaseFirstFrame();
- await page.waitForFunction(()=>document.querySelectorAll('#gallery .tile').length===22,{timeout:25000});
+ await page.waitForFunction(()=>document.querySelectorAll('#gallery .tile').length===22,null,{timeout:25000});
  if(await page.locator('#savePNG').isDisabled())throw Error('PNG não foi liberado após carregar as 22 molduras');
  console.log('Inicialização lenta aprovada: nenhum PNG vazio e exportação liberada após carregar as molduras.');
  await page.selectOption('#editorial','21');
  const png64=await page.evaluate(()=>{const t=document.createElement('canvas');t.width=t.height=32;const g=t.getContext('2d');g.fillStyle='#f00';g.fillRect(0,0,32,32);return t.toDataURL('image/png').split(',')[1]});
  await page.locator('#media').setInputFiles({name:'vermelho.png',mimeType:'image/png',buffer:Buffer.from(png64,'base64')});
- await page.waitForFunction(()=>document.querySelector('#status').textContent.includes('Foto encaixada'),{timeout:12000});
+ await page.waitForFunction(()=>document.querySelector('#status').textContent.includes('Foto encaixada'),null,{timeout:12000});
  const sample=await page.evaluate(()=>{const f=frames[selected],[W,H]=canvasFormat(),sc=Math.min(W/f.w,H/f.h),dx=(W-f.w*sc)/2,dy=(H-f.h*sc)/2;const x=Math.floor(dx+(f.box[0]+f.box[2]*.70)*sc),y=Math.floor(dy+(f.box[1]+f.box[3]*.35)*sc);return Array.from(canvas.getContext('2d').getImageData(x,y,1,1).data)});
  if(sample[0]<190||sample[1]>120||sample[2]>120)throw Error('Foto não aparece na janela da moldura: '+sample);
  await page.fill('#headline','TESTE DE PUBLICAÇÃO');
@@ -220,10 +220,10 @@ try{
  // Confirmar que a versão privada continua utilizável sem conexão após o primeiro carregamento.
  await page.evaluate(()=>navigator.serviceWorker.ready);
  await page.reload();
- await page.waitForFunction(()=>!!navigator.serviceWorker.controller,{timeout:15000});
+ await page.waitForFunction(()=>!!navigator.serviceWorker.controller,null,{timeout:15000});
  await page.context().setOffline(true);
  await page.reload({waitUntil:'domcontentloaded'});
- await page.waitForFunction(()=>document.querySelectorAll('#gallery .tile').length===22,{timeout:15000});
+ await page.waitForFunction(()=>document.querySelectorAll('#gallery .tile').length===22,null,{timeout:15000});
  console.log('PWA offline aprovado: 22 molduras carregadas sem rede.');
  await page.context().setOffline(false);
  if(errors.length)throw Error('Erros de navegador: '+errors.join(' | '));
