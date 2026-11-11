@@ -128,6 +128,16 @@ try{
  // redirecionar a exportação para uma pasta inesperada.
  const linkedDir=join(dir,'diretorio-link');
  symlinkSync(dir,linkedDir,'dir');
+ // Também recusar WebM acessado por ancestral simbólico, mesmo que o arquivo
+ // final não seja um link: a validação deve ser simétrica à do destino.
+ const inputViaLinkedDir=join(linkedDir,'entrada.webm');
+ const outputFromLinkedInput=join(dir,'origem-simbolica.mp4');
+ writeFileSync(outputFromLinkedInput,'saida protegida');
+ run('node',['scripts/converter-mp4.mjs',inputViaLinkedDir,outputFromLinkedInput],2);
+ if(readFileSync(outputFromLinkedInput,'utf8')!=='saida protegida')
+   throw new Error('Entrada por diretório simbólico alterou MP4 anterior');
+ if(readdirSync(dir).some(name=>name.startsWith('.origem-simbolica.mp4.')))
+   throw new Error('Entrada por diretório simbólico deixou temporário');
  const linkedDirOutput=join(linkedDir,'nao-criar.mp4');
  run('node',['scripts/converter-mp4.mjs',input,linkedDirOutput],2);
  if(existsSync(join(dir,'nao-criar.mp4')))
