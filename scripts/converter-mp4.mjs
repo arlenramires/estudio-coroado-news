@@ -48,8 +48,11 @@ try{
    // Reservar limite maior somente para esta consulta, mantendo os demais comandos restritos.
    const packetData=JSON.parse(run('ffprobe',['-v','error','-show_packets','-show_entries',
      'packet=stream_index,pts_time,duration_time','-of','json',input],{maxBuffer:64*1024*1024}));
-   const streamIndexes=source.streams.map((s,i)=>({type:s.codec_type,index:s.index??i}))
-     .filter(s=>s.type==='video'||s.type==='audio').map(s=>s.index);
+   // FFmpeg converte apenas 0:v:0 e 0:a:0. Não incluir timestamps de
+   // faixas extras que não farão parte do MP4 (podem ter duração diferente).
+   const firstVideo=source.streams.findIndex(s=>s.codec_type==='video');
+   const firstAudio=source.streams.findIndex(s=>s.codec_type==='audio');
+   const streamIndexes=[firstVideo,firstAudio].map(i=>source.streams[i].index??i);
    // Não espalhar todos os timestamps em Math.max(...array): gravações
    // longas podem conter centenas de milhares de pacotes e estourar a pilha.
    const allowedIndexes=new Set(streamIndexes);
