@@ -224,6 +224,21 @@ try{
  const storyHashes=new Set();
  for(let index=0;index<22;index++){
    await page.selectOption('#editorial',String(index));
+   // A prévia vertical deve mostrar a moldura correta antes de gerar o arquivo.
+   const preview=await page.evaluate(()=>{
+     const frame=frames[selected];
+     const [width,height]=canvasFormat();
+     const pixels=canvas.getContext('2d',{willReadFrequently:true}).getImageData(0,0,canvas.width,canvas.height).data;
+     let visible=false;
+     for(let offset=3;offset<pixels.length;offset+=Math.max(4,Math.floor(pixels.length/4096/4)*4)){
+       if(pixels[offset]>0){visible=true;break;}
+     }
+     return {loaded:!!frame?.img?.complete&&frame.img.naturalWidth===frame.w&&frame.img.naturalHeight===frame.h,
+       width,height,canvasWidth:canvas.width,canvasHeight:canvas.height,visible};
+   });
+   if(!preview.loaded||!preview.visible||preview.width!==1080||preview.height!==1920||
+      preview.canvasWidth!==1080||preview.canvasHeight!==1920)
+     throw Error('Prévia vertical inválida na moldura '+(index+1)+': '+JSON.stringify(preview));
    const promise=page.waitForEvent('download',{timeout:20000});
    await page.click('#savePNG');
    const result=await promise;
