@@ -345,17 +345,21 @@ console.log('Ativação PWA aprovada com CacheStorage indisponível e exclusão 
   const target='http://127.0.0.1:8765/index.html';
   const request={url:target,method:'GET',mode:'navigate',headers:{has:()=>false}};
   const stale={status:200,marker:'stale'};
-  const failure={status:404,marker:'network-404'};
+  const failures=[404,500,503];
   const worker={registration:{scope:'http://127.0.0.1:8765/'},
     addEventListener:(type,callback)=>listeners.set(type,callback)};
   const cache={match:async()=>stale,put:async()=>{throw new Error('HTTP 404 must not be cached')}};
+  let networkResponse;
   const context=vm.createContext({URL,self:worker,caches:{open:async()=>cache},
-    fetch:async()=>failure,Response:{error:()=>({status:0})},console:{warn(){}}});
+    fetch:async()=>networkResponse,Response:{error:()=>({status:0})},console:{warn(){}}});
   new vm.Script(sw,{filename:'sw.js'}).runInContext(context);
-  let responsePromise;
-  listeners.get('fetch')({request,respondWith:promise=>{responsePromise=promise}});
-  if(!responsePromise)throw new Error('Navegação do editor não foi interceptada');
-  const response=await responsePromise;
-  if(response!==failure)throw new Error('PWA ocultou erro HTTP com HTML antigo do cache');
-  console.log('PWA preserva respostas HTTP de erro sem mascará-las com cache antigo.');
+  for(const status of failures){
+    networkResponse={status,marker:'network-'+status};
+    let responsePromise;
+    listeners.get('fetch')({request,respondWith:promise=>{responsePromise=promise}});
+    if(!responsePromise)throw new Error('Navegação do editor não foi interceptada');
+    const response=await responsePromise;
+    if(response!==networkResponse)throw new Error('PWA ocultou HTTP '+status+' com HTML antigo do cache');
+  }
+  console.log('PWA preserva HTTP 404, 500 e 503 sem mascará-los com cache antigo.');
 }
