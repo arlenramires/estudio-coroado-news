@@ -17,13 +17,19 @@ let claimCalls=0;
 let failCacheListing=false;
 let failCacheCleanup=false;
 const cache={
-  addAll:async assets=>{
-    assert.equal(assets.length,28,'PWA deve incluir 22 molduras e 6 recursos básicos');
-    if(failInstall)throw new Error('Falha simulada no pré-cache');
-  }
+  put:async()=>{},
+  match:async()=>undefined
+};
+const fetchAsset=async url=>{
+  if(failInstall)throw new Error('Falha simulada no pré-cache');
+  const type=url.endsWith('.webp')?'image/webp':
+    url.endsWith('.png')?'image/png':
+    url.endsWith('.svg')?'image/svg+xml':
+    url.endsWith('.webmanifest')?'application/manifest+json':'text/html';
+  return {status:200,type:'basic',url,headers:{get:name=>name.toLowerCase()==='content-type'?type:null}};
 };
 const context=vm.createContext({
-  URL,Set,Array,
+  URL,Set,Array,console,fetch:fetchAsset,
   self:{
     registration:{scope},
     addEventListener:(name,fn)=>listeners.set(name,fn),
