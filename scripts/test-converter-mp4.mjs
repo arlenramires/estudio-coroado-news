@@ -124,6 +124,14 @@ try{
  run('node',['scripts/converter-mp4.mjs',input,join(dir,'diretorio-ausente','saida.mp4')],2);
  if(!readFileSync(input).equals(inputBeforeFailure))
    throw new Error('Falha no destino alterou o vídeo original');
+ // Não gravar em diretório de saída que seja link simbólico: evita
+ // redirecionar a exportação para uma pasta inesperada.
+ const linkedDir=join(dir,'diretorio-link');
+ symlinkSync(dir,linkedDir,'dir');
+ const linkedDirOutput=join(linkedDir,'nao-criar.mp4');
+ run('node',['scripts/converter-mp4.mjs',input,linkedDirOutput],2);
+ if(existsSync(join(dir,'nao-criar.mp4')))
+   throw new Error('Conversão escreveu através de diretório simbólico');
  const alias=join(dir,'alias.mp4');
  symlinkSync(input,alias);
  const original=readFileSync(input);
