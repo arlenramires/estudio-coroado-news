@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { createHash } from 'node:crypto';
 import { chromium } from 'playwright-core';
 const exe=['/usr/bin/google-chrome','/usr/bin/chromium','/usr/bin/chromium-browser'].find(p=>fs.existsSync(p));
 if(!exe)throw Error('Chrome/Chromium não instalado no runner');
@@ -179,6 +180,7 @@ try{
  // Exercita a exportação PNG real de TODAS as 22 molduras, não apenas a
  // presença das miniaturas. Confere assinatura, dimensões e tamanho do download.
  await page.selectOption('#format','feed');
+ const feedHashes=new Set();
  for(let i=0;i<22;i++){
    await page.selectOption('#editorial',String(i));
    const expected=await page.evaluate(()=>{
@@ -206,15 +208,20 @@ try{
    const bytes=fs.readFileSync(file);
    if(bytes.length<1000||bytes.subarray(0,8).toString('hex')!=='89504e470d0a1a0a')
      throw Error('PNG inválido/vazio na moldura '+(i+1));
+   const hash=createHash('sha256').update(bytes).digest('hex');
+   if(feedHashes.has(hash))throw Error('Duas molduras geraram o mesmo PNG no Feed: moldura '+(i+1));
+   feedHashes.add(hash);
    const width=bytes.readUInt32BE(16),height=bytes.readUInt32BE(20);
    if(width!==expected.w||height!==expected.h)
      throw Error('PNG com dimensões incorretas na moldura '+(i+1)+': '+width+'x'+height);
  }
- console.log('PNG de todas as 22 molduras aprovado: downloads válidos e dimensões corretas.');
+ if(feedHashes.size!==22)throw Error('Exportações Feed não produziram 22 arquivos distintos');
+ console.log('PNG de todas as 22 molduras aprovado: downloads válidos, dimensões corretas e conteúdo distinto.');
 
  // O formato vertical deve gerar PNG 1080x1920 de verdade para TODAS
  // as 22 molduras, inclusive após alternar do Feed.
  await page.selectOption('#format','story');
+ const storyHashes=new Set();
  for(let index=0;index<22;index++){
    await page.selectOption('#editorial',String(index));
    const promise=page.waitForEvent('download',{timeout:20000});
@@ -225,9 +232,13 @@ try{
    const bytes=fs.readFileSync(await result.path());
    if(bytes.length<1000||bytes.subarray(0,8).toString('hex')!=='89504e470d0a1a0a')
      throw Error('PNG vertical inválido: moldura '+(index+1));
+   const hash=createHash('sha256').update(bytes).digest('hex');
+   if(storyHashes.has(hash))throw Error('Duas molduras geraram o mesmo PNG vertical: moldura '+(index+1));
+   storyHashes.add(hash);
    if(bytes.readUInt32BE(16)!==1080||bytes.readUInt32BE(20)!==1920)
      throw Error('PNG vertical não possui 1080x1920: moldura '+(index+1));
  }
+ if(storyHashes.size!==22)throw Error('Exportações Story não produziram 22 arquivos distintos');
  await page.selectOption('#format','feed');
  // Regressão: voltar de Story para Feed deve alterar também o arquivo exportado,
  // não apenas o seletor ou a prévia.
