@@ -16,7 +16,12 @@ const context=vm.createContext({
     match:async req=>{reads.push(typeof req==='string'?req:req.url);return null},
     put:async(req)=>writes.push(req.url)
   })},
-  fetch:async req=>({ok:true,type:'basic',url:req.url,clone(){return this}}),
+  fetch:async req=>({
+    ok:true,status:200,type:'basic',url:req.url,
+    headers:{get:name=>name.toLowerCase()==='content-type'
+      ? (req.url.endsWith('.webp')?'image/webp':'text/html') : null},
+    clone(){return this}
+  }),
   Response:{error:()=>({ok:false})}
 });
 new vm.Script(source,{filename:'sw.js'}).runInContext(context);
