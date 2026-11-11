@@ -176,6 +176,27 @@ try{
  },png64);
  if(mobileMime.videoTools!=='block'||mobileMime.photoWidth!==32||mobileMime.finalTools!=='none')throw Error('Detecção de mídia Android com MIME genérico falhou: '+JSON.stringify(mobileMime));
  console.log('Mídia Android aprovada: MP4 com MIME genérico e PNG sem MIME reconhecidos.');
+ // Exercita a exportação PNG real de TODAS as 22 molduras, não apenas a
+ // presença das miniaturas. Confere assinatura, dimensões e tamanho do download.
+ await page.selectOption('#format','feed');
+ for(let i=0;i<22;i++){
+   await page.selectOption('#editorial',String(i));
+   const expected=await page.evaluate(()=>{const [w,h]=canvasFormat();return {w,h}});
+   const downloadPromise=page.waitForEvent('download',{timeout:20000});
+   await page.click('#savePNG');
+   const download=await downloadPromise;
+   const filename=download.suggestedFilename();
+   if(!filename.toLowerCase().endsWith('.png'))
+     throw Error('Moldura '+(i+1)+' exportou extensão incorreta: '+filename);
+   const file=await download.path();
+   const bytes=fs.readFileSync(file);
+   if(bytes.length<1000||bytes.subarray(0,8).toString('hex')!=='89504e470d0a1a0a')
+     throw Error('PNG inválido/vazio na moldura '+(i+1));
+   const width=bytes.readUInt32BE(16),height=bytes.readUInt32BE(20);
+   if(width!==expected.w||height!==expected.h)
+     throw Error('PNG com dimensões incorretas na moldura '+(i+1)+': '+width+'x'+height);
+ }
+ console.log('PNG de todas as 22 molduras aprovado: downloads válidos e dimensões corretas.');
  // Confirmar que a versão privada continua utilizável sem conexão após o primeiro carregamento.
  await page.evaluate(()=>navigator.serviceWorker.ready);
  await page.reload();
