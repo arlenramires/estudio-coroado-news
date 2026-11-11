@@ -181,7 +181,21 @@ try{
  await page.selectOption('#format','feed');
  for(let i=0;i<22;i++){
    await page.selectOption('#editorial',String(i));
-   const expected=await page.evaluate(()=>{const [w,h]=canvasFormat();return {w,h}});
+   const expected=await page.evaluate(()=>{
+     const [w,h]=canvasFormat();
+     const frame=frames[selected];
+     if(!frame?.img?.complete||!frame.img.naturalWidth||!frame.img.naturalHeight)
+       throw Error('Moldura selecionada não terminou de carregar');
+     if(frame.img.naturalWidth!==frame.w||frame.img.naturalHeight!==frame.h)
+       throw Error('Dimensões da imagem divergem do catálogo: '+frame.img.naturalWidth+'x'+frame.img.naturalHeight);
+     const ctx=canvas.getContext('2d',{willReadFrequently:true});
+     const pixels=ctx.getImageData(0,0,canvas.width,canvas.height).data;
+     let visible=0;
+     for(let p=3;p<pixels.length;p+=Math.max(4,Math.floor(pixels.length/4096/4)*4))
+       if(pixels[p]>0)visible++;
+     if(visible===0)throw Error('Prévia da moldura está totalmente transparente');
+     return {w,h};
+   });
    const downloadPromise=page.waitForEvent('download',{timeout:20000});
    await page.click('#savePNG');
    const download=await downloadPromise;
