@@ -197,6 +197,26 @@ try{
      throw Error('PNG com dimensões incorretas na moldura '+(i+1)+': '+width+'x'+height);
  }
  console.log('PNG de todas as 22 molduras aprovado: downloads válidos e dimensões corretas.');
+
+ // O formato vertical deve gerar PNG 1080x1920 de verdade, inclusive
+ // depois de alternar do Feed, e não apenas mudar o tamanho da prévia.
+ await page.selectOption('#format','story');
+ for(const index of [0,21]){
+   await page.selectOption('#editorial',String(index));
+   const promise=page.waitForEvent('download',{timeout:20000});
+   await page.click('#savePNG');
+   const result=await promise;
+   if(!result.suggestedFilename().toLowerCase().endsWith('.png'))
+     throw Error('Exportação vertical sem extensão PNG: moldura '+(index+1));
+   const bytes=fs.readFileSync(await result.path());
+   if(bytes.length<1000||bytes.subarray(0,8).toString('hex')!=='89504e470d0a1a0a')
+     throw Error('PNG vertical inválido: moldura '+(index+1));
+   if(bytes.readUInt32BE(16)!==1080||bytes.readUInt32BE(20)!==1920)
+     throw Error('PNG vertical não possui 1080x1920: moldura '+(index+1));
+ }
+ await page.selectOption('#format','feed');
+ console.log('PNG vertical aprovado: primeira e última moldura em 1080x1920 após troca de formato.');
+
  // Confirmar que a versão privada continua utilizável sem conexão após o primeiro carregamento.
  await page.evaluate(()=>navigator.serviceWorker.ready);
  await page.reload();
