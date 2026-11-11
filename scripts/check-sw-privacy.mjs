@@ -39,11 +39,20 @@ const bypass=[
   'https://example.com/photo.jpg',
   scope+'foto-pessoal.jpg',
   scope+'index.html?token=privado',
-  scope+'molduras/original_01.webp?usuario=1'
+  scope+'molduras/original_01.webp?usuario=1',
+  scope+'molduras/original_23.webp',
+  scope+'molduras/original_01.webp/extra',
+  scope+'index.html/extra',
+  'blob:http://127.0.0.1:8765/arquivo-pessoal',
+  'data:image/png;base64,AAAA'
 ];
 for(const url of bypass)assert.equal(dispatch(url),undefined,'Interceptou URL não autorizada: '+url);
 assert.equal(dispatch(scope+'index.html',{method:'POST'}),undefined);
 assert.equal(dispatch(scope+'index.html',{range:true}),undefined);
+assert.equal(dispatch(scope+'molduras/original_01.webp',{range:true}),undefined);
+assert.equal(dispatch(scope+'index.html',{method:'PUT'}),undefined);
+assert.equal(reads.length,0,'Requisições privadas não podem consultar CacheStorage');
+assert.equal(writes.length,0,'Requisições privadas não podem gravar CacheStorage');
 const moldura=dispatch(scope+'molduras/original_01.webp');
 const editor=dispatch(scope+'index.html');
 assert.ok(moldura,'Moldura autorizada não interceptada');
