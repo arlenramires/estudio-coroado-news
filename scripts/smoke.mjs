@@ -215,7 +215,20 @@ try{
      throw Error('PNG vertical não possui 1080x1920: moldura '+(index+1));
  }
  await page.selectOption('#format','feed');
- console.log('PNG vertical aprovado: 22 molduras em 1080x1920 após troca de formato.');
+ // Regressão: voltar de Story para Feed deve alterar também o arquivo exportado,
+ // não apenas o seletor ou a prévia.
+ await page.selectOption('#editorial','0');
+ const backToFeed=page.waitForEvent('download',{timeout:20000});
+ await page.click('#savePNG');
+ const backToFeedFile=await backToFeed;
+ const feedBytes=fs.readFileSync(await backToFeedFile.path());
+ const feedDimensions=await page.evaluate(()=>canvasFormat());
+ if(feedBytes.subarray(0,8).toString('hex')!=='89504e470d0a1a0a'||
+    feedBytes.readUInt32BE(16)!==feedDimensions[0]||
+    feedBytes.readUInt32BE(20)!==feedDimensions[1]||
+    (feedDimensions[0]===1080&&feedDimensions[1]===1920))
+   throw Error('Retorno de Story para Feed exportou dimensões incorretas');
+ console.log('PNG vertical aprovado: 22 molduras em 1080x1920 e retorno ao Feed com dimensões corretas.');
 
  // Confirmar que a versão privada continua utilizável sem conexão após o primeiro carregamento.
  await page.evaluate(()=>navigator.serviceWorker.ready);
