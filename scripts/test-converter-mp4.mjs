@@ -132,6 +132,14 @@ try{
  run('node',['scripts/converter-mp4.mjs',input,linkedDirOutput],2);
  if(existsSync(join(dir,'nao-criar.mp4')))
    throw new Error('Conversão escreveu através de diretório simbólico');
+ // O link pode estar em um ancestral, não apenas na pasta imediatamente anterior.
+ const nestedLinkedDir=join(linkedDir,'subpasta-real');
+ const {mkdirSync:makeNestedDir}=await import('node:fs');
+ makeNestedDir(join(dir,'subpasta-real'));
+ const nestedLinkedOutput=join(nestedLinkedDir,'nao-criar-aninhado.mp4');
+ run('node',['scripts/converter-mp4.mjs',input,nestedLinkedOutput],2);
+ if(existsSync(join(dir,'subpasta-real','nao-criar-aninhado.mp4')))
+   throw new Error('Conversão atravessou um ancestral simbólico do destino');
  const alias=join(dir,'alias.mp4');
  symlinkSync(input,alias);
  const original=readFileSync(input);
