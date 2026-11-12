@@ -2,7 +2,15 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
 
-const catalog=JSON.parse(fs.readFileSync('molduras/catalogo-22.json','utf8'));
+const dir='molduras';
+const catalogPath=path.join(dir,'catalogo-22.json');
+// Evita que o pacote privado leia molduras ou metadados através de links simbólicos.
+for(const entry of [dir,catalogPath]){
+  const stat=fs.lstatSync(entry);
+  if(stat.isSymbolicLink()||(entry===dir?!stat.isDirectory():!stat.isFile()))
+    throw Error('Diretório ou catálogo não regular: '+entry);
+}
+const catalog=JSON.parse(fs.readFileSync(catalogPath,'utf8'));
 if(!Array.isArray(catalog.assets)||catalog.assets.length!==22)
   throw Error('Catálogo deve conter exatamente 22 molduras');
 const ids=new Set(),targets=new Set(),digests=new Map();
