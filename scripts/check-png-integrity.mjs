@@ -17,13 +17,15 @@ function crc32(buffer){
 function verifyPNG(buffer,size){
   assert.ok(buffer.subarray(0,8).equals(signature),'Assinatura PNG inválida');
   let offset=8, ihdr=false, iend=false, idat=false, idatEnded=false, palette=false;
-  let colorType=null;
+  let colorType=null, bitDepth=null;
   while(offset<buffer.length){
     assert.ok(offset+12<=buffer.length,'Chunk PNG truncado');
     const length=buffer.readUInt32BE(offset);
     const end=offset+12+length;
     assert.ok(end<=buffer.length,'Dados PNG truncados');
     const type=buffer.toString('ascii',offset+4,offset+8);
+    assert.match(type,/^[A-Za-z]{4}$/,'Nome de chunk PNG inválido');
+    assert.match(type[2],/^[A-Z]$/,'Bit reservado do chunk PNG deve ser zero');
     const expected=buffer.readUInt32BE(offset+8+length);
     assert.equal(crc32(buffer.subarray(offset+4,offset+8+length)),expected,'CRC inválido: '+type);
     if(!ihdr){
@@ -34,6 +36,7 @@ function verifyPNG(buffer,size){
       // Ícones PWA devem usar PNG com parâmetros de codificação válidos.
       const depth=buffer[offset+16], color=buffer[offset+17];
       colorType=color;
+      bitDepth=depth;
       const allowed={0:[1,2,4,8,16],2:[8,16],3:[1,2,4,8],4:[8,16],6:[8,16]};
       assert.ok(allowed[color]?.includes(depth),'Profundidade/cor PNG inválidas');
       assert.equal(buffer[offset+18],0,'Compressão PNG inválida');
@@ -46,6 +49,7 @@ function verifyPNG(buffer,size){
       assert.ok(!palette&&!idat,'Paleta duplicada ou após IDAT');
       assert.ok(colorType!==0&&colorType!==4,'Paleta proibida neste tipo PNG');
       assert.ok(length>0&&length%3===0&&length<=768,'Paleta PNG inválida');
+      if(colorType===3)assert.ok(length/3<=2**bitDepth,'Paleta excede profundidade do PNG indexado');
       palette=true;
     }
     if(type==='IDAT'){
@@ -79,6 +83,13 @@ for(const size of [192,512]){
   invalidColor[25]=7; // tipo de cor inexistente
   invalidColor.writeUInt32BE(crc32(invalidColor.subarray(12,29)),29);
   assert.throws(()=>verifyPNG(invalidColor,size),/PNG inválidas/);
+  // Nomes de chunk inválidos e bit reservado incorreto não devem passar mesmo com CRC válido.
+  for(const badName of ['I1DR','IHdR']){
+    const invalidChunk=Buffer.from(buffer);
+    Buffer.from(badName).copy(invalidChunk,12);
+    invalidChunk.writeUInt32BE(crc32(invalidChunk.subarray(12,29)),29);
+    assert.throws(()=>verifyPNG(invalidChunk,size),/chunk PNG|Primeiro chunk/);
+  }
   // Um byte de dados alterado deve invalidar o CRC do respectivo chunk.
   const idat=buffer.indexOf(Buffer.from('IDAT'));
   assert.ok(idat>=12,'IDAT não encontrado');
