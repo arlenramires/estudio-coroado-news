@@ -16,6 +16,7 @@ try{
   const red=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aSx8AAAAASUVORK5CYII=','base64');
   await page.locator('#media').setInputFiles({name:'foto.png',mimeType:'image/png',buffer:red});
   await page.waitForFunction(()=>document.querySelector('#status').textContent.includes('Foto encaixada'),null,{timeout:15000});
+  await page.selectOption('#format','feed');
   await page.locator('#headline').fill('TESTE CELULAR');
   const download=page.waitForEvent('download',{timeout:15000});
   await page.locator('#savePNG').tap();
