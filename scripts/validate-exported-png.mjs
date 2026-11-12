@@ -27,7 +27,19 @@ export function validateExportedPng(bytes, expectedWidth, expectedHeight) {
       if (bytes.readUInt32BE(offset + 8) !== expectedWidth ||
           bytes.readUInt32BE(offset + 12) !== expectedHeight)
         throw Error('Dimensões do PNG exportado incorretas');
-    } else if (type === 'IDAT') idat++;
+      const depth = bytes[offset + 16], color = bytes[offset + 17];
+      const allowed = {0:[1,2,4,8,16],2:[8,16],3:[1,2,4,8],4:[8,16],6:[8,16]};
+      if (!allowed[color]?.includes(depth) || bytes[offset + 18] !== 0 ||
+          bytes[offset + 19] !== 0 || ![0,1].includes(bytes[offset + 20]))
+        throw Error('Parâmetros IHDR do PNG exportado inválidos');
+    } else if (type === 'IDAT') {
+      if (!ihdr || iend) throw Error('IDAT fora de ordem');
+      idat++;
+    } else if (type === 'PLTE') {
+      if (!ihdr || idat || iend) throw Error('PLTE fora de ordem');
+    } else if (type[0] === type[0].toUpperCase() && type !== 'IEND') {
+      throw Error('Chunk crítico PNG desconhecido: ' + type);
+    }
     else if (type === 'IEND') {
       if (size || iend++ || end !== bytes.length) throw Error('IEND PNG inválido');
     }
