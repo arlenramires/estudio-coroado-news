@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import {validateExportedPng} from './validate-exported-png.mjs';
 import {chromium} from 'playwright-core';
 const exe=['/usr/bin/google-chrome','/usr/bin/chromium','/usr/bin/chromium-browser'].find(p=>fs.existsSync(p));
 if(!exe)throw Error('Chrome indisponível no runner');
@@ -24,12 +25,8 @@ try{
   if(!file.suggestedFilename().endsWith('.png'))throw Error('Exportação móvel não retornou PNG');
   const saved=await file.path();
   const png=fs.readFileSync(saved);
-  const signature=Buffer.from([137,80,78,71,13,10,26,10]);
-  if(png.length<33||!png.subarray(0,8).equals(signature)||png.toString('ascii',12,16)!=='IHDR')
-    throw Error('Exportação móvel gerou arquivo sem assinatura PNG/IHDR válida');
-  const width=png.readUInt32BE(16),height=png.readUInt32BE(20);
-  if(width!==1080||height!==1350)
-    throw Error('Exportação móvel PNG com dimensões inesperadas: '+width+'x'+height);
+  // Validar também chunks, CRC, ordem e encerramento, não apenas assinatura/dimensões.
+  validateExportedPng(png,1080,1350);
   await page.evaluate(()=>navigator.serviceWorker.ready);
   await page.waitForFunction(()=>document.querySelector('#offlineReady').textContent.includes('Cache offline preparado'),null,{timeout:15000});
   // Uma moldura ausente não pode ser anunciada como disponível offline.
