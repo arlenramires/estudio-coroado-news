@@ -277,7 +277,19 @@ try{
  await page.context().setOffline(true);
  await page.reload({waitUntil:'domcontentloaded'});
  await page.waitForFunction(()=>document.querySelectorAll('#gallery .tile').length===22,null,{timeout:15000});
- console.log('PWA offline aprovado: 22 molduras carregadas sem rede.');
+ // Offline não basta mostrar miniaturas: o editor precisa continuar exportando PNG.
+ await page.selectOption('#editorial','21');
+ await page.selectOption('#format','story');
+ const offlineDownload=page.waitForEvent('download',{timeout:20000});
+ await page.click('#savePNG');
+ const offlineFile=await offlineDownload;
+ const offlineBytes=fs.readFileSync(await offlineFile.path());
+ if(!offlineFile.suggestedFilename().toLowerCase().endsWith('.png')||
+    offlineBytes.length<1000||
+    offlineBytes.subarray(0,8).toString('hex')!=='89504e470d0a1a0a'||
+    offlineBytes.readUInt32BE(16)!==1080||offlineBytes.readUInt32BE(20)!==1920)
+   throw Error('PWA offline não exportou PNG Story válido');
+ console.log('PWA offline aprovado: 22 molduras e exportação PNG Story 1080x1920 sem rede.');
  await page.context().setOffline(false);
  if(errors.length)throw Error('Erros de navegador: '+errors.join(' | '));
 }finally{await browser.close();}
