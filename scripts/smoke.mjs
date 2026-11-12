@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
 import { chromium } from 'playwright-core';
+import { validateExportedPng } from './validate-exported-png.mjs';
 const exe=['/usr/bin/google-chrome','/usr/bin/chromium','/usr/bin/chromium-browser'].find(p=>fs.existsSync(p));
 if(!exe)throw Error('Chrome/Chromium não instalado no runner');
 const browser=await chromium.launch({headless:true,executablePath:exe,args:['--no-sandbox','--disable-dev-shm-usage']});
@@ -235,6 +236,7 @@ try{
    const bytes=fs.readFileSync(file);
    if(bytes.length<1000||bytes.subarray(0,8).toString('hex')!=='89504e470d0a1a0a')
      throw Error('PNG inválido/vazio na moldura '+(i+1));
+   validateExportedPng(bytes, expected.w, expected.h);
    const hash=createHash('sha256').update(bytes).digest('hex');
    if(feedHashes.has(hash))throw Error('Duas molduras geraram o mesmo PNG no Feed: moldura '+(i+1));
    feedHashes.add(hash);
@@ -274,6 +276,7 @@ try{
    const bytes=fs.readFileSync(await result.path());
    if(bytes.length<1000||bytes.subarray(0,8).toString('hex')!=='89504e470d0a1a0a')
      throw Error('PNG vertical inválido: moldura '+(index+1));
+   validateExportedPng(bytes, 1080, 1920);
    const hash=createHash('sha256').update(bytes).digest('hex');
    if(storyHashes.has(hash))throw Error('Duas molduras geraram o mesmo PNG vertical: moldura '+(index+1));
    storyHashes.add(hash);
