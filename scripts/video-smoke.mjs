@@ -526,7 +526,7 @@ try{
  if(unexpectedDownloads!==1)throw Error('PNG obsoleto foi entregue após erro do vídeo: '+unexpectedDownloads);
  await page.click('#saveVideo');
  const blockedStatus=await page.locator('#status').textContent();
- if(!blockedStatus.includes('Escolha um vídeo')||unexpectedDownloads!==1)
+ if(!blockedStatus.includes('Aguarde uma mídia válida terminar de carregar')||unexpectedDownloads!==1)
    throw Error('Vídeo com falha de decodificação ainda pôde ser exportado: '+blockedStatus);
  console.log('Falha tardia de decodificação: vídeo e áudio invalidados, PNG bloqueado e prévia anterior preservada.');
 
