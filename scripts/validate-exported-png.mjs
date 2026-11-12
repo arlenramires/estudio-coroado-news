@@ -25,8 +25,12 @@ export function validateExportedPng(bytes, expectedWidth, expectedHeight) {
     if (idat && type !== 'IDAT') idatClosed = true;
     if (type === 'IHDR') {
       if (ihdr++ || offset !== 8 || size !== 13) throw Error('IHDR duplicado ou inválido');
-      if (bytes.readUInt32BE(offset + 8) !== expectedWidth ||
-          bytes.readUInt32BE(offset + 12) !== expectedHeight)
+      const width = bytes.readUInt32BE(offset + 8);
+      const height = bytes.readUInt32BE(offset + 12);
+      // A especificação PNG exige dimensões positivas de até 2^31 - 1.
+      // Não aceitar nem mesmo quando o tamanho esperado for inválido.
+      if (width === 0 || height === 0 || width > 0x7fffffff || height > 0x7fffffff ||
+          width !== expectedWidth || height !== expectedHeight)
         throw Error('Dimensões do PNG exportado incorretas');
       const depth = bytes[offset + 16], color = bytes[offset + 17];
       colorType = color;
