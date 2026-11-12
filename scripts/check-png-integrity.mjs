@@ -16,7 +16,8 @@ function crc32(buffer){
 }
 function verifyPNG(buffer,size){
   assert.ok(buffer.subarray(0,8).equals(signature),'Assinatura PNG inválida');
-  let offset=8, ihdr=false, iend=false, idat=false;
+  let offset=8, ihdr=false, iend=false, idat=false, idatEnded=false, palette=false;
+  let colorType=null;
   while(offset<buffer.length){
     assert.ok(offset+12<=buffer.length,'Chunk PNG truncado');
     const length=buffer.readUInt32BE(offset);
@@ -32,6 +33,7 @@ function verifyPNG(buffer,size){
       assert.equal(buffer.readUInt32BE(offset+12),size,'Altura incorreta');
       // Ícones PWA devem usar PNG com parâmetros de codificação válidos.
       const depth=buffer[offset+16], color=buffer[offset+17];
+      colorType=color;
       const allowed={0:[1,2,4,8,16],2:[8,16],3:[1,2,4,8],4:[8,16],6:[8,16]};
       assert.ok(allowed[color]?.includes(depth),'Profundidade/cor PNG inválidas');
       assert.equal(buffer[offset+18],0,'Compressão PNG inválida');
@@ -40,10 +42,20 @@ function verifyPNG(buffer,size){
       ihdr=true;
     }
     if(type==='IHDR'&&ihdr&&offset!==8)assert.fail('IHDR duplicado');
+    if(type==='PLTE'){
+      assert.ok(!palette&&!idat,'Paleta duplicada ou após IDAT');
+      assert.ok(colorType!==0&&colorType!==4,'Paleta proibida neste tipo PNG');
+      assert.ok(length>0&&length%3===0&&length<=768,'Paleta PNG inválida');
+      palette=true;
+    }
     if(type==='IDAT'){
       assert.ok(ihdr,'IDAT antes de IHDR');
+      assert.ok(!idatEnded,'Chunks IDAT não contíguos');
+      if(colorType===3)assert.ok(palette,'PNG indexado sem paleta');
       idat=true;
-    }
+    }else if(idat){idatEnded=true;}
+    if(type[0]===type[0]?.toUpperCase()&&!['IHDR','PLTE','IDAT','IEND'].includes(type))
+      assert.fail('Chunk crítico PNG desconhecido: '+type);
     if(type==='IEND')assert.ok(idat,'IEND antes de IDAT');
     offset=end;
     if(type==='IEND'){
@@ -73,6 +85,11 @@ for(const size of [192,512]){
   const corruptedData=Buffer.from(buffer);
   corruptedData[idat+4]^=1;
   assert.throws(()=>verifyPNG(corruptedData,size),/CRC inválido/);
+  // Chunks críticos desconhecidos devem falhar mesmo com CRC correto.
+  const unknown=Buffer.from(buffer);
+  Buffer.from('ABCD').copy(unknown,12);
+  unknown.writeUInt32BE(crc32(unknown.subarray(12,29)),29);
+  assert.throws(()=>verifyPNG(unknown,size),/Primeiro chunk deve ser IHDR|crítico/);
   // Não aceitar bytes anexados após o fim oficial do PNG.
   assert.throws(()=>verifyPNG(Buffer.concat([buffer,Buffer.from([0])]),size),/Dados extras/);
   console.log('PNG '+size+'x'+size+': chunks, CRC e dimensões válidos');
