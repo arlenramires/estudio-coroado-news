@@ -55,7 +55,7 @@ try {
     '<script>const cssExample = "url(https://example.org/example.png)";</script></body>'));
   const success=spawnSync(process.execPath,['scripts/build-offline.mjs'],{cwd:temp,encoding:'utf8'});
   assert.equal(success.status,0,'String JavaScript não pode causar falso positivo: '+success.stderr);
-  assert.match(fs.readFileSync(target,'utf8'),/data:image\\/webp;base64,/);
+  assert.ok(fs.readFileSync(target,'utf8').includes('data:image/webp;base64,'), 'Pacote deve incorporar molduras WebP');
   console.log('OK: CSS externo rejeitado, pacote preservado e string JS aceita.');
 } finally {
   fs.rmSync(temp,{recursive:true,force:true});
