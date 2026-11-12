@@ -112,7 +112,7 @@ try{
    throw Error('Editor permite exportar mídia ainda não carregada: '+JSON.stringify(pendingState));
  await page.evaluate(()=>document.querySelector('#savePNG').onclick());
  const pendingMessage=await page.locator('#status').textContent();
- if(!pendingMessage.includes('Aguarde o carregamento'))throw Error('Proteção de PNG durante carregamento não funcionou');
+ if(!pendingMessage.includes('Aguarde uma mídia válida terminar de carregar'))throw Error('Proteção de PNG durante carregamento não funcionou: '+pendingMessage);
  await page.evaluate(()=>window.__completePendingLoad());
  await page.waitForFunction(()=>photo?.naturalWidth===32&&!document.querySelector('#savePNG').disabled);
  await page.evaluate(()=>window.__restorePendingLoad());
