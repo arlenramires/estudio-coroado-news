@@ -22,6 +22,7 @@ export function validateExportedPng(bytes, expectedWidth, expectedHeight) {
       crc = crcTable[(crc ^ bytes[i]) & 255] ^ (crc >>> 8);
     if (((crc ^ 0xffffffff) >>> 0) !== bytes.readUInt32BE(offset + 8 + size))
       throw Error('CRC PNG inválido no chunk ' + type);
+    if (!ihdr && type !== 'IHDR') throw Error('IHDR deve ser o primeiro chunk PNG');
     if (idat && type !== 'IDAT') idatClosed = true;
     if (type === 'IHDR') {
       if (ihdr++ || offset !== 8 || size !== 13) throw Error('IHDR duplicado ou inválido');
@@ -50,7 +51,7 @@ export function validateExportedPng(bytes, expectedWidth, expectedHeight) {
       throw Error('Chunk crítico PNG desconhecido: ' + type);
     }
     else if (type === 'IEND') {
-      if (size || iend++ || end !== bytes.length) throw Error('IEND PNG inválido');
+      if (!idat || size || iend++ || end !== bytes.length) throw Error('IEND PNG inválido');
     }
     offset = end;
   }
