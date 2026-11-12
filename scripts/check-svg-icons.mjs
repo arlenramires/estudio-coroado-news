@@ -20,12 +20,17 @@ for(const icon of manifest.icons ?? []){
     throw Error('SVG contém instruções XML ou marcação não permitida: '+icon.src);
   if(!/^\s*<svg\b/i.test(svg)||!/<\/svg>\s*$/i.test(svg))
     throw Error('Estrutura SVG inválida: '+icon.src);
+  // O namespace SVG oficial é obrigatório e não constitui carregamento remoto.
+  // Removê-lo somente da análise de URLs mantém bloqueadas outras referências.
+  if(!/<svg\s+[^>]*xmlns="http:\/\/www\.w3\.org\/2000\/svg"/.test(svg))
+    throw Error('Namespace SVG oficial ausente: '+icon.src);
+  const svgWithoutNamespace=svg.replace('xmlns="http://www.w3.org/2000/svg"','');
   if(/<\s*(?:script|foreignObject|iframe|object|embed|image|use|animate|set)\b/i.test(svg)||
      /\bon[a-z]+\s*=/i.test(svg)||
      /\b(?:xlink:href|formaction|style)\s*=/i.test(svg)||
      /\b(?:expression\s*\(|-moz-binding|behavior\s*:)/i.test(svg)||
      /\b(?:href|src)\s*=/i.test(svg)||
-     /(?:@import|url\s*\(|javascript:|data:|https?:\/\/|<\!DOCTYPE|<\!ENTITY)/i.test(svg))
+     /(?:@import|url\s*\(|javascript:|data:|https?:\/\/|<\!DOCTYPE|<\!ENTITY)/i.test(svgWithoutNamespace))
     throw Error('SVG com referência ativa ou externa: '+icon.src);
 }
 console.log('Ícones SVG locais sem referências ativas: OK');
