@@ -39,6 +39,33 @@ try{
  await page.waitForFunction(()=>document.querySelectorAll('#gallery .tile').length===22,null,{timeout:25000});
  if(await page.locator('#savePNG').isDisabled())throw Error('PNG não foi liberado após carregar as 22 molduras');
  console.log('Inicialização lenta aprovada: nenhum PNG vazio e exportação liberada após carregar as molduras.');
+
+ // Regressão: trocar molduras não deve apagar o formato escolhido pelo usuário.
+ // Testa os dois sentidos entre uma moldura quadrada e outra vertical.
+ await page.selectOption('#format','story');
+ for(const frameIndex of ['20','1','0','21']){
+   await page.selectOption('#editorial',frameIndex);
+   const state=await page.evaluate(()=>({
+     format:document.querySelector('#format').value,
+     dimensions:canvasFormat(),
+     actual:[canvas.width,canvas.height]
+   }));
+   if(state.format!=='story'||state.dimensions[0]!==1080||state.dimensions[1]!==1920||
+      state.actual[0]!==1080||state.actual[1]!==1920)
+     throw Error('Troca de moldura alterou formato Story: '+frameIndex+' '+JSON.stringify(state));
+ }
+ await page.selectOption('#format','feed');
+ await page.selectOption('#editorial','20');
+ const feedState=await page.evaluate(()=>({
+   format:document.querySelector('#format').value,
+   dimensions:canvasFormat(),
+   actual:[canvas.width,canvas.height]
+ }));
+ if(feedState.format!=='feed'||feedState.dimensions[0]!==1080||feedState.dimensions[1]!==1350||
+    feedState.actual[0]!==1080||feedState.actual[1]!==1350)
+   throw Error('Troca de moldura alterou formato Feed: '+JSON.stringify(feedState));
+ console.log('Formato preservado entre molduras quadradas e verticais: Story e Feed.');
+
  await page.selectOption('#editorial','21');
  const png64=await page.evaluate(()=>{const t=document.createElement('canvas');t.width=t.height=32;const g=t.getContext('2d');g.fillStyle='#f00';g.fillRect(0,0,32,32);return t.toDataURL('image/png').split(',')[1]});
  await page.locator('#media').setInputFiles({name:'vermelho.png',mimeType:'image/png',buffer:Buffer.from(png64,'base64')});
