@@ -2,6 +2,7 @@
 """Regression tests for the private package integrity verifier (no network)."""
 from pathlib import Path
 import hashlib
+import os
 import subprocess
 import sys
 import tempfile
@@ -61,6 +62,19 @@ with tempfile.TemporaryDirectory(prefix="estudio-integrity-") as temporary:
     check(root, False, "unlisted nested file")
     nested.unlink()
     check(root, True, "restored after unlisted files")
+    # A FIFO must be rejected without opening it (opening could block forever).
+    if hasattr(os, "mkfifo"):
+        fifo = root / "molduras" / "unexpected-pipe"
+        try:
+            os.mkfifo(fifo)
+        except OSError:
+            print("SKIP: FIFO creation unavailable")
+        else:
+            try:
+                check(root, False, "special FIFO entry")
+            finally:
+                fifo.unlink()
+            check(root, True, "restored after FIFO removal")
     # A required file missing on disk must fail even with a valid manifest.
     missing_file = root / "icons/studio-192.png"
     missing_bytes = missing_file.read_bytes()
