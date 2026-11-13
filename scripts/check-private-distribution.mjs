@@ -122,7 +122,7 @@ if(process.platform!=='win32'){
     fs.copyFileSync(path.join(root,'Iniciar-Android-Termux.sh'),path.join(app,'Iniciar-Android-Termux.sh'));
     fs.writeFileSync(path.join(app,'Verificar-integridade.py'),'# fixture de teste\n');
     const fake=path.join(bin,'python');
-    fs.writeFileSync(fake,'#!/bin/sh\\nprintf "%s\\\\n" "$*" >> "$ESTUDIO_TEST_LOG"\\n');
+    fs.writeFileSync(fake,'#!/bin/sh\nprintf "%s\\n" "$*" >> "$ESTUDIO_TEST_LOG"\n');
     fs.chmodSync(fake,0o755);
     const log=path.join(tmp,'python.log');
     const run=spawnSync('sh',[path.join(app,'Iniciar-Android-Termux.sh')],{
