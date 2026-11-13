@@ -67,6 +67,17 @@ try{
    throw new Error('Contêiner disfarçado sobrescreveu o MP4 anterior');
  if(readdirSync(dir).some(name=>name.startsWith('.saida-protegida.mp4.')))
    throw new Error('Contêiner disfarçado deixou arquivo temporário');
+ // Uma gravação somente de áudio também deve ser rejeitada sem substituir
+ // um MP4 já existente e sem deixar arquivo temporário.
+ const audioOnly=join(dir,'som-sem-imagem.webm');
+ const audioOnlyOutput=join(dir,'som-sem-imagem.mp4');
+ run('ffmpeg',['-hide_banner','-loglevel','error','-f','lavfi','-i','sine=frequency=440:duration=1','-c:a','libopus',audioOnly]);
+ writeFileSync(audioOnlyOutput,'video anterior preservado');
+ run('node',['scripts/converter-mp4.mjs',audioOnly,audioOnlyOutput],1);
+ if(readFileSync(audioOnlyOutput,'utf8')!=='video anterior preservado')
+   throw new Error('WebM apenas com áudio substituiu MP4 anterior');
+ if(readdirSync(dir).some(name=>name.startsWith('.som-sem-imagem.mp4.')))
+   throw new Error('WebM apenas com áudio deixou temporário');
  const silent=join(dir,'sem-audio.webm');
  run('ffmpeg',['-hide_banner','-loglevel','error','-f','lavfi','-i','color=c=black:s=160x120:r=12:d=1','-c:v','libvpx',silent]);
  const invalid=join(dir,'invalido.mp4');
