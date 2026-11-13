@@ -68,6 +68,12 @@ for p in root.rglob("*"):
         sys.exit("ERRO: entrada especial nao permitida: " + str(p.relative_to(root)))
     if p.is_file() and p != manifest:
         actual_files.add(p.relative_to(root).as_posix())
+# Recusa tambem diretorios extras vazios, nao cobertos pelos hashes.
+expected_dirs = {"icons", "molduras"}
+actual_dirs = {p.relative_to(root).as_posix() for p in root.rglob("*") if p.is_dir()}
+extra_dirs = actual_dirs - expected_dirs
+if extra_dirs:
+    sys.exit("ERRO: diretorios extras no pacote: " + ", ".join(sorted(extra_dirs)))
 unlisted = actual_files - seen
 if unlisted:
     sys.exit("ERRO: arquivos sem checksum: " + ", ".join(sorted(unlisted)))
