@@ -182,8 +182,12 @@ if(digest(verifierSource)!==digest(verifierTarget))
 const files=[];
 function collect(dir){for(const entry of fs.readdirSync(dir,{withFileTypes:true})){
   const absolute=path.join(dir,entry.name);
+  // Não ignorar silenciosamente links simbólicos ou entradas especiais:
+  // qualquer arquivo fora do manifesto deixaria a entrega sem cobertura SHA256.
+  if(entry.isSymbolicLink()||(!entry.isDirectory()&&!entry.isFile()))
+    throw Error('Entrada não regular no pacote privado: '+path.relative(dest,absolute));
   if(entry.isDirectory())collect(absolute);
-  else if(entry.isFile()&&entry.name!=='SHA256SUMS.txt')files.push(absolute);
+  else if(entry.name!=='SHA256SUMS.txt')files.push(absolute);
 }}
 collect(dest);
 const sums=files.map(file=>{
