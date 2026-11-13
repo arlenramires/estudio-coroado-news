@@ -96,6 +96,16 @@ try{
    throw new Error('Entrada corrompida sobrescreveu MP4 anterior');
  if(readdirSync(dir).some(name=>name.startsWith('.preservado.mp4.')))
    throw new Error('Entrada corrompida deixou arquivo temporário');
+ // Arquivo WebM vazio deve ser recusado sem apagar uma exportação anterior
+ // nem deixar um arquivo temporário com aparência de MP4.
+ const emptyWebm=join(dir,'vazio.webm'),emptyOutput=join(dir,'vazio.mp4');
+ writeFileSync(emptyWebm,'');
+ writeFileSync(emptyOutput,'mp4 anterior protegido');
+ run('node',['scripts/converter-mp4.mjs',emptyWebm,emptyOutput],1);
+ if(readFileSync(emptyOutput,'utf8')!=='mp4 anterior protegido')
+   throw new Error('WebM vazio substituiu MP4 anterior');
+ if(readdirSync(dir).some(name=>name.startsWith('.vazio.mp4.')))
+   throw new Error('WebM vazio deixou arquivo temporário');
  // Uma gravação WebM truncada deve falhar sem substituir uma exportação anterior.
  // Testa especificamente o caminho em que o cabeçalho existe, mas faltam dados.
  const truncated=join(dir,'truncado.webm'),truncatedOutput=join(dir,'truncado.mp4');
