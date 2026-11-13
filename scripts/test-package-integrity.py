@@ -62,6 +62,22 @@ with tempfile.TemporaryDirectory(prefix="estudio-integrity-") as temporary:
     check(root, False, "path traversal")
     manifest.write_text(original_manifest, encoding="utf-8")
     check(root, True, "restored manifest")
+    # A checksum list must not silently omit any of the 22 required frames.
+    missing_line = next(line for line in original_manifest.splitlines()
+                        if line.endswith("  molduras/original_22.webp"))
+    manifest.write_text(original_manifest.replace(missing_line + "\n", ""),
+                        encoding="utf-8")
+    check(root, False, "missing required frame in manifest")
+    manifest.write_text(original_manifest, encoding="utf-8")
+    # A duplicate entry must fail even when both hashes are valid.
+    manifest.write_text(original_manifest + missing_line + "\n", encoding="utf-8")
+    check(root, False, "duplicate checksum entry")
+    manifest.write_text(original_manifest, encoding="utf-8")
+    # Corrupted checksum text must fail before accepting the package.
+    manifest.write_text("z" + original_manifest[1:], encoding="utf-8")
+    check(root, False, "invalid checksum syntax")
+    manifest.write_text(original_manifest, encoding="utf-8")
+    check(root, True, "restored manifest after negative cases")
     try:
         target.unlink()
         target.symlink_to(root / "molduras/original_02.webp")
