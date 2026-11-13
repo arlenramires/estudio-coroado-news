@@ -44,7 +44,10 @@ if(!fs.existsSync(offlineSource)||!fs.lstatSync(offlineSource).isFile()||fs.lsta
 // Preserva a ultima entrega ate que a nova passe por todas as verificacoes.
 // Uma falha de copia, permissao ou teste nao pode destruir o pacote anterior.
 const backup=dest+'.backup-'+process.pid;
-if(fs.existsSync(backup))throw Error('Backup temporario ja existe: '+backup);
+// existsSync ignora links simbólicos quebrados; lstat detecta qualquer entrada existente.
+// Nunca renomear uma entrega válida sobre um backup residual ou malicioso.
+if(fs.lstatSync(backup,{throwIfNoEntry:false}))
+  throw Error('Backup temporario ja existe: '+backup);
 const hadPrevious=fs.existsSync(dest);
 if(hadPrevious)fs.renameSync(dest,backup);
 try {
