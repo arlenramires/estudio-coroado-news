@@ -2,6 +2,7 @@
 """Confere arquivos extraidos do pacote privado sem enviar dados pela rede."""
 from pathlib import Path
 import hashlib
+import stat
 import sys
 
 root = Path(__file__).resolve().parent
@@ -42,8 +43,10 @@ for line in manifest.read_text(encoding="utf-8").splitlines():
         target.relative_to(root)
     except ValueError:
         sys.exit("ERRO: caminho fora do pacote: " + name)
-    if not target.is_file():
+    if not target.exists():
         sys.exit("ERRO: arquivo ausente: " + name)
+    if not stat.S_ISREG(target.lstat().st_mode):
+        sys.exit("ERRO: arquivo nao regular: " + name)
     digest = hashlib.sha256()
     with target.open("rb") as stream:
         for chunk in iter(lambda: stream.read(1024 * 1024), b""):
@@ -61,6 +64,8 @@ for p in root.rglob("*"):
     if p.is_symlink():
         sys.exit("ERRO: link simbolico nao permitido: " + str(p.relative_to(root)))
     # Apenas o manifesto da raiz fica fora da lista; um homônimo em subpasta é arquivo extra.
+    if not p.is_dir() and not stat.S_ISREG(p.lstat().st_mode):
+        sys.exit("ERRO: entrada especial nao permitida: " + str(p.relative_to(root)))
     if p.is_file() and p != manifest:
         actual_files.add(p.relative_to(root).as_posix())
 unlisted = actual_files - seen
