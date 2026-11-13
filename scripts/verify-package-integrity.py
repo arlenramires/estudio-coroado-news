@@ -6,6 +6,8 @@ import sys
 
 root = Path(__file__).resolve().parent
 manifest = root / "SHA256SUMS.txt"
+if manifest.is_symlink():
+    sys.exit("ERRO: manifesto de integridade nao pode ser link simbolico.")
 if not manifest.is_file():
     sys.exit("ERRO: SHA256SUMS.txt ausente. Extraia o ZIP completo.")
 required = {
