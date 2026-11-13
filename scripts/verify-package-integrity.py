@@ -21,7 +21,11 @@ required = {
 required.update("molduras/original_{:02d}.webp".format(i) for i in range(1, 23))
 seen = set()
 count = 0
-for line in manifest.read_text(encoding="utf-8").splitlines():
+try:
+    manifest_lines = manifest.read_text(encoding="utf-8").splitlines()
+except (OSError, UnicodeError) as exc:
+    sys.exit("ERRO: manifesto de integridade ilegivel ou invalido: " + str(exc))
+for line in manifest_lines:
     if len(line) < 67 or line[64:66] != "  ":
         sys.exit("ERRO: linha invalida no manifesto de integridade.")
     expected, name = line[:64], line[66:]
