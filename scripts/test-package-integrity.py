@@ -68,7 +68,7 @@ with tempfile.TemporaryDirectory(prefix="estudio-integrity-") as temporary:
     original_manifest_extra = (root / "SHA256SUMS.txt").read_text(encoding="utf-8")
     extra_hash = hashlib.sha256(authorized_extra.read_bytes()).hexdigest()
     (root / "SHA256SUMS.txt").write_text(
-        original_manifest_extra + f"{extra_hash}  unexpected-approved.txt\\n", encoding="utf-8")
+        original_manifest_extra + f"{extra_hash}  unexpected-approved.txt\n", encoding="utf-8")
     check(root, False, "unapproved file even when checksummed")
     authorized_extra.unlink()
     (root / "SHA256SUMS.txt").write_text(original_manifest_extra, encoding="utf-8")
