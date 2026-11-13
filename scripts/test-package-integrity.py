@@ -154,7 +154,7 @@ with tempfile.TemporaryDirectory(prefix="estudio-integrity-") as temporary:
     check(root, True, "restored after symlinked frame")
     # Um link simbolico em diretorio obrigatorio nao pode contornar a verificacao.
     icons_dir = root / "icons"
-    icons_backup = root / "icons-original"
+    icons_backup = root.parent / (root.name + "-icons-original")
     try:
         icons_dir.rename(icons_backup)
         icons_dir.symlink_to(icons_backup, target_is_directory=True)
