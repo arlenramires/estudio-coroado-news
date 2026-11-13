@@ -130,6 +130,11 @@ with tempfile.TemporaryDirectory(prefix="estudio-integrity-") as temporary:
     check(root, False, "checksums assigned to wrong frames")
     manifest.write_text(original_manifest, encoding="utf-8")
     check(root, True, "restored after swapped frame names")
+    # Invalid UTF-8 must fail cleanly instead of crashing with a traceback.
+    manifest.write_bytes(b"\xff\xfeinvalid manifest\n")
+    check(root, False, "invalid UTF-8 manifest")
+    manifest.write_text(original_manifest, encoding="utf-8")
+    check(root, True, "restored after invalid UTF-8")
     # Corrupted checksum text must fail before accepting the package.
     manifest.write_text("z" + original_manifest[1:], encoding="utf-8")
     check(root, False, "invalid checksum syntax")
