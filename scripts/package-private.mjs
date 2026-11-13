@@ -133,6 +133,14 @@ for(const [name,launcher] of [['Windows',win],['Android',android]]){
 }
 if(!win.includes('cd /d "%~dp0"')||!android.includes('cd "$(dirname "$0")"'))
   throw Error('Iniciadores não preservam corretamente caminhos com espaços');
+// Regressão de privacidade: os dois iniciadores devem escutar somente no
+// loopback do próprio dispositivo, nunca em 0.0.0.0 ou na rede local.
+// O servidor Windows usa ThreadingHTTPServer e o Android usa http.server.
+if(!win.includes("('127.0.0.1',8765)") ||
+   !android.includes('python -m http.server 8765 --bind 127.0.0.1'))
+  throw Error('Iniciador privado deve limitar o servidor a 127.0.0.1');
+if(/(?:0\.0\.0\.0|--bind\s+0\.0\.0\.0)/.test(win+'\n'+android))
+  throw Error('Iniciador privado não pode expor o servidor em todas as interfaces');
 fs.writeFileSync(path.join(dest,'Iniciar-PC-Windows.cmd'),win);
 fs.writeFileSync(path.join(dest,'Iniciar-Android-Termux.sh'),android,{mode:0o755});
 fs.writeFileSync(path.join(dest,'LEIA-ME-PRIMEIRO.txt'),String.raw`ESTUDIO COROADO NEWS 24H - PACOTE PRIVADO PC E ANDROID
