@@ -120,7 +120,7 @@ if(process.platform!=='win32'){
     fs.mkdirSync(bin);
     fs.mkdirSync(app);
     fs.copyFileSync(path.join(root,'Iniciar-Android-Termux.sh'),path.join(app,'Iniciar-Android-Termux.sh'));
-    fs.writeFileSync(path.join(app,'Verificar-integridade.py'),'# fixture de teste\\n');
+    fs.writeFileSync(path.join(app,'Verificar-integridade.py'),'# fixture de teste\n');
     const fake=path.join(bin,'python');
     fs.writeFileSync(fake,'#!/bin/sh\\nprintf "%s\\\\n" "$*" >> "$ESTUDIO_TEST_LOG"\\n');
     fs.chmodSync(fake,0o755);
@@ -129,7 +129,7 @@ if(process.platform!=='win32'){
       cwd:tmp,encoding:'utf8',env:{...process.env,PATH:bin+path.delimiter+process.env.PATH,ESTUDIO_TEST_LOG:log}
     });
     assert.equal(run.status,0,'Iniciador Android falhou com espaços no caminho: '+run.stderr);
-    assert.deepEqual(fs.readFileSync(log,'utf8').trim().split('\\n'),[
+    assert.deepEqual(fs.readFileSync(log,'utf8').trim().split('\n'),[
       'Verificar-integridade.py','-m http.server 8765 --bind 127.0.0.1'
     ],'Iniciador Android não verificou integridade antes de servir somente localhost');
     console.log('Iniciador Android aprovado em execução simulada com espaços no caminho.');
