@@ -55,6 +55,9 @@ for line in manifest.read_text(encoding="utf-8").splitlines():
     if actual != expected:
         sys.exit("ERRO: arquivo alterado ou corrompido: " + name)
     count += 1
+unexpected = seen - required
+if unexpected:
+    sys.exit("ERRO: arquivos nao autorizados no manifesto: " + ", ".join(sorted(unexpected)))
 missing = required - seen
 if missing:
     sys.exit("ERRO: arquivos obrigatorios ausentes do manifesto: " + ", ".join(sorted(missing)))
