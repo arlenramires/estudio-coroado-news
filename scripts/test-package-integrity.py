@@ -62,6 +62,17 @@ with tempfile.TemporaryDirectory(prefix="estudio-integrity-") as temporary:
     check(root, False, "unlisted nested file")
     nested.unlink()
     check(root, True, "restored after unlisted files")
+    # Even a correctly hashed extra file must not expand the approved package.
+    authorized_extra = root / "unexpected-approved.txt"
+    authorized_extra.write_bytes(b"unexpected but checksummed")
+    original_manifest_extra = (root / "SHA256SUMS.txt").read_text(encoding="utf-8")
+    extra_hash = hashlib.sha256(authorized_extra.read_bytes()).hexdigest()
+    (root / "SHA256SUMS.txt").write_text(
+        original_manifest_extra + f"{extra_hash}  unexpected-approved.txt\\n", encoding="utf-8")
+    check(root, False, "unapproved file even when checksummed")
+    authorized_extra.unlink()
+    (root / "SHA256SUMS.txt").write_text(original_manifest_extra, encoding="utf-8")
+    check(root, True, "restored after unauthorized manifest entry")
     # A FIFO must be rejected without opening it (opening could block forever).
     if hasattr(os, "mkfifo"):
         fifo = root / "molduras" / "unexpected-pipe"
