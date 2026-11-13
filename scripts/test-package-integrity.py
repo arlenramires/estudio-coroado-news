@@ -152,4 +152,33 @@ with tempfile.TemporaryDirectory(prefix="estudio-integrity-") as temporary:
             target.unlink()
         target.write_bytes(original)
     check(root, True, "restored after symlinked frame")
+    # Um link simbolico em diretorio obrigatorio nao pode contornar a verificacao.
+    icons_dir = root / "icons"
+    icons_backup = root / "icons-original"
+    try:
+        icons_dir.rename(icons_backup)
+        icons_dir.symlink_to(icons_backup, target_is_directory=True)
+    except (OSError, NotImplementedError):
+        print("SKIP: directory symlinks unavailable on this platform")
+    else:
+        check(root, False, "symlinked required directory")
+    finally:
+        if icons_dir.is_symlink():
+            icons_dir.unlink()
+        if icons_backup.exists():
+            icons_backup.rename(icons_dir)
+    check(root, True, "restored after directory symlink")
+
+    # Links adicionais tambem devem ser recusados, mesmo apontando para arquivo valido.
+    unexpected_link = root / "molduras" / "unexpected-link.webp"
+    try:
+        unexpected_link.symlink_to(target)
+    except (OSError, NotImplementedError):
+        print("SKIP: extra symlinks unavailable on this platform")
+    else:
+        try:
+            check(root, False, "unexpected symlink")
+        finally:
+            unexpected_link.unlink()
+    check(root, True, "restored after unexpected symlink")
 print("Private package integrity regression tests passed.")
