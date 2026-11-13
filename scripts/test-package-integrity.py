@@ -55,6 +55,19 @@ with tempfile.TemporaryDirectory(prefix="estudio-integrity-") as temporary:
     extra.write_text("unlisted", encoding="utf-8")
     check(root, False, "unlisted file")
     extra.unlink()
+    # A nested unlisted payload must be rejected too, not just root files.
+    nested = root / "molduras" / "payload.txt"
+    nested.write_text("unexpected nested file", encoding="utf-8")
+    check(root, False, "unlisted nested file")
+    nested.unlink()
+    check(root, True, "restored after unlisted files")
+    # A required file missing on disk must fail even with a valid manifest.
+    missing_file = root / "icons/studio-192.png"
+    missing_bytes = missing_file.read_bytes()
+    missing_file.unlink()
+    check(root, False, "required file missing on disk")
+    missing_file.write_bytes(missing_bytes)
+    check(root, True, "restored required file")
     manifest = root / "SHA256SUMS.txt"
     original_manifest = manifest.read_text(encoding="utf-8")
     manifest.write_text(original_manifest.replace("molduras/original_01.webp",
