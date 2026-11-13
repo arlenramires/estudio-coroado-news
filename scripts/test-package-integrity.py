@@ -146,4 +146,10 @@ with tempfile.TemporaryDirectory(prefix="estudio-integrity-") as temporary:
         print("SKIP: symlinks unavailable on this platform")
     else:
         check(root, False, "symlinked frame")
+    finally:
+        # Restore the fixture even if the negative assertion fails.
+        if target.is_symlink():
+            target.unlink()
+        target.write_bytes(original)
+    check(root, True, "restored after symlinked frame")
 print("Private package integrity regression tests passed.")
