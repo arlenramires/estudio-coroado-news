@@ -83,9 +83,9 @@ const sw=fs.readFileSync(path.join(dir,'sw.js'),'utf8');
 // O pré-cache atual valida status, MIME e URL antes de cache.put().
 // Não exigir cache.addAll(): esse método não valida o tipo de cada resposta.
 if(!sw.includes('Array.from({length:22}')||
-   !/for\\s*\\(const\\s+asset\\s+of\\s+ASSETS\\)/.test(sw)||
-   !/await\\s+fetch\\(url,\\s*\\{cache:\\s*'no-store'\\}\\)/.test(sw)||
-   !/await\\s+cache\\.put\\(url,\\s*response\\)/.test(sw)||
+   !/for\s*\(const\s+asset\s+of\s+ASSETS\)/.test(sw)||
+   !/await\s+fetch\(url,\s*\{cache:\s*'no-store'\}\)/.test(sw)||
+   !/await\s+cache\.put\(url,\s*response\)/.test(sw)||
    !sw.includes("asset.endsWith('.webp')?'image/webp'")||
    !sw.includes('response.status!==200')||
    !sw.includes('!validType'))
