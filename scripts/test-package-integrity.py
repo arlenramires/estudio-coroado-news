@@ -135,6 +135,15 @@ with tempfile.TemporaryDirectory(prefix="estudio-integrity-") as temporary:
     check(root, False, "invalid UTF-8 manifest")
     manifest.write_text(original_manifest, encoding="utf-8")
     check(root, True, "restored after invalid UTF-8")
+    # Missing or empty manifest must never be accepted; restore it afterwards.
+    manifest.unlink()
+    check(root, False, "missing checksum manifest")
+    manifest.write_text(original_manifest, encoding="utf-8")
+    check(root, True, "restored after missing manifest")
+    manifest.write_text("", encoding="utf-8")
+    check(root, False, "empty checksum manifest")
+    manifest.write_text(original_manifest, encoding="utf-8")
+    check(root, True, "restored after empty manifest")
     # Corrupted checksum text must fail before accepting the package.
     manifest.write_text("z" + original_manifest[1:], encoding="utf-8")
     check(root, False, "invalid checksum syntax")
