@@ -16,7 +16,7 @@ assert.match(source,/python Verificar-integridade\.py/,
   'Android deve verificar integridade antes de servir arquivos');
 assert.match(source,/py -3 Verificar-integridade\.py/,
   'Windows com py deve verificar integridade');
-assert.match(source,/if ! python Verificar-integridade\\.py; then/,
+assert.match(source,/if ! python Verificar-integridade\.py; then/,
   'Android deve interromper execução quando integridade falha');
 assert.match(source,/if errorlevel 1 goto invalid/,
   'Windows deve impedir servidor quando integridade falha');
