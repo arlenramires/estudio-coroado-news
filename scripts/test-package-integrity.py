@@ -75,6 +75,12 @@ with tempfile.TemporaryDirectory(prefix="estudio-integrity-") as temporary:
             finally:
                 fifo.unlink()
             check(root, True, "restored after FIFO removal")
+    # Diretorios extras vazios tambem nao pertencem ao pacote assinado.
+    empty_dir = root / "molduras" / "extra-empty"
+    empty_dir.mkdir()
+    check(root, False, "unexpected empty directory")
+    empty_dir.rmdir()
+    check(root, True, "restored after empty directory removal")
     # A required file missing on disk must fail even with a valid manifest.
     missing_file = root / "icons/studio-192.png"
     missing_bytes = missing_file.read_bytes()
