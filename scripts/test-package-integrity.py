@@ -91,6 +91,23 @@ with tempfile.TemporaryDirectory(prefix="estudio-integrity-") as temporary:
     check(root, False, "invalid checksum syntax")
     manifest.write_text(original_manifest, encoding="utf-8")
     check(root, True, "restored manifest after negative cases")
+    # The manifest itself must not be replaced with a symlink, even when
+    # the target contains otherwise valid checksums.
+    outside_manifest = root.parent / (root.name + "-external-manifest.txt")
+    try:
+        outside_manifest.write_text(original_manifest, encoding="utf-8")
+        manifest.unlink()
+        manifest.symlink_to(outside_manifest)
+    except (OSError, NotImplementedError):
+        print("SKIP: manifest symlinks unavailable on this platform")
+    else:
+        check(root, False, "symlinked checksum manifest")
+    finally:
+        if manifest.is_symlink():
+            manifest.unlink()
+        manifest.write_text(original_manifest, encoding="utf-8")
+        outside_manifest.unlink(missing_ok=True)
+    check(root, True, "restored after manifest symlink")
     try:
         target.unlink()
         target.symlink_to(root / "molduras/original_02.webp")
