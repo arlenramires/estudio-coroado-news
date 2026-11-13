@@ -78,6 +78,10 @@ const digest=file=>crypto.createHash('sha256').update(fs.readFileSync(file)).dig
 if(digest(offline)!==digest(offlineTarget))throw Error('HTML offline diverge do arquivo gerado');
 const win=String.raw`@echo off
 cd /d "%~dp0"
+if errorlevel 1 (
+  echo Nao foi possivel acessar a pasta do Estudio. Extraia novamente o pacote.
+  exit /b 1
+)
 where py >nul 2>&1
 if not errorlevel 1 (
   py -3 --version >nul 2>&1
