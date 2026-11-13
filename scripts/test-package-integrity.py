@@ -117,6 +117,19 @@ with tempfile.TemporaryDirectory(prefix="estudio-integrity-") as temporary:
     manifest.write_text(original_manifest + missing_line + "\n", encoding="utf-8")
     check(root, False, "duplicate checksum entry")
     manifest.write_text(original_manifest, encoding="utf-8")
+    # Valid hashes must still be bound to the exact expected file name.
+    # Swapping two names without changing their hashes must not pass.
+    lines = original_manifest.splitlines()
+    first = next(i for i, line in enumerate(lines) if line.endswith("  molduras/original_01.webp"))
+    second = next(i for i, line in enumerate(lines) if line.endswith("  molduras/original_02.webp"))
+    lines[first], lines[second] = (
+        lines[first][:66] + "molduras/original_02.webp",
+        lines[second][:66] + "molduras/original_01.webp",
+    )
+    manifest.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    check(root, False, "checksums assigned to wrong frames")
+    manifest.write_text(original_manifest, encoding="utf-8")
+    check(root, True, "restored after swapped frame names")
     # Corrupted checksum text must fail before accepting the package.
     manifest.write_text("z" + original_manifest[1:], encoding="utf-8")
     check(root, False, "invalid checksum syntax")
