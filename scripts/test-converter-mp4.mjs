@@ -51,6 +51,16 @@ try{
    throw new Error('Áudio AAC ausente ou praticamente mudo após conversão: '+(volume?.[1]??'sem medição'));
 
  if(!info.streams.some(s=>s.codec_type==='video'&&s.codec_name==='h264')||!info.streams.some(s=>s.codec_type==='audio'&&s.codec_name==='aac')||!(Number(info.format.duration)>0))throw new Error('MP4 sem H.264/AAC ou duração');
+ // Regressão de sincronização: o MP4 deve manter as faixas de áudio e vídeo
+ // com durações próximas. A presença de AAC, isoladamente, não garante
+ // que o som acompanhe a imagem durante a publicação.
+ const trackDurations=JSON.parse(run('ffprobe',['-v','error','-show_entries','stream=codec_type,duration','-of','json',output])).streams;
+ const videoDuration=Number(trackDurations.find(s=>s.codec_type==='video')?.duration);
+ const audioDuration=Number(trackDurations.find(s=>s.codec_type==='audio')?.duration);
+ if(!Number.isFinite(videoDuration)||!Number.isFinite(audioDuration)||
+    videoDuration<=0||audioDuration<=0||Math.abs(videoDuration-audioDuration)>0.25)
+   throw new Error('Duração das faixas de áudio e vídeo diverge no MP4: '+videoDuration+'s / '+audioDuration+'s');
+
  // Caminhos com espaços e caracteres Unicode são comuns em Downloads no Windows/Android.
  // O conversor deve aceitar esses nomes sem invocar shell e preservar o original.
  const unicodeInput=join(dir,'vídeo de entrada ção.webm');
