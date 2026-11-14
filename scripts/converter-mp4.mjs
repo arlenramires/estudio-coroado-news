@@ -2,7 +2,7 @@
 // Conversão local opcional para navegadores que exportam WebM.
 // Uso: node scripts/converter-mp4.mjs entrada.webm saida.mp4
 import {spawnSync} from 'node:child_process';
-import {existsSync,statSync,lstatSync,renameSync,rmSync,realpathSync} from 'node:fs';
+import {existsSync,statSync,lstatSync,renameSync,rmSync,realpathSync,openSync,readSync,closeSync} from 'node:fs';
 import {resolve,extname,dirname,basename,join} from 'node:path';
 import {randomUUID} from 'node:crypto';
 const [inputArg,outputArg]=process.argv.slice(2);
@@ -29,6 +29,33 @@ if(input===output||extname(input).toLowerCase()!=='.webm'||extname(output).toLow
 const temporary=join(dirname(output),'.'+basename(output)+'.'+randomUUID()+'.mp4');
 function run(cmd,args,{maxBuffer=4*1024*1024}={}){const r=spawnSync(cmd,args,{encoding:'utf8',maxBuffer});if(r.error)throw new Error(cmd+': '+r.error.message);if(r.status!==0)throw new Error(cmd+': '+(r.stderr||r.stdout).slice(-1200));return r.stdout}
 function probe(file){return JSON.parse(run('ffprobe',['-v','error','-show_entries','stream=index,codec_type,codec_name,duration:format=format_name,duration','-of','json',file]))}
+ // Confere a ordem dos átomos de nível superior, sem carregar o vídeo na memória.
+ // Buscar a palavra "moov" em bytes arbitrários poderia aceitar falsos positivos.
+function hasFaststart(file){
+ const fd=openSync(file,'r');
+ try{
+  const total=statSync(file).size;
+  let offset=0,moov=-1,mdat=-1;
+  const header=Buffer.alloc(16);
+  while(offset+8<=total){
+   if(readSync(fd,header,0,8,offset)!==8)return false;
+   let size=header.readUInt32BE(0),headSize=8;
+   const type=header.toString('ascii',4,8);
+   if(size===1){
+    if(offset+16>total||readSync(fd,header,8,8,offset+8)!==8)return false;
+    const big=header.readBigUInt64BE(8);
+    if(big>BigInt(Number.MAX_SAFE_INTEGER))return false;
+    size=Number(big);headSize=16;
+   }else if(size===0)size=total-offset;
+   if(size<headSize||offset+size>total)return false;
+   if(type==='moov'&&moov<0)moov=offset;
+   if(type==='mdat'&&mdat<0)mdat=offset;
+   offset+=size;
+  }
+  return offset===total&&moov>=0&&mdat>=0&&moov<mdat;
+ }finally{closeSync(fd)}
+}
+
 try{
  const source=probe(input);
  // Não aceitar um MP4 ou outro contêiner renomeado para .webm: a conversão
@@ -109,6 +136,7 @@ try{
  run('ffmpeg',['-hide_banner','-loglevel','error','-nostdin','-xerror','-err_detect','explode','-i',temporary,
    '-map','0:v:0','-map','0:a:0','-f','null','-']);
  if(!(statSync(temporary).size>0))throw new Error('MP4 convertido está vazio');
+ if(!hasFaststart(temporary))throw new Error('MP4 convertido não possui índice moov antes de mdat (faststart)');
  // Evita entregar um MP4 aparentemente válido, porém truncado ou com duração
  // incompatível com a gravação original. Pequenas diferenças de encoder são normais.
  const outputDuration=Number(result.format.duration);
