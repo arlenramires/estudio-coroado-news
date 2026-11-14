@@ -49,6 +49,15 @@ for(const name of ['index.html','manifest.webmanifest','sw.js',
   assert.deepEqual(fs.readFileSync(path.join(root,name)),fs.readFileSync(name),
     'Recurso PWA divergente no pacote: '+name);
 }
+// O pacote privado também precisa levar o conversor MP4 e seu iniciador
+// exatamente como foram testados no repositório, sem versões antigas.
+for(const name of ['Converter-MP4-Windows.cmd','scripts/converter-mp4.mjs']){
+  const source=fs.readFileSync(name);
+  const packaged=fs.readFileSync(path.join(root,name));
+  assert.deepEqual(packaged,source,'Conversor MP4 divergente no pacote: '+name);
+}
+console.log('Conversor MP4: iniciador e script idênticos aos originais.');
+
 // O HTML único precisa funcionar sem acesso ao diretório molduras/.
 // Referências residuais podem deixar a prévia vazia ao abrir o arquivo no Android.
 assert.ok(!/"src":"molduras\//.test(offline),
