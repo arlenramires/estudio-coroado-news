@@ -152,6 +152,17 @@ try{
    throw new Error('WebM truncado substituiu exportação anterior');
  if(readdirSync(dir).some(name=>name.startsWith('.truncado.mp4.')))
    throw new Error('WebM truncado deixou arquivo temporário');
+ // Truncamento perto do fim pode preservar cabeçalhos e pacotes iniciais.
+ // A validação precisa rejeitar a gravação incompleta sem apagar o MP4 anterior.
+ const lateTruncated=join(dir,'truncado-no-final.webm');
+ const lateTruncatedOutput=join(dir,'truncado-no-final.mp4');
+ writeFileSync(lateTruncated,completeWebm.subarray(0,Math.max(128,completeWebm.length-2048)));
+ writeFileSync(lateTruncatedOutput,'mp4 anterior sem alteracoes');
+ run('node',['scripts/converter-mp4.mjs',lateTruncated,lateTruncatedOutput],1);
+ if(readFileSync(lateTruncatedOutput,'utf8')!=='mp4 anterior sem alteracoes')
+   throw new Error('WebM truncado no final substituiu MP4 anterior');
+ if(readdirSync(dir).some(name=>name.startsWith('.truncado-no-final.mp4.')))
+   throw new Error('WebM truncado no final deixou arquivo temporário');
  // Recusar extensão de saída enganosa mesmo quando o destino já existe:
  // uma falha de argumentos não pode sobrescrever o arquivo anterior.
  const wrongExtension=join(dir,'exportacao-anterior.webm');
