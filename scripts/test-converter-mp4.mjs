@@ -17,6 +17,17 @@ try{
  run('node',['scripts/converter-mp4.mjs',input,output]);
  const info=JSON.parse(run('ffprobe',['-v','error','-show_entries','stream=codec_type,codec_name:format=duration:format_tags=title','-of','json',output]));
  if(info.format?.tags?.title)throw new Error('MP4 vazou título/metadados do arquivo original');
+ // Compatibilidade de publicação: H.264 em yuv420p e índice MP4 (moov)
+ // antes dos dados de mídia (mdat), permitindo reprodução progressiva.
+ const videoDetails=JSON.parse(run('ffprobe',['-v','error','-select_streams','v:0','-show_entries','stream=pix_fmt','-of','json',output]));
+ if(videoDetails.streams?.[0]?.pix_fmt!=='yuv420p')
+   throw new Error('MP4 não usa pixel format yuv420p compatível com redes sociais');
+ const mp4Bytes=readFileSync(output);
+ const moovPosition=mp4Bytes.indexOf(Buffer.from('moov'));
+ const mdatPosition=mp4Bytes.indexOf(Buffer.from('mdat'));
+ if(moovPosition<0||mdatPosition<0||moovPosition>mdatPosition)
+   throw new Error('MP4 não possui moov antes de mdat (faststart)');
+
  // A presença de codec AAC não basta: decodifique a faixa e confirme que o tom
  // de teste realmente sobreviveu à conversão (evita MP4 com áudio mudo).
  const audioCheck=spawnSync('ffmpeg',['-hide_banner','-nostdin','-i',output,'-map','0:a:0','-af','volumedetect','-f','null','-'],{encoding:'utf8',maxBuffer:4*1024*1024});
