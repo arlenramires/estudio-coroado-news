@@ -22,6 +22,14 @@ try{
  const videoDetails=JSON.parse(run('ffprobe',['-v','error','-select_streams','v:0','-show_entries','stream=pix_fmt','-of','json',output]));
  if(videoDetails.streams?.[0]?.pix_fmt!=='yuv420p')
    throw new Error('MP4 não usa pixel format yuv420p compatível com redes sociais');
+ // Confirmar propriedades reais das faixas, além do nome dos codecs.
+ const videoTrack=videoDetails.streams?.[0];
+ const dimensions=JSON.parse(run('ffprobe',['-v','error','-select_streams','v:0','-show_entries','stream=width,height','-of','json',output])).streams?.[0];
+ if(dimensions?.width!==320||dimensions?.height!==240)
+   throw new Error('Conversão alterou as dimensões esperadas do vídeo de teste');
+ const audioTrack=JSON.parse(run('ffprobe',['-v','error','-select_streams','a:0','-show_entries','stream=sample_rate,channels','-of','json',output])).streams?.[0];
+ if(!(Number(audioTrack?.sample_rate)>0&&Number.isInteger(audioTrack?.channels)&&audioTrack.channels>0))
+   throw new Error('MP4 sem frequência de amostragem ou canais AAC válidos');
  const mp4Bytes=readFileSync(output);
  const moovPosition=mp4Bytes.indexOf(Buffer.from('moov'));
  const mdatPosition=mp4Bytes.indexOf(Buffer.from('mdat'));
