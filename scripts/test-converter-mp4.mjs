@@ -122,6 +122,19 @@ try{
  run('node',['scripts/converter-mp4.mjs',silent,invalid],1);
  if(readFileSync(invalid,'utf8')!=='arquivo anterior')throw new Error('Conversão falha sobrescreveu arquivo anterior');
  if(readdirSync(dir).some(name=>name.startsWith('.invalido.mp4.')))throw new Error('Conversão falha deixou arquivo temporário');
+ // Um MP4 real renomeado para .webm não pode ser tratado como gravação WebM.
+ // A extensão isolada não comprova o contêiner; proteger a exportação existente.
+ const disguised=join(dir,'mp4-disfarcado.webm');
+ const disguisedOutput=join(dir,'mp4-disfarcado.mp4');
+ writeFileSync(disguised,readFileSync(output));
+ writeFileSync(disguisedOutput,'mp4 anterior protegido');
+ run('node',['scripts/converter-mp4.mjs',disguised,disguisedOutput],1);
+ if(readFileSync(disguisedOutput,'utf8')!=='mp4 anterior protegido')
+   throw new Error('MP4 disfarçado de WebM sobrescreveu saída anterior');
+ if(readdirSync(dir).some(name=>name.startsWith('.mp4-disfarcado.mp4.')))
+   throw new Error('MP4 disfarçado de WebM deixou temporário');
+ if(!readFileSync(disguised).equals(readFileSync(output)))
+   throw new Error('Conversão inválida modificou entrada disfarçada');
  // Arquivo com extensão WebM, mas conteúdo inválido: não deve apagar a saída anterior.
  const corrupted=join(dir,'corrompido.webm'),preserved=join(dir,'preservado.mp4');
  writeFileSync(corrupted,'nao e um arquivo de video');
