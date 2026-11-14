@@ -44,6 +44,16 @@ if errorlevel 1 (
   pause
   exit /b 1
 )
+if not exist "%~dpn1_convertido.mp4" (
+  echo ERRO: o conversor terminou sem criar o arquivo MP4 esperado.
+  pause
+  exit /b 1
+)
+for %%F in ("%~dpn1_convertido.mp4") do if %%~zF EQU 0 (
+  echo ERRO: o arquivo MP4 gerado esta vazio.
+  pause
+  exit /b 1
+)
 echo.
 echo Pronto: "%~dpn1_convertido.mp4"
 echo Abra o arquivo para conferir imagem, som e sincronizacao.
