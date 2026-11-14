@@ -34,6 +34,7 @@ Na execução bem-sucedida de **Actions → Testar Estúdio**, baixe o artefato 
 - `index.html`, `manifest.webmanifest`, `sw.js`, `icons/` e `molduras/`: PWA completo para instalar no navegador a partir de `localhost`.
 - `Iniciar-PC-Windows.cmd` e `Iniciar-Android-Termux.sh`: auxiliares para iniciar servidor local sem publicação pública.
 - `LEIA-ME-PRIMEIRO.txt`: instruções passo a passo, incluindo limitações reais de MP4 e Android.
+- `Converter-MP4-Windows.cmd` e `scripts/converter-mp4.mjs`: conversão local de WebM com áudio para MP4 H.264/AAC no Windows, com Node.js, FFmpeg e FFprobe instalados.
 
 **Uso imediato:** extraia o ZIP e abra `Estudio_Coroado_Offline.html` no Chrome/Edge do PC ou no navegador do Android via gerenciador de arquivos. As fotos e os vídeos selecionados ficam no dispositivo. Esse HTML **não** é um PWA instalável.
 
@@ -51,7 +52,7 @@ O botão **Salvar PNG** gera uma imagem estática, não um vídeo. A opção **F
 Se o nome aparecer como **PNG4**, verifique a extensão real do arquivo: o formato correto de imagem é **.png**. Para publicação com movimento e áudio, use **Exportar vídeo**; o editor não transforma um PNG em vídeo. Se o navegador só disponibilizar WebM, não renomeie o arquivo para MP4: isso não converte o codec. Para obter MP4 universal, converta o WebM com um codificador H.264/AAC externo e confira o áudio antes da publicação.
 
 ## Conversão MP4 no Windows por arrastar e soltar
-No ZIP do **repositório completo**, arraste um arquivo `.webm` sobre `Converter-MP4-Windows.cmd`. É necessário instalar Node.js, FFmpeg e FFprobe e deixá-los disponíveis no PATH. O resultado será criado ao lado do original com sufixo `_convertido.mp4`, após validação H.264/AAC. O arquivo WebM original é preservado. **Este atalho ainda não integra o artefato reduzido de Actions**; para usá-lo, baixe o ZIP do repositório completo.
+No ZIP do **repositório completo**, arraste um arquivo `.webm` sobre `Converter-MP4-Windows.cmd`. É necessário instalar Node.js, FFmpeg e FFprobe e deixá-los disponíveis no PATH. O resultado será criado ao lado do original com sufixo `_convertido.mp4`, após validação H.264/AAC. O arquivo WebM original é preservado. **Este atalho agora integra também o pacote privado de Actions**, junto com `scripts/converter-mp4.mjs`. A conversão continua exigindo Node.js, FFmpeg e FFprobe instalados no Windows.
 
 ## Converter WebM para MP4 H.264/AAC no PC
 Se o navegador salvar `.webm`, **não renomeie a extensão**. O repositório inclui o conversor local `scripts/converter-mp4.mjs`, que usa FFmpeg e FFprobe instalados no PC e exige que o WebM original contenha vídeo **e** uma faixa de áudio. Ele produz H.264/AAC, verifica contêiner, codecs e duração e só substitui a saída depois da validação; o WebM de entrada permanece intacto.
