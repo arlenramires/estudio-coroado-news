@@ -142,6 +142,17 @@ try{
    throw new Error('WebM truncado substituiu exportação anterior');
  if(readdirSync(dir).some(name=>name.startsWith('.truncado.mp4.')))
    throw new Error('WebM truncado deixou arquivo temporário');
+ // Uma gravação com cabeçalho e faixas reais, mas cortada no meio do fluxo,
+ // não pode substituir o MP4 anterior nem deixar resíduos temporários.
+ // Diferente do truncamento de 128 bytes, este caso exercita a decodificação.
+ const halfWebm=join(dir,'interrompido.webm'),halfOutput=join(dir,'interrompido.mp4');
+ writeFileSync(halfWebm,completeWebm.subarray(0,Math.floor(completeWebm.length/2)));
+ writeFileSync(halfOutput,'MP4 anterior seguro');
+ run('node',['scripts/converter-mp4.mjs',halfWebm,halfOutput],1);
+ if(readFileSync(halfOutput,'utf8')!=='MP4 anterior seguro')
+   throw new Error('WebM interrompido sobrescreveu MP4 anterior');
+ if(readdirSync(dir).some(name=>name.startsWith('.interrompido.mp4.')))
+   throw new Error('WebM interrompido deixou arquivo temporário');
  // Um link simbólico de entrada deve ser recusado, inclusive quando aponta
  // para uma gravação WebM legítima, sem tocar no destino existente.
  const linkedInput=join(dir,'entrada-link.webm'),linkedInputOutput=join(dir,'entrada-link.mp4');
