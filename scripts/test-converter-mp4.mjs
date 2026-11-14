@@ -14,7 +14,13 @@ function run(cmd,args,expect=0){
 try{
  const input=join(dir,'entrada.webm'),output=join(dir,'saida.mp4');
  run('ffmpeg',['-hide_banner','-loglevel','error','-f','lavfi','-i','color=c=black:s=320x240:r=12:d=1','-f','lavfi','-i','sine=frequency=440:duration=1','-c:v','libvpx','-b:v','150k','-c:a','libopus','-metadata','title=Privado-Estudio-Teste','-shortest',input]);
+ const sourceBeforeConversion=readFileSync(input);
  run('node',['scripts/converter-mp4.mjs',input,output]);
+ // Exportar MP4 nunca deve alterar o WebM original, mesmo quando a conversão é bem-sucedida.
+ if(!readFileSync(input).equals(sourceBeforeConversion))
+   throw new Error('Conversão bem-sucedida modificou o WebM original');
+ if(readdirSync(dir).some(name=>name.startsWith('.saida.mp4.')))
+   throw new Error('Conversão inicial deixou arquivo temporário');
  const info=JSON.parse(run('ffprobe',['-v','error','-show_entries','stream=codec_type,codec_name:format=duration:format_tags=title','-of','json',output]));
  if(info.format?.tags?.title)throw new Error('MP4 vazou título/metadados do arquivo original');
  // Compatibilidade de publicação: H.264 em yuv420p e índice MP4 (moov)
