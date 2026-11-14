@@ -140,8 +140,11 @@ try{
  writeFileSync(corrupted,'nao e um arquivo de video');
  writeFileSync(preserved,'MP4 anterior intacto');
  run('node',['scripts/converter-mp4.mjs',corrupted,preserved],1);
+ const corruptedBefore=readFileSync(corrupted);
  if(readFileSync(preserved,'utf8')!=='MP4 anterior intacto')
    throw new Error('Entrada corrompida sobrescreveu MP4 anterior');
+ if(!readFileSync(corrupted).equals(corruptedBefore))
+   throw new Error('Falha com WebM corrompido alterou o arquivo de entrada');
  if(readdirSync(dir).some(name=>name.startsWith('.preservado.mp4.')))
    throw new Error('Entrada corrompida deixou arquivo temporário');
  // Arquivo WebM vazio deve ser recusado sem apagar uma exportação anterior
