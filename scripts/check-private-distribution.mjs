@@ -87,6 +87,7 @@ console.log('Pacote: iniciadores restritos a localhost, PWA local e 22 molduras 
      fs.copyFileSync(path.join(root,'Verificar-integridade.py'),fixture);
      const required=['index.html','manifest.webmanifest','sw.js','icons/studio.svg','icons/studio-192.png','icons/studio-512.png',
        'Estudio_Coroado_Offline.html','Iniciar-PC-Windows.cmd','Iniciar-Android-Termux.sh','LEIA-ME-PRIMEIRO.txt','Verificar-integridade.py',
+       'Converter-MP4-Windows.cmd','scripts/converter-mp4.mjs',
        ...Array.from({length:22},(_,i)=>'molduras/original_'+String(i+1).padStart(2,'0')+'.webp')];
      for(const name of required){
        const dest=path.join(tmp,name);
