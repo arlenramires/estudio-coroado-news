@@ -121,6 +121,14 @@ try{
    throw new Error('MP4 convertido não usa formato de pixels yuv420p');
  if(!(Number.isInteger(videoDetails.width)&&videoDetails.width>0&&Number.isInteger(videoDetails.height)&&videoDetails.height>0))
    throw new Error('MP4 convertido sem dimensões de vídeo válidas');
+ // A transcodificação não deve redimensionar a arte aprovada (Feed/Story).
+ // Comparar com a primeira faixa de vídeo realmente selecionada da entrada.
+ const sourceVideo=source.streams.find(s=>s.codec_type==='video');
+ const sourceDimensions=JSON.parse(run('ffprobe',['-v','error','-select_streams','v:0','-show_entries','stream=width,height','-of','json',input])).streams?.[0];
+ if(!(Number.isInteger(sourceDimensions?.width)&&sourceDimensions.width>0&&Number.isInteger(sourceDimensions?.height)&&sourceDimensions.height>0))
+   throw new Error('WebM original sem dimensões de vídeo válidas');
+ if(videoDetails.width!==sourceDimensions.width||videoDetails.height!==sourceDimensions.height)
+   throw new Error('Conversão alterou dimensões do vídeo original: '+sourceDimensions.width+'x'+sourceDimensions.height+' → '+videoDetails.width+'x'+videoDetails.height);
  const audioDetails=JSON.parse(run('ffprobe',['-v','error','-select_streams','a:0','-show_entries','stream=sample_rate,channels','-of','json',temporary])).streams?.[0];
  if(!(Number(audioDetails?.sample_rate)>0&&Number.isInteger(audioDetails?.channels)&&audioDetails.channels>0))
    throw new Error('MP4 convertido sem frequência de amostragem ou canais de áudio válidos');
