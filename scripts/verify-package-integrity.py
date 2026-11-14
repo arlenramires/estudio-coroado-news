@@ -17,6 +17,7 @@ required = {
     "Estudio_Coroado_Offline.html", "Iniciar-PC-Windows.cmd",
     "Iniciar-Android-Termux.sh", "LEIA-ME-PRIMEIRO.txt",
     "Verificar-integridade.py",
+    "Converter-MP4-Windows.cmd", "scripts/converter-mp4.mjs",
 }
 required.update("molduras/original_{:02d}.webp".format(i) for i in range(1, 23))
 seen = set()
@@ -76,7 +77,7 @@ for p in root.rglob("*"):
     if p.is_file() and p != manifest:
         actual_files.add(p.relative_to(root).as_posix())
 # Recusa tambem diretorios extras vazios, nao cobertos pelos hashes.
-expected_dirs = {"icons", "molduras"}
+expected_dirs = {"icons", "molduras", "scripts"}
 actual_dirs = {p.relative_to(root).as_posix() for p in root.rglob("*") if p.is_dir()}
 extra_dirs = actual_dirs - expected_dirs
 if extra_dirs:
