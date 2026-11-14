@@ -139,8 +139,8 @@ try{
  const corrupted=join(dir,'corrompido.webm'),preserved=join(dir,'preservado.mp4');
  writeFileSync(corrupted,'nao e um arquivo de video');
  writeFileSync(preserved,'MP4 anterior intacto');
- run('node',['scripts/converter-mp4.mjs',corrupted,preserved],1);
  const corruptedBefore=readFileSync(corrupted);
+ run('node',['scripts/converter-mp4.mjs',corrupted,preserved],1);
  if(readFileSync(preserved,'utf8')!=='MP4 anterior intacto')
    throw new Error('Entrada corrompida sobrescreveu MP4 anterior');
  if(!readFileSync(corrupted).equals(corruptedBefore))
