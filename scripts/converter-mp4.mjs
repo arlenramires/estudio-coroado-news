@@ -123,7 +123,6 @@ try{
    throw new Error('MP4 convertido sem dimensões de vídeo válidas');
  // A transcodificação não deve redimensionar a arte aprovada (Feed/Story).
  // Comparar com a primeira faixa de vídeo realmente selecionada da entrada.
- const sourceVideo=source.streams.find(s=>s.codec_type==='video');
  const sourceDimensions=JSON.parse(run('ffprobe',['-v','error','-select_streams','v:0','-show_entries','stream=width,height','-of','json',input])).streams?.[0];
  if(!(Number.isInteger(sourceDimensions?.width)&&sourceDimensions.width>0&&Number.isInteger(sourceDimensions?.height)&&sourceDimensions.height>0))
    throw new Error('WebM original sem dimensões de vídeo válidas');
