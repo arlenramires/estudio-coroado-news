@@ -8,6 +8,11 @@ if "%~1"=="" (
   pause
   exit /b 2
 )
+if not "%~2"=="" (
+  echo ERRO: arraste somente um arquivo WebM por vez.
+  pause
+  exit /b 2
+)
 if not exist "%~1" (
   echo ERRO: arquivo nao encontrado.
   pause
@@ -21,6 +26,12 @@ where ffprobe >nul 2>&1
 if errorlevel 1 goto missingFFmpeg
 if /i not "%~x1"==".webm" (
   echo ERRO: selecione um arquivo com extensao .webm.
+  pause
+  exit /b 2
+)
+if exist "%~dpn1_convertido.mp4" (
+  echo ERRO: o arquivo de destino ja existe e nao sera sobrescrito.
+  echo Renomeie o arquivo existente antes de tentar novamente.
   pause
   exit /b 2
 )
