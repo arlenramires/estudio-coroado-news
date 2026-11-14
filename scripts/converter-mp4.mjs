@@ -85,6 +85,12 @@ try{
    throw new Error('Duração da entrada ausente ou inválida, inclusive nos timestamps dos pacotes');
  run('ffmpeg',['-hide_banner','-loglevel','error','-nostdin','-y','-i',input,'-map','0:v:0','-map','0:a:0','-map_metadata','-1','-map_chapters','-1','-c:v','libx264','-pix_fmt','yuv420p','-crf','20','-preset','medium','-c:a','aac','-b:a','192k','-movflags','+faststart',temporary]);
  const result=probe(temporary);
+ // H.264 pode ser codificado em formatos de pixels incompatíveis com alguns
+ // celulares. Validar o formato efetivo, não apenas os parâmetros do FFmpeg.
+ const videoStream=result.streams?.find(s=>s.codec_type==='video');
+ const pixelDetails=JSON.parse(run('ffprobe',['-v','error','-select_streams','v:0','-show_entries','stream=pix_fmt','-of','json',temporary]));
+ if(!videoStream||pixelDetails.streams?.[0]?.pix_fmt!=='yuv420p')
+   throw new Error('MP4 convertido não usa formato de pixels yuv420p');
  if(!result.format?.format_name?.split(',').includes('mp4')||
     !result.streams.some(s=>s.codec_type==='video'&&s.codec_name==='h264')||
     !result.streams.some(s=>s.codec_type==='audio'&&s.codec_name==='aac')||
