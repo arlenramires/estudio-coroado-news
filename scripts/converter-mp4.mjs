@@ -152,6 +152,16 @@ try{
  if(!hasFaststart(temporary))throw new Error('MP4 convertido não possui índice moov antes de mdat (faststart)');
  // Evita entregar um MP4 aparentemente válido, porém truncado ou com duração
  // incompatível com a gravação original. Pequenas diferenças de encoder são normais.
+ // Validar sincronização na saída real, não somente no teste automatizado.
+ // Um MP4 pode conter H.264 e AAC válidos, mas terminar o som muito antes
+ // da imagem. Recusar antes de substituir qualquer exportação existente.
+ const trackDurations=JSON.parse(run('ffprobe',['-v','error','-show_entries',
+   'stream=codec_type,duration','-of','json',temporary])).streams||[];
+ const videoDuration=Number(trackDurations.find(s=>s.codec_type==='video')?.duration);
+ const audioDuration=Number(trackDurations.find(s=>s.codec_type==='audio')?.duration);
+ if(!Number.isFinite(videoDuration)||!Number.isFinite(audioDuration)||
+    videoDuration<=0||audioDuration<=0||Math.abs(videoDuration-audioDuration)>0.25)
+   throw new Error('MP4 com faixas de áudio e vídeo fora de sincronia: '+videoDuration+'s / '+audioDuration+'s');
  const outputDuration=Number(result.format.duration);
  const tolerance=Math.max(0.75,sourceDuration*0.02);
  if(Math.abs(outputDuration-sourceDuration)>tolerance)
