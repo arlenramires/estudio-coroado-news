@@ -23,11 +23,14 @@ const expected=new Set([...assets,'Estudio_Coroado_Offline.html','Iniciar-PC-Win
 function scan(directory){
   for(const entry of fs.readdirSync(directory,{withFileTypes:true})){
     const absolute=path.join(directory,entry.name);
-    if(entry.isDirectory())scan(absolute);
-    else if(entry.isFile()){
-      const relative=path.relative(dir,absolute).split(path.sep).join('/');
+    const relative=path.relative(dir,absolute).split(path.sep).join('/');
+    if(entry.isSymbolicLink())throw Error('Link simbólico proibido no pacote: '+relative);
+    if(entry.isDirectory()){
+      if(!['icons','molduras','scripts'].includes(relative))throw Error('Diretório inesperado no pacote: '+relative);
+      scan(absolute);
+    }else if(entry.isFile()){
       if(!expected.has(relative))throw Error('Arquivo obsoleto no pacote: '+relative);
-    }
+    }else throw Error('Entrada especial proibida no pacote: '+relative);
   }
 }
 scan(dir);
