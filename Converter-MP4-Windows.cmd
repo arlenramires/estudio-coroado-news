@@ -18,6 +18,11 @@ if not exist "%~1" (
   pause
   exit /b 2
 )
+if exist "%~f1\\" (
+  echo ERRO: o caminho informado e uma pasta, nao um arquivo WebM.
+  pause
+  exit /b 2
+)
 where node >nul 2>&1
 if errorlevel 1 goto missingNode
 where ffmpeg >nul 2>&1
