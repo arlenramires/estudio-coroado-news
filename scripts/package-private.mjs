@@ -21,6 +21,7 @@ const dest=path.join(root,'dist','Estudio-Coroado-Privado');
 const previousStat=fs.lstatSync(dest,{throwIfNoEntry:false});
 if(previousStat && (!previousStat.isDirectory() || previousStat.isSymbolicLink()))
   throw Error('Destino privado não é diretório regular; entrega anterior preservada');
+const converterFiles=['Converter-MP4-Windows.cmd','scripts/converter-mp4.mjs'];
 const required=['index.html','manifest.webmanifest','sw.js','icons/studio.svg','icons/studio-192.png','icons/studio-512.png',
   ...Array.from({length:22},(_,i)=>'molduras/original_'+String(i+1).padStart(2,'0')+'.webp')];
 // Recusa links simbólicos: o pacote privado não pode copiar conteúdo de fora\n// da árvore do projeto por meio de entradas apontando para outros caminhos.\n// Valida todas as entradas ANTES de apagar o pacote anterior. Uma extração
@@ -34,7 +35,7 @@ for(const directory of ['molduras','icons','scripts','dist']){
 }
 const offlineSource=path.join(root,'dist','Estudio_Coroado_Offline.html');
 const verifierSource=path.join(root,'scripts','verify-package-integrity.py');
-for(const file of [...required,'scripts/verify-package-integrity.py']){
+for(const file of [...required,...converterFiles,'scripts/verify-package-integrity.py']){
   const source=path.join(root,file);
   if(!fs.existsSync(source)||!fs.lstatSync(source).isFile()||fs.lstatSync(source).size===0)
     throw Error('Arquivo necessário ausente ou vazio; pacote anterior preservado: '+file);
@@ -52,7 +53,7 @@ const hadPrevious=fs.existsSync(dest);
 if(hadPrevious)fs.renameSync(dest,backup);
 try {
 fs.mkdirSync(dest,{recursive:true});
-for(const file of required){
+for(const file of [...required,...converterFiles]){
   const source=path.join(root,file),target=path.join(dest,file);
   // Revalida imediatamente antes da cópia: uma entrada substituída por symlink
   // depois do pré-voo não pode introduzir arquivos externos no pacote.
@@ -169,6 +170,12 @@ PWA NO ANDROID (SEM HOSPEDAGEM PUBLICA):
 6. Aguarde as 22 molduras; menu > Instalar app/Adicionar a tela inicial.
 7. Se o Chrome nao oferecer instalacao, use o HTML offline como alternativa.
 
+CONVERTER WEBM COM AUDIO PARA MP4 NO WINDOWS:
+Instale Node.js, FFmpeg e FFprobe e confirme que estao no PATH.
+Arraste o WebM com video e audio sobre Converter-MP4-Windows.cmd.
+O MP4 H.264/AAC sera salvo ao lado do original com sufixo _convertido.mp4.
+Confira o som e a imagem antes de publicar. O WebM original e preservado.
+
 VERIFICAR ARQUIVOS EXTRAIDOS (OPCIONAL):
 Execute python Verificar-integridade.py na pasta extraida.
 O resultado OK confirma que os arquivos conferem com SHA256SUMS.txt.
@@ -213,7 +220,7 @@ for(const line of sums.trimEnd().split('\n')){
   const actual=crypto.createHash('sha256').update(fs.readFileSync(path.join(dest,relative))).digest('hex');
   if(actual!==digest)throw Error('Falha de integridade no pacote: '+relative);
 }
-console.log('Pacote privado gerado:',dest,'com',required.length,'arquivos do PWA + HTML offline e iniciadores.');
+console.log('Pacote privado gerado:',dest,'com',required.length,'arquivos do PWA + HTML offline, iniciadores e conversor MP4.');
 
 // Valida o pacote final independentemente da etapa de cópia.
 await import('./verify-private-package.mjs');
