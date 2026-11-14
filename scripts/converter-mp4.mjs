@@ -115,9 +115,15 @@ try{
  // H.264 pode ser codificado em formatos de pixels incompatíveis com alguns
  // celulares. Validar o formato efetivo, não apenas os parâmetros do FFmpeg.
  const videoStream=result.streams?.find(s=>s.codec_type==='video');
- const pixelDetails=JSON.parse(run('ffprobe',['-v','error','-select_streams','v:0','-show_entries','stream=pix_fmt','-of','json',temporary]));
- if(!videoStream||pixelDetails.streams?.[0]?.pix_fmt!=='yuv420p')
+ const pixelDetails=JSON.parse(run('ffprobe',['-v','error','-select_streams','v:0','-show_entries','stream=pix_fmt,width,height','-of','json',temporary]));
+ const videoDetails=pixelDetails.streams?.[0];
+ if(!videoStream||videoDetails?.pix_fmt!=='yuv420p')
    throw new Error('MP4 convertido não usa formato de pixels yuv420p');
+ if(!(Number.isInteger(videoDetails.width)&&videoDetails.width>0&&Number.isInteger(videoDetails.height)&&videoDetails.height>0))
+   throw new Error('MP4 convertido sem dimensões de vídeo válidas');
+ const audioDetails=JSON.parse(run('ffprobe',['-v','error','-select_streams','a:0','-show_entries','stream=sample_rate,channels','-of','json',temporary])).streams?.[0];
+ if(!(Number(audioDetails?.sample_rate)>0&&Number.isInteger(audioDetails?.channels)&&audioDetails.channels>0))
+   throw new Error('MP4 convertido sem frequência de amostragem ou canais de áudio válidos');
  if(!result.format?.format_name?.split(',').includes('mp4')||
     !result.streams.some(s=>s.codec_type==='video'&&s.codec_name==='h264')||
     !result.streams.some(s=>s.codec_type==='audio'&&s.codec_name==='aac')||
