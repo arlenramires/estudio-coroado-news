@@ -14,6 +14,7 @@ REQUIRED = {
     "Estudio_Coroado_Offline.html", "Iniciar-PC-Windows.cmd",
     "Iniciar-Android-Termux.sh", "LEIA-ME-PRIMEIRO.txt",
     "Verificar-integridade.py",
+    "Converter-MP4-Windows.cmd", "scripts/converter-mp4.mjs",
 }
 REQUIRED.update(f"molduras/original_{i:02d}.webp" for i in range(1, 23))
 
