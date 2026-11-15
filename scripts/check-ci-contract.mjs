@@ -40,14 +40,14 @@ const required=[
 ];
 // Check executable run steps, not command names merely mentioned in comments.
 const runCommands=ci.split('\n').flatMap((line, index, lines) => {
-  const match=line.match(/^(\\s*)run:\\s*(.*)$/);
+  const match=line.match(/^(\s*)run:\s*(.*)$/);
   if(!match) return [];
   if(match[2]!=='|') return [match[2]];
   const indent=match[1].length;
   const commands=[];
   for(let i=index+1;i<lines.length;i++){
     const next=lines[i];
-    if(next.trim() && next.match(/^\\s*/)[0].length<=indent) break;
+    if(next.trim() && next.match(/^\s*/)[0].length<=indent) break;
     if(next.trim()) commands.push(next.trim());
   }
   return commands;
