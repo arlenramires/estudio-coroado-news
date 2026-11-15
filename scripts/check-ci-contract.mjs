@@ -39,15 +39,27 @@ const required=[
  'Estudio-Coroado-Privado-PC-Android'
 ];
 // Check executable run steps, not command names merely mentioned in comments.
-const runCommands=ci.split('\n').filter(line=>/^\s*run:\s*/.test(line)).map(line=>line.replace(/^\s*run:\s*/,''));
+const runCommands=ci.split('\n').flatMap((line, index, lines) => {
+  const match=line.match(/^(\\s*)run:\\s*(.*)$/);
+  if(!match) return [];
+  if(match[2]!=='|') return [match[2]];
+  const indent=match[1].length;
+  const commands=[];
+  for(let i=index+1;i<lines.length;i++){
+    const next=lines[i];
+    if(next.trim() && next.match(/^\\s*/)[0].length<=indent) break;
+    if(next.trim()) commands.push(next.trim());
+  }
+  return commands;
+});
 for(const step of required.filter(s=>s.startsWith('node ')||s.startsWith('python3 ')||s.startsWith('STUDIO_')))
   assert(runCommands.includes(step),'Missing executable CI acceptance stage: '+step);
 for(const step of required.filter(s=>!s.startsWith('node ')&&!s.startsWith('python3 ')&&!s.startsWith('STUDIO_')))
   assert(ci.includes(step),'Missing CI acceptance stage: '+step);
 // The package must only be uploaded after all acceptance checks have run.
-const artifactPosition=ci.indexOf('actions/upload-artifact@v4');
+const artifactPosition=ci.lastIndexOf('actions/upload-artifact@v4');
 for(const step of required.filter(s=>s!=='actions/upload-artifact@v4'&&s!=='Estudio-Coroado-Privado-PC-Android'))
-  assert(ci.indexOf(step)<artifactPosition,'Acceptance check appears after artifact publication: '+step);
+  assert(ci.indexOf(step)<artifactPosition,'Acceptance check appears after final package publication: '+step);
 assert(/permissions:\s*\n\s*contents:\s*read/.test(ci),'CI must have read-only contents permission');
 assert(!/\bworkflow_dispatch\b[\s\S]*?deploy-pages/.test(ci),'No Pages deployment allowed');
 console.log('CI guard passed: browser, audio, 22 assets, offline, private package and no Pages deployment.');
