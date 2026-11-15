@@ -75,6 +75,27 @@ try{
    if(!stream||!(Number(stream.nb_read_packets)>0))
      throw new Error('WebM de entrada sem pacotes na primeira faixa de '+type);
  }
+ // Alguns WebM truncados ainda são decodificados pelo FFmpeg sem erro.
+ // Quando o contêiner declara duração, conferir se a última amostra de vídeo
+ // realmente chega ao final anunciado (e não apenas se existem pacotes).
+ const declaredDuration=Number(source.format?.duration);
+ if(Number.isFinite(declaredDuration)&&declaredDuration>0){
+   const videoIndex=source.streams.find(s=>s.codec_type==='video').index;
+   const timeline=JSON.parse(run('ffprobe',['-v','error','-select_streams','v:0',
+     '-show_packets','-show_entries','packet=pts_time,duration_time','-of','json',input],
+     {maxBuffer:64*1024*1024}));
+   let lastVideoEnd=0;
+   for(const packet of timeline.packets||[]){
+     const pts=Number(packet.pts_time);
+     const duration=packet.duration_time==null?0:Number(packet.duration_time);
+     if(Number.isFinite(pts)&&Number.isFinite(duration)&&duration>=0)
+       lastVideoEnd=Math.max(lastVideoEnd,pts+duration);
+   }
+   const allowedGap=Math.max(0.15,declaredDuration*0.05);
+   if(lastVideoEnd<=0||declaredDuration-lastVideoEnd>allowedGap)
+     throw new Error('WebM incompleto: quadros de vídeo terminam antes da duração declarada ('+
+       lastVideoEnd+'s / '+declaredDuration+'s)');
+ }
  // Verifica o WebM original inteiro antes de codificar. Um cabeçalho e pacotes
  // presentes não garantem que o conteúdo esteja decodificável até o final.
  // Assim, uma entrada corrompida falha sem tocar no MP4 anterior.
