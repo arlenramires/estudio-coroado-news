@@ -18,6 +18,8 @@ jobs:
           node-version: '22'
       - name: Proteger etapas obrigatórias e impedir GitHub Pages
         run: node scripts/check-ci-contract.mjs
+      - name: Testar regressões do verificador de segurança CI
+        run: node scripts/test-ci-guard.mjs
       - name: Validar editor e arquivos originais
         run: node scripts/check-editor.mjs
 
