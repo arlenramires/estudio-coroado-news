@@ -25,6 +25,7 @@ try {
   check('original workflow',workflow,true);
   check('missing PNG/browser test',workflow.replace('run: node scripts/smoke.mjs','run: echo skipped'),false);
   check('masked video test',workflow.replace('run: node scripts/video-smoke.mjs','run: node scripts/video-smoke.mjs || true'),false);
+  check('masked video with echo',workflow.replace('run: node scripts/video-smoke.mjs','run: node scripts/video-smoke.mjs || echo ignored'),false);
   check('missing pipefail',workflow.replace('          set -o pipefail\n',''),false);
   check('public Pages action',workflow.replace('actions/checkout@v4','actions/deploy-pages@v4'),false);
   check('missing private package',workflow.replace('Estudio-Coroado-Privado-PC-Android','public-package'),false);
