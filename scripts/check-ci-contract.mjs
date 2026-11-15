@@ -38,20 +38,26 @@ const required=[
  'actions/upload-artifact@v4',
  'Estudio-Coroado-Privado-PC-Android'
 ];
-// Check executable run steps, not command names merely mentioned in comments.
-const runCommands=ci.split('\n').flatMap((line, index, lines) => {
-  const match=line.match(/^(\s*)run:\s*(.*)$/);
-  if(!match) return [];
-  if(match[2]!=='|') return [match[2]];
-  const indent=match[1].length;
-  const commands=[];
-  for(let i=index+1;i<lines.length;i++){
-    const next=lines[i];
-    if(next.trim() && next.match(/^\s*/)[0].length<=indent) break;
-    if(next.trim()) commands.push(next.trim());
+// Validate each command in a real YAML run step (inline or literal block).
+// Keep command matching independent of comments, descriptions and indentation.
+const runCommands=[];
+const lines=ci.split(/\r?\n/);
+for(let i=0;i<lines.length;i++){
+  const match=/^[ \t]*run:[ \t]*(.*)$/.exec(lines[i]);
+  if(!match) continue;
+  const inline=match[1].trim();
+  if(inline!=='|' && inline!=='|-') {
+    runCommands.push(inline);
+    continue;
   }
-  return commands;
-});
+  const baseIndent=lines[i].search(/\S/);
+  for(let j=i+1;j<lines.length;j++){
+    const command=lines[j].trim();
+    if(!command) continue;
+    if(lines[j].search(/\S/)<=baseIndent) break;
+    runCommands.push(command);
+  }
+}
 for(const step of required.filter(s=>s.startsWith('node ')||s.startsWith('python3 ')||s.startsWith('STUDIO_')))
   assert(runCommands.includes(step),'Missing executable CI acceptance stage: '+step);
 for(const step of required.filter(s=>!s.startsWith('node ')&&!s.startsWith('python3 ')&&!s.startsWith('STUDIO_')))
