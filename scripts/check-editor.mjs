@@ -11,6 +11,7 @@ import './check-sw-private.mjs';
 import './check-sw-boundaries.mjs';
 import './check-sw-root-offline.mjs';
 import './check-sw-root-http-errors.mjs';
+import './check-sw-invalid-navigation.mjs';
 import './check-sw-partial-response.mjs';
 import './check-sw-mime.mjs';
 import './check-sw-manifest-json.mjs';
