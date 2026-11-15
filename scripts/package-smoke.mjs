@@ -36,12 +36,20 @@ function scan(directory){
 scan(dir);
 const sums=fs.readFileSync(path.join(dir,'SHA256SUMS.txt'),'utf8').trimEnd().split('\n');
 if(sums.length!==expected.size-1)throw Error('Manifesto SHA-256 incompleto');
+// O HTML offline deve ser exatamente o produzido pelo build atual, não uma
+// cópia antiga que por acaso ainda contenha as 22 molduras.
+if(hash(path.join(dir,'Estudio_Coroado_Offline.html'))!==hash(path.join(root,'dist','Estudio_Coroado_Offline.html')))
+  throw Error('HTML offline do pacote diverge do build atual');
 const verified=new Set();
 for(const line of sums){
   const match=/^([a-f0-9]{64})  (.+)$/.exec(line);
   if(!match||!expected.has(match[2])||match[2]==='SHA256SUMS.txt'||verified.has(match[2]))throw Error('Entrada SHA-256 invalida: '+line);
   if(hash(path.join(dir,match[2]))!==match[1])throw Error('Hash SHA-256 divergente: '+match[2]);
   verified.add(match[2]);
+}
+for(const file of expected){
+  if(file!=='SHA256SUMS.txt'&&!verified.has(file))
+    throw Error('Arquivo ausente do manifesto SHA-256: '+file);
 }
 const windowsLauncher=fs.readFileSync(path.join(dir,'Iniciar-PC-Windows.cmd'),'utf8');
 if(!windowsLauncher.includes('ThreadingHTTPServer')||!windowsLauncher.includes('webbrowser.open'))throw Error('Inicializador Windows não espera servidor antes de abrir o navegador');
