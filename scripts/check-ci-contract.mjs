@@ -63,7 +63,7 @@ for(let i=0;i<lines.length;i++){
 const normalized = runCommands.filter(command => !command.startsWith('#'));
 for(const step of required.filter(s=>s.startsWith('node ')||s.startsWith('python3 ')||s.startsWith('STUDIO_'))){
   const matching = normalized.filter(command => command === step || command.startsWith(step + ' '));
-  assert(matching.some(command => !/\|\|\s*(?:true|:|echo\b)(?:\s|$)|;\s*(?:true|:)(?:\s|$)/.test(command)),
+  assert(matching.some(command => !/\|\|\s*(?:true|:|echo\b|printf\b|exit\s+0\b)(?:\s|$)|;\s*(?:true|:|exit\s+0\b)(?:\s|$)/.test(command)),
     'Missing unmasked executable CI acceptance stage: '+step);
 }
 const converterCommand = normalized.find(command => /^node scripts\/test-converter-mp4\.mjs\s+2>&1\s*\|\s*tee\s+/.test(command));
