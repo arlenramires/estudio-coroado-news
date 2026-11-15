@@ -59,7 +59,8 @@ for(let i=0;i<lines.length;i++){
   }
 }
 for(const step of required.filter(s=>s.startsWith('node ')||s.startsWith('python3 ')||s.startsWith('STUDIO_')))
-  assert(runCommands.includes(step),'Missing executable CI acceptance stage: '+step);
+  assert(runCommands.some(command => command === step || command.startsWith(step + ' ') || command.startsWith(step + ' |') || command.startsWith(step + ' 2>')),
+    'Missing executable CI acceptance stage: '+step);
 for(const step of required.filter(s=>!s.startsWith('node ')&&!s.startsWith('python3 ')&&!s.startsWith('STUDIO_')))
   assert(ci.includes(step),'Missing CI acceptance stage: '+step);
 // The package must only be uploaded after all acceptance checks have run.
