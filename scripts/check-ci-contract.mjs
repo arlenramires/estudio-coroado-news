@@ -58,9 +58,20 @@ for(let i=0;i<lines.length;i++){
     runCommands.push(command);
   }
 }
-for(const step of required.filter(s=>s.startsWith('node ')||s.startsWith('python3 ')||s.startsWith('STUDIO_')))
-  assert(runCommands.some(command => command === step || command.startsWith(step + ' ') || command.startsWith(step + ' |') || command.startsWith(step + ' 2>')),
-    'Missing executable CI acceptance stage: '+step);
+// Require test commands to be executed, not merely mentioned or masked as successful.
+// In particular, tee must not hide a failing converter test behind a successful pipe.
+const normalized = runCommands.filter(command => !command.startsWith('#'));
+for(const step of required.filter(s=>s.startsWith('node ')||s.startsWith('python3 ')||s.startsWith('STUDIO_'))){
+  const matching = normalized.filter(command => command === step || command.startsWith(step + ' '));
+  assert(matching.some(command => !/\\|\\|\\s*(?:true|:)(?:\\s|$)|;\\s*(?:true|:)(?:\\s|$)/.test(command)),
+    'Missing unmasked executable CI acceptance stage: '+step);
+}
+const converterCommand = normalized.find(command => /^node scripts\\/test-converter-mp4\\.mjs\\s+2>&1\\s*\\|\\s*tee\\s+/.test(command));
+if(converterCommand){
+  const converterIndex = normalized.indexOf(converterCommand);
+  assert(normalized.slice(0,converterIndex).includes('set -o pipefail'),
+    'Piped MP4 converter test must enable pipefail to propagate failures');
+}
 for(const step of required.filter(s=>!s.startsWith('node ')&&!s.startsWith('python3 ')&&!s.startsWith('STUDIO_')))
   assert(ci.includes(step),'Missing CI acceptance stage: '+step);
 // The package must only be uploaded after all acceptance checks have run.
