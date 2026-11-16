@@ -13,6 +13,7 @@ import './check-sw-root-offline.mjs';
 import './check-sw-root-http-errors.mjs';
 import './check-sw-invalid-navigation.mjs';
 import './check-sw-html-200.mjs';
+import './check-sw-html-read-failures.mjs';
 import './check-sw-install-html-200.mjs';
 import './check-sw-install-missing-controls.mjs';
 import './check-sw-navigation-missing-controls.mjs';
