@@ -10,7 +10,7 @@ const OFFLINE_URLS=new Set(ASSETS.map(asset=>new URL(asset,self.registration.sco
 async function isEditorHtml(response){
   if(typeof response.clone!=='function')return false;
   const copy=response.clone();
-  if(typeof copy.text!=='function')return true; // Compatibilidade com mocks antigos dos testes.
+  if(typeof copy.text!=='function')return false; // Sem conteúdo verificável, não aceitar HTML como editor.
   const html=await copy.text();
   return html.includes('<title>Estúdio Coroado News 24H')&&html.includes('id="editorial"')&&html.includes('id="savePNG"');
 }
