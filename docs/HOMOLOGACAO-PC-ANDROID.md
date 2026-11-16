@@ -27,3 +27,7 @@ Este roteiro complementa os testes automatizados. **Não** considerar o PWA Andr
 
 ## Critério de aprovação
 Marcar cada etapa como **aprovada**, **reprovada** ou **não executada**; anexar nome do dispositivo, versões, arquivos exportados e descrição reproduzível da falha. A instalação Android e o MP4 H.264/AAC **não estão aprovados** até teste em aparelho real e inspeção dos arquivos. Não publicar GitHub Pages nem substituir testes reais por simulação.
+
+## Critério adicional de segurança do Service Worker (pendente)
+
+O validador `isEditorHtml` em `sw.js` ainda contém um caminho de compatibilidade que aceita uma resposta clonada sem método `text()`. Isso é aceitável apenas como simulação antiga, **não como evidência de validação de HTML**. Antes da homologação, substituir essa aceitação por rejeição explícita, atualizar os mocks de instalação em `scripts/check-editor.mjs` para implementar `clone().text()` com HTML contendo `id="editorial"` e `id="savePNG"`, e executar todos os testes de regressão do Service Worker. Confirmar que HTML 200 incompleto nunca substitui a versão offline íntegra. Não declarar esse item aprovado até existir teste executado e commit de correção.
