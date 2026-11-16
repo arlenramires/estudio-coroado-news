@@ -1,6 +1,6 @@
 'use strict';
 // Somente arquivos públicos do próprio estúdio: mídia importada pelo usuário nunca é armazenada.
-const CACHE='estudio-coroado-offline-v48';
+const CACHE='estudio-coroado-offline-v49';
 const ASSETS=['./','./index.html','./manifest.webmanifest','./icons/studio.svg','./icons/studio-192.png','./icons/studio-512.png',
   ...Array.from({length:22},(_,i)=>'./molduras/original_'+String(i+1).padStart(2,'0')+'.webp')];
 // Somente arquivos declarados do aplicativo podem entrar no cache.
@@ -12,7 +12,7 @@ async function isEditorHtml(response){
   const copy=response.clone();
   if(typeof copy.text!=='function')return false; // Sem conteúdo verificável, não aceitar HTML como editor.
   const html=await copy.text();
-  const withoutComments=html.replace(/<!--[\s\S]*?-->/g,'').replace(/<script\b[^>]*>[\s\S]*?<\/script\s*>/gi,'').replace(/<style\b[^>]*>[\s\S]*?<\/style\s*>/gi,'').replace(/<template\b[^>]*>[\s\S]*?<\/template\s*>/gi,'');
+  const withoutComments=html.replace(/<!--[\s\S]*?-->/g,'').replace(/<script\b[^>]*>[\s\S]*?<\/script\s*>/gi,'').replace(/<style\b[^>]*>[\s\S]*?<\/style\s*>/gi,'').replace(/<template\b[^>]*>[\s\S]*?<\/template\s*>/gi,'').replace(/<textarea\b[^>]*>[\s\S]*?<\/textarea\s*>/gi,'').replace(/<noscript\b[^>]*>[\s\S]*?<\/noscript\s*>/gi,'');
   return /<title>Estúdio Coroado News 24H(?:<|\s)/.test(withoutComments)&&
     /<[^>]+\bid=["']editorial["'][^>]*>/.test(withoutComments)&&
     /<[^>]+\bid=["']savePNG["'][^>]*>/.test(withoutComments);
