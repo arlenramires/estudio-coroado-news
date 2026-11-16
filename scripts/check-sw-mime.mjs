@@ -6,7 +6,7 @@ const scope='http://127.0.0.1:8765/';
 for(const [path,mime] of [['index.html','image/png'],['manifest.webmanifest','text/html'],['manifest.webmanifest','application/octet-stream'],['manifest.webmanifest','application/javascript'],['icons/studio-192.png','text/html'],['icons/studio.svg','text/html'],['molduras/original_01.webp','image/webp-malicious'],['molduras/original_01.webp','image/webp2'],['molduras/original_01.webp',''],['icons/studio-192.png','image/png-malicious'],['index.html','text/html-malicious']]){
   const handlers=new Map(),events=[];
   const url=scope+path;
-  const response={ok:true,status:200,type:'basic',url,headers:{get:()=>mime},clone(){return this}};
+  const response={ok:true,status:200,type:'basic',url,headers:{get:()=>mime},clone(){return this},async text(){return '<title>Estúdio Coroado News 24H</title><main id="editorial"><button id="savePNG"></button></main>'}};
   const context=vm.createContext({URL,console:{warn(){}},self:{registration:{scope},addEventListener:(name,fn)=>handlers.set(name,fn)},caches:{open:async()=>({match:async()=>undefined,put:async()=>events.push('put')})},fetch:async()=>response,Response:{error:()=>({ok:false})}});
   new vm.Script(source).runInContext(context);
   let pending;
@@ -23,7 +23,7 @@ for(const variant of [
 ]){
   const handlers=new Map(),events=[];
   const url=scope+'molduras/original_01.webp';
-  const response={ok:true,...variant,headers:{get:()=> 'image/webp'},clone(){return this}};
+  const response={ok:true,...variant,headers:{get:()=> 'image/webp'},clone(){return this},async text(){return '<title>Estúdio Coroado News 24H</title><main id="editorial"><button id="savePNG"></button></main>'}};
   const context=vm.createContext({URL,console:{warn(){}},self:{registration:{scope},addEventListener:(name,fn)=>handlers.set(name,fn)},caches:{open:async()=>({match:async()=>undefined,put:async()=>events.push('put')})},fetch:async()=>response,Response:{error:()=>({ok:false})}});
   new vm.Script(source).runInContext(context);
   let pending;
@@ -44,7 +44,7 @@ for(const [path,mime] of [
 ]){
   const handlers=new Map(),saved=new Map();
   const url=scope+path;
-  const response={status:200,type:'basic',url,headers:{get:()=>mime},clone(){return this}};
+  const response={status:200,type:'basic',url,headers:{get:()=>mime},clone(){return this},async text(){return '<title>Estúdio Coroado News 24H</title><main id="editorial"><button id="savePNG"></button></main>'}};
   let online=true;
   const cache={match:async request=>saved.get(typeof request==='string'?new URL(request,scope).href:request.url),put:async (request,value)=>saved.set(typeof request==='string'?new URL(request,scope).href:request.url,value)};
   const context=vm.createContext({URL,console:{warn(){}},self:{registration:{scope},addEventListener:(name,fn)=>handlers.set(name,fn)},caches:{open:async()=>cache},fetch:async()=>{if(!online)throw new Error('offline');return response},Response:{error:()=>({status:0})}});
