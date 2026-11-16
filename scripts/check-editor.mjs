@@ -297,7 +297,8 @@ for(const failure of ['none','mime','network','cleanup']){
       pathname.endsWith('.svg')?'image/svg+xml':
       pathname.endsWith('.webmanifest')?'application/manifest+json':'text/html';
     if(failure==='mime'&&pathname.endsWith('original_01.webp'))type='text/html';
-    return {ok:true,status:200,type:'basic',url,headers:{get:()=>type}};
+    return {ok:true,status:200,type:'basic',url,headers:{get:()=>type},
+      clone(){return {text:async()=>'<title>Estúdio Coroado News 24H</title><main id="editorial"></main><button id="savePNG"></button>'}}};
   };
   const context=vm.createContext({URL,self:worker,caches:fakeCaches,fetch,console:{warn(){},error(){}}});
   new vm.Script(sw,{filename:'sw.js'}).runInContext(context);
