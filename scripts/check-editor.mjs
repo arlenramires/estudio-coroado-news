@@ -14,6 +14,7 @@ import './check-sw-root-http-errors.mjs';
 import './check-sw-invalid-navigation.mjs';
 import './check-sw-html-200.mjs';
 import './check-sw-install-html-200.mjs';
+import './check-sw-install-missing-controls.mjs';
 import './check-sw-cache-unavailable.mjs';
 import './check-sw-partial-response.mjs';
 import './check-sw-mime.mjs';
