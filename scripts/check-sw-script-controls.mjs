@@ -9,7 +9,9 @@ const title='<title>Estúdio Coroado News 24H</title>';
 const variants=[
   title+'<script>const fake = \'<div id="editorial"></div><button id="savePNG"></button>\';</script>',
   title+'<style>/* <div id="editorial"></div><button id="savePNG"></button> */</style>',
-  title+'<div id="editorial"></div><script>const fake = \'<button id="savePNG"></button>\';</script>'
+  title+'<div id="editorial"></div><script>const fake = \'<button id="savePNG"></button>\';</script>',
+  title+'<template><div id="editorial"></div><button id="savePNG"></button></template>',
+  title+'<div id="editorial"></div><template><button id="savePNG"></button></template>'
 ];
 for(const html of variants){
   const handlers=new Map();
