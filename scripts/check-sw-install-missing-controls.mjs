@@ -29,4 +29,26 @@ for(const missing of ['editorial','savePNG']){
   assert.equal(deleted,true,'Cache parcial não foi removido: '+missing);
   assert.equal(activated,false,'Worker incompleto assumiu controle: '+missing);
 }
+// Um servidor pode devolver HTML com os IDs apenas em comentários, sem editor funcional.
+{
+  const handlers=new Map();
+  let deleted=false, activated=false;
+  const commented='<title>Estúdio Coroado News 24H</title><!-- <div id="editorial"></div><button id="savePNG"></button> -->';
+  const context=vm.createContext({
+    URL,console:{error(){},warn(){}},
+    self:{registration:{scope},addEventListener:(name,fn)=>handlers.set(name,fn),skipWaiting:async()=>{activated=true}},
+    caches:{open:async()=>({put:async()=>{}}),delete:async()=>{deleted=true}},
+    fetch:async url=>{
+      const pathname=new URL(url).pathname;
+      const type=pathname.endsWith('.webp')?'image/webp':pathname.endsWith('.png')?'image/png':pathname.endsWith('.svg')?'image/svg+xml':pathname.endsWith('.webmanifest')?'application/manifest+json':'text/html';
+      return {status:200,type:'basic',url,headers:{get:()=>type},clone(){return {text:async()=>commented}}};
+    }
+  });
+  new vm.Script(source,{filename:'sw.js'}).runInContext(context);
+  let pending;
+  handlers.get('install')({waitUntil:p=>{pending=p}});
+  await assert.rejects(pending,/HTML offline não contém o editor/);
+  assert.equal(deleted,true,'Cache com controles apenas em comentários não foi removido');
+  assert.equal(activated,false,'Worker sem editor funcional assumiu controle');
+}
 console.log('PWA: instalação rejeita editor HTML sem controles essenciais.');
