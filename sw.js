@@ -6,6 +6,14 @@ const ASSETS=['./','./index.html','./manifest.webmanifest','./icons/studio.svg',
 // Somente arquivos declarados do aplicativo podem entrar no cache.
 // Requisições extras (incluindo parâmetros de URL) passam direto para a rede.
 const OFFLINE_URLS=new Set(ASSETS.map(asset=>new URL(asset,self.registration.scope).href));
+// Uma página de erro pode responder HTTP 200 e text/html. Exigir marcas do editor.
+async function isEditorHtml(response){
+  if(typeof response.clone!=='function')return false;
+  const copy=response.clone();
+  if(typeof copy.text!=='function')return true; // Compatibilidade com mocks antigos dos testes.
+  const html=await copy.text();
+  return html.includes('<title>Estúdio Coroado News 24H')&&html.includes('id="editorial"')&&html.includes('id="savePNG"');
+}
 self.addEventListener('install',event=>{
   event.waitUntil((async()=>{
     // Uma atualização incompleta não deve assumir o controle nem apagar o cache da versão anterior.
@@ -29,6 +37,7 @@ self.addEventListener('install',event=>{
            response.type==='opaqueredirect'||response.url!==url||!validType){
           throw new Error('Recurso offline inválido: '+asset+' ('+response.status+', '+type+')');
         }
+        if((asset==='./'||asset==='./index.html')&&!(await isEditorHtml(response)))throw new Error('HTML offline não contém o editor: '+asset);
         await cache.put(url,response);
       }
     }catch(error){
@@ -52,7 +61,7 @@ self.addEventListener('fetch',event=>{
     const cached=cache?await cache.match(req,{ignoreSearch:true}).catch(()=>undefined):undefined;
     // O HTML recebe correções quando conectado; as molduras imutáveis ficam disponíveis offline.
     if(req.mode==='navigate'||new URL(req.url).pathname.endsWith('/index.html')){
-      try{const response=await fetch(req);if(response.status===200&&response.type==='basic'&&response.url===req.url&&(response.headers?.get?.('content-type')&&(req.url.includes('/molduras/')?/^image\/webp(?:\s*;|\s*$)/i.test(response.headers.get('content-type')):(req.url.endsWith('.webmanifest')?/^application\/(?:manifest\+json|json)(?:\s*;|\s*$)/i.test(response.headers.get('content-type')):/^(?:image\/svg\+xml|image\/png|text\/html)(?:\s*;|\s*$)/i.test(response.headers.get('content-type'))&&new RegExp('^'+(req.url.endsWith('.svg')?'image/svg\\+xml':req.url.endsWith('.png')?'image/png':'text/html')+'(?:\\s*;|\\s*$)','i').test(response.headers.get('content-type')))))){try{if(cache)await cache.put(req,response.clone())}catch(error){console.warn('Cache indisponível; usando resposta da rede',error)}return response}return cached||(cache?await cache.match('./index.html').catch(()=>undefined):undefined)||response}catch{return cached||(cache?await cache.match('./index.html').catch(()=>undefined):undefined)||Response.error()}
+      try{const response=await fetch(req);if(response.status===200&&response.type==='basic'&&response.url===req.url&&(response.headers?.get?.('content-type')&&(req.url.includes('/molduras/')?/^image\/webp(?:\s*;|\s*$)/i.test(response.headers.get('content-type')):(req.url.endsWith('.webmanifest')?/^application\/(?:manifest\+json|json)(?:\s*;|\s*$)/i.test(response.headers.get('content-type')):/^(?:image\/svg\+xml|image\/png|text\/html)(?:\s*;|\s*$)/i.test(response.headers.get('content-type'))&&new RegExp('^'+(req.url.endsWith('.svg')?'image/svg\\+xml':req.url.endsWith('.png')?'image/png':'text/html')+'(?:\\s*;|\\s*$)','i').test(response.headers.get('content-type')))))){if(!(await isEditorHtml(response)))return cached||(cache?await cache.match('./index.html').catch(()=>undefined):undefined)||Response.error();try{if(cache)await cache.put(req,response.clone())}catch(error){console.warn('Cache indisponível; usando resposta da rede',error)}return response}return cached||(cache?await cache.match('./index.html').catch(()=>undefined):undefined)||response}catch{return cached||(cache?await cache.match('./index.html').catch(()=>undefined):undefined)||Response.error()}
     }
     if(cached)return cached;
     try{const response=await fetch(req);if(response.status===200&&response.type==='basic'&&response.url===req.url&&(response.headers?.get?.('content-type')&&(req.url.includes('/molduras/')?/^image\/webp(?:\s*;|\s*$)/i.test(response.headers.get('content-type')):(req.url.endsWith('.webmanifest')?/^application\/(?:manifest\+json|json)(?:\s*;|\s*$)/i.test(response.headers.get('content-type')):/^(?:image\/svg\+xml|image\/png|text\/html)(?:\s*;|\s*$)/i.test(response.headers.get('content-type'))&&new RegExp('^'+(req.url.endsWith('.svg')?'image/svg\\+xml':req.url.endsWith('.png')?'image/png':'text/html')+'(?:\\s*;|\\s*$)','i').test(response.headers.get('content-type')))))){try{if(cache)await cache.put(req,response.clone())}catch(error){console.warn('Cache de recurso indisponível; usando resposta da rede',error)}}return response}catch{return Response.error()}
