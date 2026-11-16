@@ -9,7 +9,8 @@ for(const route of ['', 'index.html']){
   for(const online of [true,false]){
     const handlers=new Map();
     const url=scope+route;
-    const response={status:200,type:'basic',url,headers:{get:()=> 'text/html'}};
+    const response={status:200,type:'basic',url,headers:{get:()=> 'text/html'},
+      clone(){return {text:async()=>'<title>Estúdio Coroado News 24H</title><main id="editorial"></main><button id="savePNG"></button>'}}};
     let networkCalls=0;
     const context=vm.createContext({
       URL,console:{warn(){}},
