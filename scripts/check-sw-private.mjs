@@ -22,7 +22,7 @@ const context=vm.createContext({
   caches:{open:async()=>cache},
   fetch:async request=>{networkCalls++;if(serverUnavailable)throw new Error('Falha de conexão simulada');
     if(serverErrorStatus!==null)return {ok:false,status:serverErrorStatus,type:'basic',url:request.url};
-    return {ok:true,status:200,type:'basic',url:request.url,headers:{get:()=>serverWrongMime?'application/octet-stream':request.url.endsWith('.webp')?'image/webp':'text/html; charset=utf-8'},clone(){return this}}},
+    return {ok:true,status:200,type:'basic',url:request.url,headers:{get:()=>serverWrongMime?'application/octet-stream':request.url.endsWith('.webp')?'image/webp':'text/html; charset=utf-8'},clone(){return this},async text(){return '<title>Estúdio Coroado News 24H</title><main id="editorial"><button id="savePNG"></button></main>'}}},
   Response:{error:()=>({error:true})}
 });
 new vm.Script(source,{filename:'sw.js'}).runInContext(context);
@@ -90,7 +90,7 @@ console.log('Service worker: fallback somente em falha de conexão e preservaç�
     URL,Set,Array,console:{warn:()=>{}},
     self:{registration:{scope},addEventListener:(name,fn)=>listenersWithBrokenCache.set(name,fn)},
     caches:{open:async()=>brokenCache},
-    fetch:async req=>({ok:true,status:200,type:'basic',url:req.url,headers:{get:()=>req.url.endsWith('.webp')?'image/webp':'text/html; charset=utf-8'},clone(){return this}}),
+    fetch:async req=>({ok:true,status:200,type:'basic',url:req.url,headers:{get:()=>req.url.endsWith('.webp')?'image/webp':'text/html; charset=utf-8'},clone(){return this},async text(){return '<title>Estúdio Coroado News 24H</title><main id="editorial"><button id="savePNG"></button></main>'}}),
     Response:{error:()=>({error:true})}
   });
   new vm.Script(source,{filename:'sw.js'}).runInContext(testContext);
