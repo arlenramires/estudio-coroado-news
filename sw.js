@@ -12,7 +12,10 @@ async function isEditorHtml(response){
   const copy=response.clone();
   if(typeof copy.text!=='function')return false; // Sem conteúdo verificável, não aceitar HTML como editor.
   const html=await copy.text();
-  return html.includes('<title>Estúdio Coroado News 24H')&&html.includes('id="editorial"')&&html.includes('id="savePNG"');
+  const withoutComments=html.replace(/<!--[\s\S]*?-->/g,'');
+  return /<title>Estúdio Coroado News 24H(?:<|\s)/.test(withoutComments)&&
+    /<[^>]+\bid=["']editorial["'][^>]*>/.test(withoutComments)&&
+    /<[^>]+\bid=["']savePNG["'][^>]*>/.test(withoutComments);
 }
 self.addEventListener('install',event=>{
   event.waitUntil((async()=>{
