@@ -16,6 +16,7 @@ import './check-sw-html-200.mjs';
 import './check-sw-install-html-200.mjs';
 import './check-sw-install-missing-controls.mjs';
 import './check-sw-navigation-missing-controls.mjs';
+import './check-sw-script-controls.mjs';
 import './check-sw-cache-unavailable.mjs';
 import './check-sw-partial-response.mjs';
 import './check-sw-mime.mjs';
