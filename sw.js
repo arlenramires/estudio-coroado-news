@@ -12,7 +12,7 @@ async function isEditorHtml(response){
   const copy=response.clone();
   if(typeof copy.text!=='function')return false; // Sem conteúdo verificável, não aceitar HTML como editor.
   const html=await copy.text();
-  const withoutComments=html.replace(/<!--[\s\S]*?-->/g,'');
+  const withoutComments=html.replace(/<!--[\s\S]*?-->/g,'').replace(/<script\b[^>]*>[\s\S]*?<\/script\s*>/gi,'').replace(/<style\b[^>]*>[\s\S]*?<\/style\s*>/gi,'');
   return /<title>Estúdio Coroado News 24H(?:<|\s)/.test(withoutComments)&&
     /<[^>]+\bid=["']editorial["'][^>]*>/.test(withoutComments)&&
     /<[^>]+\bid=["']savePNG["'][^>]*>/.test(withoutComments);
