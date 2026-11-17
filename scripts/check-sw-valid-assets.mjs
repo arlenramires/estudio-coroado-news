@@ -14,12 +14,12 @@ for(const [route,mime] of [
  const handlers=new Map();
  const url=scope+route;
  const response={status:200,type:'basic',url,redirected:false,headers:{get:()=>mime},clone(){return this}};
- let writes=0,storedUrl='';
+ let writes=0,storedUrl='',storedResponse; let networkCalls=0;
  const context=vm.createContext({
   URL,console:{warn(){}},
   self:{registration:{scope},addEventListener:(name,fn)=>handlers.set(name,fn)},
-  caches:{open:async()=>({match:async()=>undefined,put:async(key)=>{writes++;storedUrl=key.url||key}})},
-  fetch:async()=>response,
+  caches:{open:async()=>({match:async()=>storedResponse,put:async(key,value)=>{writes++;storedUrl=key.url||key;storedResponse=value}})},
+  fetch:async()=>{networkCalls++;if(networkCalls>1)throw new Error('Sem conexão');return response},
   Response:{error:()=>({status:0})}
  });
  new vm.Script(source,{filename:'sw.js'}).runInContext(context);
@@ -29,5 +29,12 @@ for(const [route,mime] of [
  assert.equal(await pending,response,'Resposta válida não entregue: '+route);
  assert.equal(writes,1,'Recurso válido não armazenado exatamente uma vez: '+route);
  assert.equal(storedUrl,url,'URL incorreta no cache: '+route);
+ // Segunda solicitação sem rede: o recurso deve ser servido do cache, sem nova busca.
+ let offlinePending;
+ handlers.get('fetch')({request:{url,method:'GET',mode:'same-origin',headers:{has:()=>false}},respondWith:p=>{offlinePending=p}});
+ assert.ok(offlinePending,'Requisição offline não interceptada: '+route);
+ assert.equal(await offlinePending,response,'Recurso válido não recuperado do cache offline: '+route);
+ assert.equal(networkCalls,1,'Recurso em cache fez acesso desnecessário à rede: '+route);
+ assert.equal(writes,1,'Leitura offline não deve regravar o recurso: '+route);
 }
 console.log('PWA: manifesto, ícones e molduras válidos são armazenados offline.');
