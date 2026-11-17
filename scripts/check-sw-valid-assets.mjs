@@ -9,7 +9,7 @@ for(const [route,mime] of [
  ['manifest.webmanifest','application/json; charset=utf-8'],
  ['icons/studio-192.png','image/png'],
  ['icons/studio.svg','image/svg+xml'],
- ['molduras/original_01.webp','image/webp']
+ ...Array.from({length:22},(_,i)=>['molduras/original_'+String(i+1).padStart(2,'0')+'.webp','image/webp'])
 ]){
  const handlers=new Map();
  const url=scope+route;
@@ -37,4 +37,4 @@ for(const [route,mime] of [
  assert.equal(networkCalls,1,'Recurso em cache fez acesso desnecessário à rede: '+route);
  assert.equal(writes,1,'Leitura offline não deve regravar o recurso: '+route);
 }
-console.log('PWA: manifesto, ícones e molduras válidos são armazenados offline.');
+console.log('PWA: manifesto, ícones e todas as 22 molduras válidos são armazenados e recuperados offline.');
