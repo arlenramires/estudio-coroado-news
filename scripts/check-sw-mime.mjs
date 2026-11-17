@@ -19,6 +19,8 @@ for(const [path,mime] of [['index.html','image/png'],['manifest.webmanifest','te
 for(const variant of [
   {status:206,type:'basic',url:scope+'molduras/original_01.webp'},
   {status:200,type:'opaqueredirect',url:scope+'molduras/original_01.webp'},
+  {status:200,type:'opaque',url:scope+'molduras/original_01.webp'},
+  {status:200,type:'basic',redirected:true,url:scope+'molduras/original_01.webp'},
   {status:200,type:'basic',url:'https://example.invalid/original_01.webp'},
 ]){
   const handlers=new Map(),events=[];
