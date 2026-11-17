@@ -27,3 +27,28 @@ for(const route of ['manifest.webmanifest','icons/studio-192.png','molduras/orig
  }
 }
 console.log('PWA: erros HTTP em manifesto, ícone e moldura são preservados sem cache indevido.');
+
+
+// Regressão: mesmo com HTTP 200, um recurso sem Content-Type não pode ser
+// persistido como moldura, ícone ou manifesto. Evita cache de respostas vazias
+// ou páginas de erro produzidas por proxies.
+for(const route of ['manifest.webmanifest','icons/studio-192.png','molduras/original_01.webp']){
+ const handlers=new Map();
+ const url=scope+route;
+ const response={status:200,type:'basic',url,headers:{get:()=>null}};
+ let writes=0;
+ const context=vm.createContext({
+  URL,console:{warn(){}},
+  self:{registration:{scope},addEventListener:(name,fn)=>handlers.set(name,fn)},
+  caches:{open:async()=>({match:async()=>undefined,put:async()=>{writes++}})},
+  fetch:async()=>response,
+  Response:{error:()=>({status:0})}
+ });
+ new vm.Script(source,{filename:'sw.js'}).runInContext(context);
+ let pending;
+ handlers.get('fetch')({request:{url,method:'GET',mode:'same-origin',headers:{has:()=>false}},respondWith:p=>{pending=p}});
+ assert.ok(pending,'Recurso sem MIME não interceptado: '+route);
+ assert.equal(await pending,response,'Resposta sem MIME ocultada: '+route);
+ assert.equal(writes,0,'Resposta sem MIME armazenada: '+route);
+}
+console.log('PWA: respostas HTTP 200 sem Content-Type não contaminam o cache.');
