@@ -8,6 +8,7 @@ for(const [route,mime] of [
  ['manifest.webmanifest','application/manifest+json'],
  ['manifest.webmanifest','application/json; charset=utf-8'],
  ['icons/studio-192.png','image/png'],
+ ['icons/studio-512.png','image/png'],
  ['icons/studio.svg','image/svg+xml'],
  ...Array.from({length:22},(_,i)=>['molduras/original_'+String(i+1).padStart(2,'0')+'.webp','image/webp'])
 ]){
