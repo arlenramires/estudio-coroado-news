@@ -37,5 +37,18 @@ for(const [route,mime] of [
  assert.equal(await offlinePending,response,'Recurso válido não recuperado do cache offline: '+route);
  assert.equal(networkCalls,1,'Recurso em cache fez acesso desnecessário à rede: '+route);
  assert.equal(writes,1,'Leitura offline não deve regravar o recurso: '+route);
+
+ // Privacidade: URLs com parâmetros, uploads e outras origens não devem ser interceptados.
+ for(const candidate of [
+  {url:url+'?token=privado',method:'GET',range:false},
+  {url:scope+'uploads/video-pessoal.mp4',method:'GET',range:false},
+  {url:'https://example.org/'+route,method:'GET',range:false},
+  {url,method:'POST',range:false},
+  {url,method:'GET',range:true}
+ ]){
+  let intercepted=false;
+  handlers.get('fetch')({request:{url:candidate.url,method:candidate.method,mode:'same-origin',headers:{has:key=>key==='range'&&candidate.range}},respondWith:()=>{intercepted=true}});
+  assert.equal(intercepted,false,'Requisição privada ou não autorizada interceptada: '+candidate.url);
+ }
 }
 console.log('PWA: manifesto, ícones e todas as 22 molduras válidos são armazenados e recuperados offline.');
