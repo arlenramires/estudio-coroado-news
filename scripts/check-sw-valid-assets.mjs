@@ -52,3 +52,28 @@ for(const [route,mime] of [
  }
 }
 console.log('PWA: manifesto, ícones e todas as 22 molduras válidos são armazenados e recuperados offline.');
+
+
+// Regressão negativa: uma página de erro HTTP 200 não pode contaminar o cache
+// de imagens/manifesto, nem ser devolvida como se fosse um asset válido.
+for(const route of ['molduras/original_01.webp','icons/studio-192.png','icons/studio-512.png','icons/studio.svg','manifest.webmanifest']){
+ const handlers=new Map();
+ const url=scope+route;
+ let writes=0;
+ const invalid={status:200,type:'basic',url,redirected:false,headers:{get:()=> 'text/html; charset=utf-8'},clone(){return this}};
+ const context=vm.createContext({
+  URL,console:{warn(){}},
+  self:{registration:{scope},addEventListener:(name,fn)=>handlers.set(name,fn)},
+  caches:{open:async()=>({match:async()=>undefined,put:async()=>{writes++}})},
+  fetch:async()=>invalid,
+  Response:{error:()=>({status:0})}
+ });
+ new vm.Script(source,{filename:'sw.js'}).runInContext(context);
+ let pending;
+ handlers.get('fetch')({request:{url,method:'GET',mode:'same-origin',headers:{has:()=>false}},respondWith:p=>{pending=p}});
+ assert.ok(pending,'Asset inválido não interceptado: '+route);
+ const result=await pending;
+ assert.equal(result.status,0,'HTML falso foi entregue como asset válido: '+route);
+ assert.equal(writes,0,'HTML falso contaminou cache: '+route);
+}
+console.log('PWA: respostas HTTP 200 com HTML no lugar de assets são rejeitadas sem contaminar o cache.');
