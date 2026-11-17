@@ -56,7 +56,10 @@ console.log('PWA: manifesto, ícones e todas as 22 molduras válidos são armaze
 
 // Regressão negativa: uma página de erro HTTP 200 não pode contaminar o cache
 // de imagens/manifesto, nem ser devolvida como se fosse um asset válido.
-for(const route of ['molduras/original_01.webp','icons/studio-192.png','icons/studio-512.png','icons/studio.svg','manifest.webmanifest']){
+for(const route of [
+ ...Array.from({length:22},(_,i)=>'molduras/original_'+String(i+1).padStart(2,'0')+'.webp'),
+ 'icons/studio-192.png','icons/studio-512.png','icons/studio.svg','manifest.webmanifest'
+]){
  const handlers=new Map();
  const url=scope+route;
  let writes=0;
@@ -76,4 +79,4 @@ for(const route of ['molduras/original_01.webp','icons/studio-192.png','icons/st
  assert.equal(result.status,0,'HTML falso foi entregue como asset válido: '+route);
  assert.equal(writes,0,'HTML falso contaminou cache: '+route);
 }
-console.log('PWA: respostas HTTP 200 com HTML no lugar de assets são rejeitadas sem contaminar o cache.');
+console.log('PWA: HTML HTTP 200 falso rejeitado nas 22 molduras, ícones e manifesto sem contaminar o cache.');
