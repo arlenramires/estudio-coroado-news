@@ -11,7 +11,7 @@ for(const [path,mime] of [['index.html','image/png'],['manifest.webmanifest','te
   new vm.Script(source).runInContext(context);
   let pending;
   handlers.get('fetch')({request:{url,method:'GET',mode:path==='index.html'?'navigate':'no-cors',headers:{has:()=>false}},respondWith:p=>pending=p});
-  assert.equal(await pending,response,'Resposta de rede alterada: '+path);
+  assert.equal((await pending).ok,false,'Resposta com MIME inválido deve ser rejeitada: '+path);
   assert.deepEqual(events,[],'MIME incorreto persistido em cache: '+path);
 }
 // Respostas redirecionadas, parciais ou de outra origem não podem entrar no cache,
@@ -30,7 +30,7 @@ for(const variant of [
   new vm.Script(source).runInContext(context);
   let pending;
   handlers.get('fetch')({request:{url,method:'GET',mode:'no-cors',headers:{has:()=>false}},respondWith:p=>pending=p});
-  assert.equal(await pending,response,'Resposta de rede alterada');
+  assert.equal((await pending).ok,false,'Resposta parcial, opaca ou redirecionada deve ser rejeitada');
   assert.deepEqual(events,[],'Resposta parcial, opaca ou redirecionada persistida em cache');
 }
 
