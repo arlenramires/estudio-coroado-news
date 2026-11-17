@@ -5,7 +5,8 @@ import vm from 'node:vm';
 const source=fs.readFileSync('sw.js','utf8');
 const scope='http://127.0.0.1:8765/';
 for(const route of ['manifest.webmanifest','icons/studio-192.png','molduras/original_01.webp']){
- // Inclui respostas parciais, sem corpo e não modificadas: nenhuma deve virar recurso offline.\n for(const status of [204,206,304,401,403,404,429,500,502,503,504]){
+ // Inclui respostas parciais, sem corpo e não modificadas: nenhuma deve virar recurso offline.
+ for(const status of [204,206,304,401,403,404,429,500,502,503,504]){
   const handlers=new Map();
   const url=scope+route;
   const response={status,type:'basic',url};
