@@ -114,3 +114,31 @@ for(const [route,wrongMime] of [
  assert.equal(writes,0,'MIME cruzado contaminou cache: '+route);
 }
 console.log('PWA: tipos MIME trocados rejeitados nas 22 molduras, ícones e manifesto.');
+
+
+// Regressão: Content-Type ausente não pode ser tratado como arquivo válido.
+// Servidores locais mal configurados podem responder 200 sem informar o tipo.
+for(const route of [
+ ...Array.from({length:22},(_,i)=>'molduras/original_'+String(i+1).padStart(2,'0')+'.webp'),
+ 'icons/studio-192.png','icons/studio-512.png','icons/studio.svg','manifest.webmanifest'
+]){
+ const handlers=new Map();
+ const url=scope+route;
+ let writes=0;
+ const invalid={status:200,type:'basic',url,redirected:false,headers:{get:()=>null},clone(){return this}};
+ const context=vm.createContext({
+  URL,console:{warn(){}},
+  self:{registration:{scope},addEventListener:(name,fn)=>handlers.set(name,fn)},
+  caches:{open:async()=>({match:async()=>undefined,put:async()=>{writes++}})},
+  fetch:async()=>invalid,
+  Response:{error:()=>({status:0})}
+ });
+ new vm.Script(source,{filename:'sw.js'}).runInContext(context);
+ let pending;
+ handlers.get('fetch')({request:{url,method:'GET',mode:'same-origin',headers:{has:()=>false}},respondWith:p=>{pending=p}});
+ assert.ok(pending,'Asset sem Content-Type não interceptado: '+route);
+ const result=await pending;
+ assert.equal(result.status,0,'Asset sem Content-Type foi entregue: '+route);
+ assert.equal(writes,0,'Asset sem Content-Type contaminou o cache: '+route);
+}
+console.log('PWA: respostas sem Content-Type rejeitadas para as 22 molduras, ícones e manifesto.');
