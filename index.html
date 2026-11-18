@@ -221,7 +221,7 @@ $('saveVideo').onclick=async()=>{if(!framesReady()||!frames[selected]){status('A
  let start=Math.max(0,+$('trimStart').value||0),end=Math.min(video.duration,+$('trimEnd').value||video.duration);if(!(end>start+.3)){status('Escolha um trecho válido de pelo menos 0,3 segundo.');return}
  const mimes=$('audio').checked?['video/webm;codecs=vp8,opus','video/webm','video/mp4;codecs=avc1.42E01E,mp4a.40.2','video/mp4']:['video/webm;codecs=vp8,opus','video/webm','video/mp4;codecs=avc1.42E01E','video/mp4']; // Preferir WebM verificável: Chromium pode anunciar MP4 mas gravar VP9/Opus incompatível com redes sociais. MP4 é alternativa quando WebM não existe; validar codecs do resultado antes de publicar.
  const supportedMimes=mimes.filter(x=>MediaRecorder.isTypeSupported(x));if(!supportedMimes.length){status('Seu navegador não suporta MP4 nem WebM.');return}
- recording=true;setExportBusy(true);let chunks=[],lastTime=-1,frameId=0,videoFrameId=0,interval=0,stopRequested=false,stream=null,mime='',exportErrorMessage='',visibilityHandler=null;
+ recording=true;setExportBusy(true);let chunks=[],lastTime=-1,renderedFrames=0,frameId=0,videoFrameId=0,interval=0,stopRequested=false,stream=null,mime='',exportErrorMessage='',visibilityHandler=null;
  const preparationAbort=new AbortController();let stopCapture=null;
  const cancelMessage='Exportação cancelada. Nenhum arquivo parcial foi entregue.';
  // Cancelar deve funcionar também durante Wake Lock, retomada do áudio e seek inicial.
@@ -273,7 +273,7 @@ $('saveVideo').onclick=async()=>{if(!framesReady()||!frames[selected]){status('A
  stopCapture=stop;
  // Ao bloquear a tela ou trocar de aplicativo, o navegador pode suspender os quadros e o áudio.
  // Descartar a gravação evita entregar um vídeo congelado ou incompleto como finalizado.
- function paint(_now,metadata){if(!recording)return;const mediaTime=metadata?.mediaTime??video.currentTime;if(mediaTime>lastTime+.001){lastTime=mediaTime;draw();recordCtx.drawImage(canvas,0,0,recordCanvas.width,recordCanvas.height);if(manualFrame)frameTrack.requestFrame()}if(video.currentTime>=end-.04||video.ended){video.pause();stop();return}if(video.requestVideoFrameCallback)videoFrameId=video.requestVideoFrameCallback(paint);else frameId=requestAnimationFrame(paint)}
+ function paint(_now,metadata){if(!recording)return;const mediaTime=metadata?.mediaTime??video.currentTime;if(mediaTime>lastTime+.001){lastTime=mediaTime;draw();recordCtx.drawImage(canvas,0,0,recordCanvas.width,recordCanvas.height);renderedFrames++;if(manualFrame)frameTrack.requestFrame()}if(video.currentTime>=end-.04||video.ended){video.pause();stop();return}if(video.requestVideoFrameCallback)videoFrameId=video.requestVideoFrameCallback(paint);else frameId=requestAnimationFrame(paint)}
  recorder.onstop=async()=>{
   // Se o navegador encerrar a gravação sem solicitação do editor, o arquivo pode estar incompleto.
   if(!stopRequested&&!exportErrorMessage)exportErrorMessage='Gravação interrompida pelo navegador antes de concluir. Nenhum arquivo parcial foi entregue.';
@@ -293,6 +293,7 @@ $('saveVideo').onclick=async()=>{if(!framesReady()||!frames[selected]){status('A
     if($('audio').checked&&!stream.getAudioTracks().some(t=>t.readyState==='live')){
       status('A faixa de áudio foi encerrada durante a gravação. Nenhum arquivo foi entregue.');return;
     }
+    if(renderedFrames===0){status('Nenhum quadro de vídeo foi capturado. Nenhum arquivo foi entregue.');return}
     const blob=new Blob(chunks,{type:mime});
     // Um cabeçalho válido isolado não comprova que houve quadros de vídeo.
     // Rejeitar gravações minúsculas/truncadas antes de oferecer download.
