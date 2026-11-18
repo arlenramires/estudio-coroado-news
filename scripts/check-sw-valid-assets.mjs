@@ -83,3 +83,34 @@ for(const route of [
  assert.equal(writes,0,'HTML falso contaminou cache: '+route);
 }
 console.log('PWA: HTML HTTP 200 falso rejeitado nas 22 molduras, ícones e manifesto sem contaminar o cache.');
+
+
+// Regressão de tipo cruzado: um servidor que responde 200 com outro asset
+// permitido (ex.: PNG no lugar de WebP) não pode contaminar o cache.
+for(const [route,wrongMime] of [
+ ...Array.from({length:22},(_,i)=>['molduras/original_'+String(i+1).padStart(2,'0')+'.webp','image/png']),
+ ['icons/studio-192.png','image/webp'],
+ ['icons/studio-512.png','image/webp'],
+ ['icons/studio.svg','image/png'],
+ ['manifest.webmanifest','image/svg+xml']
+]){
+ const handlers=new Map();
+ const url=scope+route;
+ let writes=0;
+ const invalid={status:200,type:'basic',url,redirected:false,headers:{get:()=>wrongMime},clone(){return this}};
+ const context=vm.createContext({
+  URL,console:{warn(){}},
+  self:{registration:{scope},addEventListener:(name,fn)=>handlers.set(name,fn)},
+  caches:{open:async()=>({match:async()=>undefined,put:async()=>{writes++}})},
+  fetch:async()=>invalid,
+  Response:{error:()=>({status:0})}
+ });
+ new vm.Script(source,{filename:'sw.js'}).runInContext(context);
+ let pending;
+ handlers.get('fetch')({request:{url,method:'GET',mode:'same-origin',headers:{has:()=>false}},respondWith:p=>{pending=p}});
+ assert.ok(pending,'Asset de tipo incorreto não interceptado: '+route);
+ const result=await pending;
+ assert.equal(result.status,0,'MIME de outro asset foi aceito: '+route);
+ assert.equal(writes,0,'MIME cruzado contaminou cache: '+route);
+}
+console.log('PWA: tipos MIME trocados rejeitados nas 22 molduras, ícones e manifesto.');
