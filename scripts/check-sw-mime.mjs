@@ -11,7 +11,11 @@ for(const [path,mime] of [['index.html','image/png'],['manifest.webmanifest','te
   new vm.Script(source).runInContext(context);
   let pending;
   handlers.get('fetch')({request:{url,method:'GET',mode:path==='index.html'?'navigate':'no-cors',headers:{has:()=>false}},respondWith:p=>pending=p});
-  assert.equal((await pending).ok,false,'Resposta com MIME inválido deve ser rejeitada: '+path);
+  const delivered=await pending;
+  // Navegação inválida usa fallback seguro; recursos estáticos não devem ser cacheados,
+  // mas a resposta HTTP original é entregue para que o navegador exponha o erro.
+  if(path==='index.html')assert.equal(delivered.ok,false,'HTML inválido deve ser rejeitado: '+path);
+  else assert.equal(delivered,response,'Resposta MIME inválida deve passar sem entrar no cache: '+path);
   assert.deepEqual(events,[],'MIME incorreto persistido em cache: '+path);
 }
 // Respostas redirecionadas, parciais ou de outra origem não podem entrar no cache,
@@ -30,7 +34,7 @@ for(const variant of [
   new vm.Script(source).runInContext(context);
   let pending;
   handlers.get('fetch')({request:{url,method:'GET',mode:'no-cors',headers:{has:()=>false}},respondWith:p=>pending=p});
-  assert.equal((await pending).ok,false,'Resposta parcial, opaca ou redirecionada deve ser rejeitada');
+  assert.equal(await pending,response,'Resposta parcial, opaca ou redirecionada deve passar sem entrar no cache');
   assert.deepEqual(events,[],'Resposta parcial, opaca ou redirecionada persistida em cache');
 }
 
