@@ -294,6 +294,9 @@ $('saveVideo').onclick=async()=>{if(!framesReady()||!frames[selected]){status('A
       status('A faixa de áudio foi encerrada durante a gravação. Nenhum arquivo foi entregue.');return;
     }
     const blob=new Blob(chunks,{type:mime});
+    // Um cabeçalho válido isolado não comprova que houve quadros de vídeo.
+    // Rejeitar gravações minúsculas/truncadas antes de oferecer download.
+    if(blob.size<1024){status('Gravação vazia ou incompleta. Nenhum arquivo foi entregue.');return}
     const bytes=new Uint8Array(await blob.slice(0,16).arrayBuffer());
     // Cancelar ainda é possível enquanto o cabeçalho é lido de forma assíncrona.
     if(exportErrorMessage){status(exportErrorMessage);return}
