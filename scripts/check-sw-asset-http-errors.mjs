@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 const source=fs.readFileSync('sw.js','utf8');
 const scope='http://127.0.0.1:8765/';
-for(const route of ['manifest.webmanifest','icons/studio-192.png','molduras/original_01.webp']){
+for(const route of ['manifest.webmanifest','icons/studio-192.png',...Array.from({length:22},(_,i)=>'molduras/original_'+String(i+1).padStart(2,'0')+'.webp')]){
  // Inclui respostas 2xx que não são 200, redirecionamentos, respostas parciais e erros: nenhuma deve virar recurso offline.
  for(const status of [201,202,203,204,205,206,207,301,302,307,308,304,401,403,404,418,429,500,502,503,504]){
   const handlers=new Map();
@@ -32,7 +32,7 @@ console.log('PWA: erros HTTP em manifesto, ícone e moldura são rejeitados sem 
 // Regressão: mesmo com HTTP 200, um recurso sem Content-Type não pode ser
 // persistido como moldura, ícone ou manifesto. Evita cache de respostas vazias
 // ou páginas de erro produzidas por proxies.
-for(const route of ['manifest.webmanifest','icons/studio-192.png','molduras/original_01.webp']){
+for(const route of ['manifest.webmanifest','icons/studio-192.png',...Array.from({length:22},(_,i)=>'molduras/original_'+String(i+1).padStart(2,'0')+'.webp')]){
  const handlers=new Map();
  const url=scope+route;
  const response={status:200,type:'basic',url,headers:{get:()=>null}};
