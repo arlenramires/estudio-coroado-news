@@ -22,11 +22,11 @@ for(const route of ['manifest.webmanifest','icons/studio-192.png','molduras/orig
   let pending;
   handlers.get('fetch')({request:{url,method:'GET',mode:'same-origin',headers:{has:()=>false}},respondWith:p=>{pending=p}});
   assert.ok(pending,'Recurso PWA não interceptado: '+route);
-  assert.equal(await pending,response,'Erro HTTP '+status+' ocultado: '+route);
+  assert.equal((await pending).status,0,'Resposta HTTP inválida não rejeitada: '+status+' '+route);
   assert.equal(writes,0,'Erro HTTP gravado no cache: '+route);
  }
 }
-console.log('PWA: erros HTTP em manifesto, ícone e moldura são preservados sem cache indevido.');
+console.log('PWA: erros HTTP em manifesto, ícone e moldura são rejeitados sem cache indevido.');
 
 
 // Regressão: mesmo com HTTP 200, um recurso sem Content-Type não pode ser
@@ -48,7 +48,7 @@ for(const route of ['manifest.webmanifest','icons/studio-192.png','molduras/orig
  let pending;
  handlers.get('fetch')({request:{url,method:'GET',mode:'same-origin',headers:{has:()=>false}},respondWith:p=>{pending=p}});
  assert.ok(pending,'Recurso sem MIME não interceptado: '+route);
- assert.equal(await pending,response,'Resposta sem MIME ocultada: '+route);
+ assert.equal((await pending).status,0,'Resposta sem MIME não rejeitada: '+route);
  assert.equal(writes,0,'Resposta sem MIME armazenada: '+route);
 }
 console.log('PWA: respostas HTTP 200 sem Content-Type não contaminam o cache.');
@@ -78,7 +78,7 @@ for(const [route,mime] of [
  let pending;
  handlers.get('fetch')({request:{url,method:'GET',mode:'same-origin',headers:{has:()=>false}},respondWith:p=>{pending=p}});
  assert.ok(pending,'Recurso com MIME errado não interceptado: '+route);
- assert.equal(await pending,response,'Resposta com MIME errado ocultada: '+route);
+ assert.equal((await pending).status,0,'Resposta com MIME errado não rejeitada: '+route);
  assert.equal(writes,0,'Resposta com MIME errado armazenada: '+route);
 }
 console.log('PWA: respostas HTTP 200 com MIME incorreto não contaminam o cache.');
