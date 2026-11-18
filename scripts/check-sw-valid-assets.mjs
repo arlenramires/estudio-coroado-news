@@ -58,7 +58,7 @@ console.log('PWA: manifesto, ícones e todas as 22 molduras válidos são armaze
 
 
 // Regressão negativa: uma página de erro HTTP 200 não pode contaminar o cache
-// de imagens/manifesto, nem ser devolvida como se fosse um asset válido.
+// de imagens/manifesto, mas a resposta HTTP original deve ser preservada para o navegador.
 for(const route of [
  ...Array.from({length:22},(_,i)=>'molduras/original_'+String(i+1).padStart(2,'0')+'.webp'),
  'icons/studio-192.png','icons/studio-512.png','icons/studio.svg','manifest.webmanifest'
@@ -79,10 +79,10 @@ for(const route of [
  handlers.get('fetch')({request:{url,method:'GET',mode:'same-origin',headers:{has:()=>false}},respondWith:p=>{pending=p}});
  assert.ok(pending,'Asset inválido não interceptado: '+route);
  const result=await pending;
- assert.equal(result.status,0,'HTML falso foi entregue como asset válido: '+route);
+ assert.equal(result,invalid,'Resposta HTTP original não preservada: '+route);
  assert.equal(writes,0,'HTML falso contaminou cache: '+route);
 }
-console.log('PWA: HTML HTTP 200 falso rejeitado nas 22 molduras, ícones e manifesto sem contaminar o cache.');
+console.log('PWA: HTML HTTP 200 falso preservado sem contaminar o cache das 22 molduras, ícones e manifesto.');
 
 
 // Regressão de tipo cruzado: um servidor que responde 200 com outro asset
@@ -110,10 +110,10 @@ for(const [route,wrongMime] of [
  handlers.get('fetch')({request:{url,method:'GET',mode:'same-origin',headers:{has:()=>false}},respondWith:p=>{pending=p}});
  assert.ok(pending,'Asset de tipo incorreto não interceptado: '+route);
  const result=await pending;
- assert.equal(result.status,0,'MIME de outro asset foi aceito: '+route);
+ assert.equal(result,invalid,'Resposta de MIME cruzado não preservada: '+route);
  assert.equal(writes,0,'MIME cruzado contaminou cache: '+route);
 }
-console.log('PWA: tipos MIME trocados rejeitados nas 22 molduras, ícones e manifesto.');
+console.log('PWA: tipos MIME trocados não entram no cache das 22 molduras, ícones e manifesto.');
 
 
 // Regressão: Content-Type ausente não pode ser tratado como arquivo válido.
@@ -138,7 +138,7 @@ for(const route of [
  handlers.get('fetch')({request:{url,method:'GET',mode:'same-origin',headers:{has:()=>false}},respondWith:p=>{pending=p}});
  assert.ok(pending,'Asset sem Content-Type não interceptado: '+route);
  const result=await pending;
- assert.equal(result.status,0,'Asset sem Content-Type foi entregue: '+route);
+ assert.equal(result,invalid,'Resposta sem Content-Type não preservada: '+route);
  assert.equal(writes,0,'Asset sem Content-Type contaminou o cache: '+route);
 }
-console.log('PWA: respostas sem Content-Type rejeitadas para as 22 molduras, ícones e manifesto.');
+console.log('PWA: respostas sem Content-Type não entram no cache das 22 molduras, ícones e manifesto.');
