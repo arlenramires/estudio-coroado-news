@@ -105,6 +105,10 @@ if(!html.includes("String.fromCharCode(...bytes.slice(4,8))==='ftyp'")||
    !html.includes('bytes[0]===26&&bytes[1]===69&&bytes[2]===223&&bytes[3]===163')||
    !html.includes("if(!mp4&&!webm){status('O navegador gerou um vídeo inválido. Nenhum arquivo foi entregue.');return}"))
   throw new Error('Exportação deve verificar assinatura MP4/WebM e rejeitar vídeo inválido');
+// Regressão: não entregar arquivo se a gravação não desenhou nenhum quadro.
+if(!html.includes('renderedFrames=0')||!html.includes('renderedFrames++')||
+   !html.includes("if(renderedFrames===0){status('Nenhum quadro de vídeo foi capturado. Nenhum arquivo foi entregue.');return}"))
+  throw new Error('Exportação de vídeo deve rejeitar gravações sem quadros capturados');
 // Um cabeçalho de MP4/WebM sozinho não deve permitir entregar uma gravação vazia.
 if(!html.includes("if(blob.size<1024){status('Gravação vazia ou incompleta. Nenhum arquivo foi entregue.');return}"))
   throw new Error('Exportação de vídeo deve rejeitar arquivos vazios ou truncados');
