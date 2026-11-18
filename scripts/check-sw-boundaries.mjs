@@ -76,7 +76,7 @@ console.log('PWA: falha de leitura do cache preserva carregamento de molduras pe
   const handlers=new Map();
   const target=scope+'index.html';
   const events=[];
-  const response={ok:true,status:200,type:'basic',url:target,headers:{get:()=>target.endsWith('.webp')?'image/webp':'text/html; charset=utf-8'},clone(){return this}};
+  const response={ok:true,status:200,type:'basic',url:target,headers:{get:()=> 'text/html; charset=utf-8'},clone(){return {text:async()=>'<title>Estúdio Coroado News 24H</title><main id="editorial"><button id="savePNG">Salvar PNG</button></main>'}}};
   const context=vm.createContext({
     URL,console:{warn(){}},
     self:{registration:{scope},addEventListener:(name,handler)=>handlers.set(name,handler)},
