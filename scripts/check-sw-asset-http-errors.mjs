@@ -5,7 +5,7 @@ import vm from 'node:vm';
 const source=fs.readFileSync('sw.js','utf8');
 const scope='http://127.0.0.1:8765/';
 for(const route of ['manifest.webmanifest','icons/studio-192.png','icons/studio-512.png','icons/studio.svg',...Array.from({length:22},(_,i)=>'molduras/original_'+String(i+1).padStart(2,'0')+'.webp')]){
- // Inclui respostas 2xx que não são 200, redirecionamentos, respostas parciais e erros: nenhuma deve virar recurso offline.
+ // Respostas não-200 são repassadas intactas ao navegador, mas nunca entram no cache.
  for(const status of [201,202,203,204,205,206,207,301,302,307,308,304,401,403,404,418,429,500,502,503,504]){
   const handlers=new Map();
   const url=scope+route;
@@ -22,11 +22,11 @@ for(const route of ['manifest.webmanifest','icons/studio-192.png','icons/studio-
   let pending;
   handlers.get('fetch')({request:{url,method:'GET',mode:'same-origin',headers:{has:()=>false}},respondWith:p=>{pending=p}});
   assert.ok(pending,'Recurso PWA não interceptado: '+route);
-  assert.equal((await pending).status,0,'Resposta HTTP inválida não rejeitada: '+status+' '+route);
+  assert.equal((await pending).status,status,'Status HTTP não preservado: '+status+' '+route);
   assert.equal(writes,0,'Erro HTTP gravado no cache: '+route);
  }
 }
-console.log('PWA: erros HTTP em manifesto, ícone e moldura são rejeitados sem cache indevido.');
+console.log('PWA: erros HTTP em manifesto, ícone e moldura são preservados sem cache indevido.');
 
 
 // Regressão: mesmo com HTTP 200, um recurso sem Content-Type não pode ser
@@ -48,7 +48,7 @@ for(const route of ['manifest.webmanifest','icons/studio-192.png','icons/studio-
  let pending;
  handlers.get('fetch')({request:{url,method:'GET',mode:'same-origin',headers:{has:()=>false}},respondWith:p=>{pending=p}});
  assert.ok(pending,'Recurso sem MIME não interceptado: '+route);
- assert.equal((await pending).status,0,'Resposta sem MIME não rejeitada: '+route);
+ assert.equal((await pending).status,200,'Resposta sem MIME não preservada: '+route);
  assert.equal(writes,0,'Resposta sem MIME armazenada: '+route);
 }
 console.log('PWA: respostas HTTP 200 sem Content-Type não contaminam o cache.');
@@ -78,7 +78,7 @@ for(const [route,mime] of [
  let pending;
  handlers.get('fetch')({request:{url,method:'GET',mode:'same-origin',headers:{has:()=>false}},respondWith:p=>{pending=p}});
  assert.ok(pending,'Recurso com MIME errado não interceptado: '+route);
- assert.equal((await pending).status,0,'Resposta com MIME errado não rejeitada: '+route);
+ assert.equal((await pending).status,200,'Resposta com MIME errado não preservada: '+route);
  assert.equal(writes,0,'Resposta com MIME errado armazenada: '+route);
 }
 console.log('PWA: respostas HTTP 200 com MIME incorreto não contaminam o cache.');
