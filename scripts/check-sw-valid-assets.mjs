@@ -142,3 +142,31 @@ for(const route of [
  assert.equal(writes,0,'Asset sem Content-Type contaminou o cache: '+route);
 }
 console.log('PWA: respostas sem Content-Type não entram no cache das 22 molduras, ícones e manifesto.');
+
+
+// CacheStorage bloqueado (modo privado ou política do navegador):
+// recursos íntegros continuam acessíveis pela rede, sem depender de escrita offline.
+for(const route of [
+ ...Array.from({length:22},(_,i)=>'molduras/original_'+String(i+1).padStart(2,'0')+'.webp'),
+ 'icons/studio-192.png','icons/studio-512.png','icons/studio.svg','manifest.webmanifest'
+]){
+ const handlers=new Map();
+ const url=scope+route;
+ const mime=route.endsWith('.webp')?'image/webp':route.endsWith('.png')?'image/png':route.endsWith('.svg')?'image/svg+xml':'application/manifest+json';
+ const response={status:200,type:'basic',url,redirected:false,headers:{get:()=>mime},clone(){return this}};
+ let requests=0;
+ const context=vm.createContext({
+  URL,console:{warn(){}},
+  self:{registration:{scope},addEventListener:(name,fn)=>handlers.set(name,fn)},
+  caches:{open:async()=>{throw new Error('CacheStorage bloqueado')}},
+  fetch:async()=>{requests++;return response},
+  Response:{error:()=>({status:0})}
+ });
+ new vm.Script(source,{filename:'sw.js'}).runInContext(context);
+ let pending;
+ handlers.get('fetch')({request:{url,method:'GET',mode:'same-origin',headers:{has:()=>false}},respondWith:p=>{pending=p}});
+ assert.ok(pending,'Recurso não interceptado com CacheStorage bloqueado: '+route);
+ assert.equal(await pending,response,'Recurso online não entregue com CacheStorage bloqueado: '+route);
+ assert.equal(requests,1,'Rede não consultada exatamente uma vez: '+route);
+}
+console.log('PWA: 22 molduras, ícones e manifesto continuam online com CacheStorage bloqueado.');
