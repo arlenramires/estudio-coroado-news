@@ -44,6 +44,9 @@ for(const [route,mime] of [
   {url:scope+'uploads/video-pessoal.mp4',method:'GET',range:false},
   {url:'https://example.org/'+route,method:'GET',range:false},
   {url,method:'POST',range:false},
+  {url,method:'PUT',range:false},
+  {url,method:'DELETE',range:false},
+  {url,method:'HEAD',range:false},
   {url,method:'GET',range:true}
  ]){
   let intercepted=false;
