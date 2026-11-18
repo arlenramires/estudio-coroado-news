@@ -105,6 +105,9 @@ if(!html.includes("String.fromCharCode(...bytes.slice(4,8))==='ftyp'")||
    !html.includes('bytes[0]===26&&bytes[1]===69&&bytes[2]===223&&bytes[3]===163')||
    !html.includes("if(!mp4&&!webm){status('O navegador gerou um vídeo inválido. Nenhum arquivo foi entregue.');return}"))
   throw new Error('Exportação deve verificar assinatura MP4/WebM e rejeitar vídeo inválido');
+// Um cabeçalho de MP4/WebM sozinho não deve permitir entregar uma gravação vazia.
+if(!html.includes("if(blob.size<1024){status('Gravação vazia ou incompleta. Nenhum arquivo foi entregue.');return}"))
+  throw new Error('Exportação de vídeo deve rejeitar arquivos vazios ou truncados');
 // O tipo MIME do arquivo entregue deve refletir o contêiner detectado pelo cabeçalho,
 // e não apenas o MIME anunciado pelo MediaRecorder (que pode estar incorreto).
 if(!html.includes("const verifiedBlob=new Blob(chunks,{type:mp4?'video/mp4':'video/webm'});")||
