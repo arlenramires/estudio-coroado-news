@@ -212,8 +212,17 @@ $('savePNG').onclick=()=>{
   draw();
   canvas.toBlob(blob=>{
    if(generation!==pngGeneration)return;
-   if(!blob){status('Falha ao gerar PNG. Tente novamente.');return}
-   deliver(blob,name);
+   if(!blob||blob.size<8||blob.type!=='image/png'){status('Falha ao gerar PNG válido. Nenhum arquivo foi entregue.');return}
+   // Conferir assinatura PNG: alguns navegadores retornam um Blob sem conteúdo utilizável.
+   blob.slice(0,8).arrayBuffer().then(header=>{
+    if(generation!==pngGeneration)return;
+    const bytes=new Uint8Array(header);
+    const signature=[137,80,78,71,13,10,26,10];
+    if(bytes.length!==8||signature.some((value,i)=>bytes[i]!==value)){
+     status('PNG inválido gerado pelo navegador. Nenhum arquivo foi entregue.');return;
+    }
+    deliver(blob,name);
+   }).catch(()=>{if(generation===pngGeneration)status('Falha ao verificar PNG. Nenhum arquivo foi entregue.');});
   },'image/png');
  }catch(err){if(generation===pngGeneration)status('Falha ao gerar PNG: '+err.message)}
 };
