@@ -212,13 +212,13 @@ $('savePNG').onclick=()=>{
   draw();
   canvas.toBlob(blob=>{
    if(generation!==pngGeneration)return;
-   if(!blob||blob.size<8||blob.type!=='image/png'){status('Falha ao gerar PNG válido. Nenhum arquivo foi entregue.');return}
+   if(!blob||blob.size<24||blob.type!=='image/png'){status('Falha ao gerar PNG válido. Nenhum arquivo foi entregue.');return}
    // Conferir assinatura PNG: alguns navegadores retornam um Blob sem conteúdo utilizável.
-   blob.slice(0,8).arrayBuffer().then(header=>{
+   blob.slice(0,24).arrayBuffer().then(header=>{
     if(generation!==pngGeneration)return;
     const bytes=new Uint8Array(header);
     const signature=[137,80,78,71,13,10,26,10];
-    if(bytes.length!==8||signature.some((value,i)=>bytes[i]!==value)){
+    const view=new DataView(header);\n    const validDimensions=bytes.length===24&&view.getUint32(8)===13&&String.fromCharCode(...bytes.slice(12,16))==='IHDR'&&view.getUint32(16)===canvas.width&&view.getUint32(20)===canvas.height;\n    if(bytes.length!==24||signature.some((value,i)=>bytes[i]!==value)||!validDimensions){
      status('PNG inválido gerado pelo navegador. Nenhum arquivo foi entregue.');return;
     }
     deliver(blob,name);
