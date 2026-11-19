@@ -21,7 +21,10 @@ self.addEventListener('install',event=>{
   event.waitUntil((async()=>{
     // Uma atualização incompleta não deve assumir o controle nem apagar o cache da versão anterior.
     // A rejeição da instalação mantém o service worker anterior ativo para uso offline.
+    let cacheExisted=false;
     try{
+      // Nunca excluir um cache já existente ao falhar uma nova instalação.
+      cacheExisted=(await caches.keys()).includes(CACHE);
       const cache=await caches.open(CACHE);
       // Validar cada resposta antes de confirmar o pré-cache: servidores podem
       // devolver uma página HTML de erro com status 200 no lugar de uma moldura.
@@ -45,7 +48,7 @@ self.addEventListener('install',event=>{
       }
     }catch(error){
       console.error('Instalação offline incompleta; mantendo a versão anterior',error);
-      try{await caches.delete(CACHE)}catch(cleanupError){console.warn('Limpeza do cache incompleto falhou',cleanupError)}
+      try{if(!cacheExisted)await caches.delete(CACHE)}catch(cleanupError){console.warn('Limpeza do cache incompleto falhou',cleanupError)}
       throw error;
     }
     await self.skipWaiting();
