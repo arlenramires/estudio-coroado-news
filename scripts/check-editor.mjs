@@ -160,6 +160,10 @@ for(const size of [192,512]){
 }
 
 const sw=fs.readFileSync('sw.js','utf8');new vm.Script(sw,{filename:'sw.js'});
+// O indicador offline precisa consultar a mesma versão que o service worker grava.
+const cacheVersion=sw.match(/const CACHE='([^']+)'/ )?.[1];
+if(!cacheVersion||!html.includes("name==='"+cacheVersion+"'"))
+  throw new Error('Diagnóstico offline consulta cache diferente do service worker');
 const catalog=JSON.parse(fs.readFileSync('molduras/catalogo-22.json','utf8'));
 if(!Array.isArray(catalog.assets)||catalog.assets.length!==22)throw new Error('Catálogo deve conter exatamente 22 molduras');
 const catalogPaths=new Set();
