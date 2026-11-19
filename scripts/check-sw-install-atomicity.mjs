@@ -35,8 +35,9 @@ async function scenario(existed,failAt,{invalidAt=Infinity,putFailAt=Infinity}={
   let pending;
   listeners.get('install')({waitUntil:p=>{pending=p}});
   assert.ok(pending,'install deve usar waitUntil');
-  if(failAt!==Infinity)await assert.rejects(pending,/Falha simulada/);
-  else await pending;
+  if(failAt!==Infinity||invalidAt!==Infinity||putFailAt!==Infinity){
+    await assert.rejects(pending, /Falha simulada|Recurso offline inválido|Falha simulada no cache\.put/);
+  }else await pending;
   return {stored,deleted,skipWaiting,requests};
 }
 const old=await scenario(true,3);
