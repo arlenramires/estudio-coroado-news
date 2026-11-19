@@ -49,5 +49,5 @@ assert.equal(fresh.deleted,true);
 assert.equal(fresh.skipWaiting,false);
 const success=await scenario(false,Infinity);
 assert.equal(success.skipWaiting,true,'Instalação completa deve ativar a atualização');
-assert.equal(success.stored.get(cacheName)?.size,27,'Pré-cache deve incluir raiz, HTML, manifest, 3 ícones e 22 molduras');
+assert.equal(success.stored.get(cacheName)?.size,28,'Pré-cache deve incluir raiz, HTML, manifest, 3 ícones e 22 molduras');
 console.log('Instalação offline: cache anterior preservado, cache novo incompleto removido e 22 molduras armazenadas.');
