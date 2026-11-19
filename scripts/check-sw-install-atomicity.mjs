@@ -46,9 +46,9 @@ assert.equal(old.stored.get(cacheName)?.get(scope+'index.html'),'original-editor
 assert.equal(old.stored.get(cacheName)?.get(scope+'molduras/original_01.webp'),'original-frame','Falha não pode sobrescrever moldura anterior');
 assert.equal(old.deleted,false,'Instalação falha não deve apagar cache existente');
 assert.equal(old.skipWaiting,false,'Instalação falha não deve assumir controle');
-// Falhas no primeiro e no último recurso também não podem ativar o worker.
-// O último recurso detecta regressões que só aparecem após quase todo o pré-cache.
-for(const failAt of [1,28]){
+// Verificar todos os 28 pontos de falha, inclusive o primeiro e o último recurso.
+// Uma instalação parcial nunca deve assumir controle nem apagar o cache anterior.
+for(let failAt=1;failAt<=28;failAt++){
   for(const existed of [false,true]){
     const failed=await scenario(existed,failAt);
     assert.equal(failed.skipWaiting,false,'Falha no recurso '+failAt+' não deve ativar o worker');
