@@ -17,7 +17,7 @@ function response(url){
 }
 async function scenario(existed,failAt){
   const listeners=new Map();
-  const stored=new Map(existed?[[cacheName,new Map([['sentinel','preserved']])]]:[]);
+  const stored=new Map(existed?[[cacheName,new Map([['sentinel','preserved'],[scope+'index.html','original-editor']])]]:[]);
   let requests=0,deleted=false,skipWaiting=false;
   const context=vm.createContext({
     URL,Set,Array,console:{error:()=>{},warn:()=>{}},
@@ -26,7 +26,7 @@ async function scenario(existed,failAt){
     caches:{
       keys:async()=>[...stored.keys()],
       open:async name=>{if(!stored.has(name))stored.set(name,new Map());const items=stored.get(name);
-        return {put:async(url,res)=>{items.set(url,res)}}},
+        return {match:async url=>items.get(url),put:async(url,res)=>{items.set(url,res)}}},
       delete:async name=>{deleted=true;return stored.delete(name)}
     },
     fetch:async url=>{requests++;if(requests===failAt)throw new Error('Falha simulada');return response(url)}
@@ -41,6 +41,7 @@ async function scenario(existed,failAt){
 }
 const old=await scenario(true,3);
 assert.equal(old.stored.get(cacheName)?.get('sentinel'),'preserved','Cache preexistente não pode ser apagado');
+assert.equal(old.stored.get(cacheName)?.get(scope+'index.html'),'original-editor','Instalação falha não pode sobrescrever HTML anterior');
 assert.equal(old.deleted,false,'Instalação falha não deve apagar cache existente');
 assert.equal(old.skipWaiting,false,'Instalação falha não deve assumir controle');
 const fresh=await scenario(false,3);
