@@ -48,6 +48,13 @@ const fresh=await scenario(false,3);
 assert.equal(fresh.stored.has(cacheName),false,'Cache novo incompleto deve ser removido');
 assert.equal(fresh.deleted,true);
 assert.equal(fresh.skipWaiting,false);
+const existingSuccess=await scenario(true,Infinity);
+assert.equal(existingSuccess.skipWaiting,true,'Cache existente completo deve permitir ativação');
+assert.equal(existingSuccess.deleted,false,'Instalação bem-sucedida não deve apagar cache existente');
+assert.equal(existingSuccess.stored.get(cacheName)?.get(scope+'index.html'),'original-editor',
+  'Instalação bem-sucedida não deve sobrescrever HTML previamente armazenado');
+assert.equal(existingSuccess.stored.get(cacheName)?.size,29,
+  'Cache existente deve manter sentinela, HTML original e completar os outros 27 recursos');
 const success=await scenario(false,Infinity);
 assert.equal(success.skipWaiting,true,'Instalação completa deve ativar a atualização');
 assert.equal(success.stored.get(cacheName)?.size,28,'Pré-cache deve incluir raiz, HTML, manifest, 3 ícones e 22 molduras');
