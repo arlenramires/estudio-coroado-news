@@ -44,7 +44,8 @@ self.addEventListener('install',event=>{
           throw new Error('Recurso offline inválido: '+asset+' ('+response.status+', '+type+')');
         }
         if((asset==='./'||asset==='./index.html')&&!(await isEditorHtml(response)))throw new Error('HTML offline não contém o editor: '+asset);
-        // Se este nome de cache já existia, não sobrescrever seus recursos durante\n        // uma tentativa de instalação: uma falha posterior deve preservar a versão utilizável.\n        const previous=cacheExisted?await cache.match(url):undefined;\n        if(!previous)await cache.put(url,response);
+        // Se este nome de cache já existia, não sobrescrever seus recursos durante\n        // uma tentativa de instalação: uma falha posterior deve preservar a versão utilizável.
+        const previous=cacheExisted?await cache.match(url):undefined;\n        if(!previous)await cache.put(url,response);
       }
     }catch(error){
       console.error('Instalação offline incompleta; mantendo a versão anterior',error);
