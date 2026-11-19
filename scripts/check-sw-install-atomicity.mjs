@@ -46,6 +46,19 @@ assert.equal(old.stored.get(cacheName)?.get(scope+'index.html'),'original-editor
 assert.equal(old.stored.get(cacheName)?.get(scope+'molduras/original_01.webp'),'original-frame','Falha não pode sobrescrever moldura anterior');
 assert.equal(old.deleted,false,'Instalação falha não deve apagar cache existente');
 assert.equal(old.skipWaiting,false,'Instalação falha não deve assumir controle');
+// Falhas no primeiro e no último recurso também não podem ativar o worker.
+// O último recurso detecta regressões que só aparecem após quase todo o pré-cache.
+for(const failAt of [1,28]){
+  for(const existed of [false,true]){
+    const failed=await scenario(existed,failAt);
+    assert.equal(failed.skipWaiting,false,'Falha no recurso '+failAt+' não deve ativar o worker');
+    assert.equal(failed.stored.has(cacheName),existed,'Falha no recurso '+failAt+' deve preservar apenas cache preexistente');
+    if(existed){
+      assert.equal(failed.stored.get(cacheName).get(scope+'index.html'),'original-editor');
+      assert.equal(failed.stored.get(cacheName).get(scope+'molduras/original_01.webp'),'original-frame');
+    }
+  }
+}
 const fresh=await scenario(false,3);
 assert.equal(fresh.stored.has(cacheName),false,'Cache novo incompleto deve ser removido');
 assert.equal(fresh.deleted,true);
