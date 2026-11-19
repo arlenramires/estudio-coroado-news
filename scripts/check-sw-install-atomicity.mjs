@@ -15,10 +15,10 @@ function response(url){
   return {status:200,type:'basic',redirected:false,url,headers:{get:()=>mime},
     clone(){return this},async text(){return html}};
 }
-async function scenario(existed,failAt){
+async function scenario(existed,failAt,{invalidAt=Infinity,putFailAt=Infinity}={}){
   const listeners=new Map();
   const stored=new Map(existed?[[cacheName,new Map([['sentinel','preserved'],[scope+'index.html','original-editor']])]]:[]);
-  let requests=0,deleted=false,skipWaiting=false;
+  let requests=0,puts=0,deleted=false,skipWaiting=false;
   const context=vm.createContext({
     URL,Set,Array,console:{error:()=>{},warn:()=>{}},
     self:{registration:{scope},addEventListener:(event,fn)=>listeners.set(event,fn),
@@ -26,10 +26,10 @@ async function scenario(existed,failAt){
     caches:{
       keys:async()=>[...stored.keys()],
       open:async name=>{if(!stored.has(name))stored.set(name,new Map());const items=stored.get(name);
-        return {match:async url=>items.get(url),put:async(url,res)=>{items.set(url,res)}}},
+        return {match:async url=>items.get(url),put:async(url,res)=>{puts++;if(puts===putFailAt)throw new Error('Falha simulada no cache.put');items.set(url,res)}}},
       delete:async name=>{deleted=true;return stored.delete(name)}
     },
-    fetch:async url=>{requests++;if(requests===failAt)throw new Error('Falha simulada');return response(url)}
+    fetch:async url=>{requests++;if(requests===failAt)throw new Error('Falha simulada');return requests===invalidAt?{...response(url),headers:{get:()=> 'text/html'}}:response(url)}
   });
   new vm.Script(source,{filename:'sw.js'}).runInContext(context);
   let pending;
@@ -48,6 +48,20 @@ const fresh=await scenario(false,3);
 assert.equal(fresh.stored.has(cacheName),false,'Cache novo incompleto deve ser removido');
 assert.equal(fresh.deleted,true);
 assert.equal(fresh.skipWaiting,false);
+// Uma resposta HTTP 200 com MIME errado não pode ser armazenada como moldura.
+for(const existed of [false,true]){
+  const invalid=await scenario(existed,Infinity,{invalidAt:7});
+  assert.equal(invalid.skipWaiting,false,'Resposta inválida não deve ativar o worker');
+  assert.equal(invalid.stored.has(cacheName),existed,'Falha de MIME deve preservar apenas cache preexistente');
+  if(existed)assert.equal(invalid.stored.get(cacheName).get(scope+'index.html'),'original-editor');
+}
+// Falha de escrita no CacheStorage deve rejeitar a instalação e preservar a versão anterior.
+for(const existed of [false,true]){
+  const failedPut=await scenario(existed,Infinity,{putFailAt:2});
+  assert.equal(failedPut.skipWaiting,false,'Falha no cache.put não deve ativar o worker');
+  assert.equal(failedPut.stored.has(cacheName),existed,'Falha no cache.put deve preservar somente cache preexistente');
+  if(existed)assert.equal(failedPut.stored.get(cacheName).get(scope+'index.html'),'original-editor');
+}
 const existingSuccess=await scenario(true,Infinity);
 assert.equal(existingSuccess.skipWaiting,true,'Cache existente completo deve permitir ativação');
 assert.equal(existingSuccess.deleted,false,'Instalação bem-sucedida não deve apagar cache existente');
