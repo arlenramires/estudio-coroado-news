@@ -86,10 +86,16 @@ if(!/canvas\.toBlob\(blob=>\{[\s\S]*?\},'image\/png'\)/.test(html))
   throw new Error('Exportação PNG deve usar Canvas.toBlob com MIME image/png');
 if(!/const generation=\+\+pngGeneration/.test(html)||!/if\(generation!==pngGeneration\)return/.test(html))
   throw new Error('Exportação PNG deve descartar callbacks de gerações anteriores');
-if(!html.includes("if(!blob||blob.size<8||blob.type!=='image/png')"))
+if(!html.includes("if(!blob||blob.size<24||blob.type!=='image/png')"))
   throw new Error('Exportação PNG deve rejeitar blob vazio ou MIME incorreto');
-if(!html.includes('blob.slice(0,8).arrayBuffer()')||!html.includes('signature=[137,80,78,71,13,10,26,10]')||!html.includes('if(generation!==pngGeneration)return;'))
+if(!html.includes('blob.slice(0,24).arrayBuffer()')||!html.includes('signature=[137,80,78,71,13,10,26,10]')||!html.includes('if(generation!==pngGeneration)return;'))
   throw new Error('Exportação PNG deve validar assinatura binária e descartar geração obsoleta');
+// PNG: conferir o chunk IHDR e as dimensões reais antes do download.
+if(!html.includes("view.getUint32(8)===13")||
+   !html.includes("String.fromCharCode(...bytes.slice(12,16))==='IHDR'")||
+   !html.includes("view.getUint32(16)===canvas.width")||
+   !html.includes("view.getUint32(20)===canvas.height"))
+  throw new Error('Exportação PNG deve validar IHDR e dimensões do canvas');
 // Não iniciar gravação antes da moldura e da mídia estarem prontas.
 if(!/\$\('saveVideo'\)\.onclick=async\(\)=>\{if\(!framesReady\(\)\|\|!frames\[selected\]\)/.test(html))
   throw new Error('Exportação de vídeo deve aguardar a moldura selecionada');
