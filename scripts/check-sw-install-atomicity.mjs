@@ -15,7 +15,7 @@ function response(url){
   return {status:200,type:'basic',redirected:false,url,headers:{get:()=>mime},
     clone(){return this},async text(){return html}};
 }
-async function scenario(existed,failAt,{invalidAt=Infinity,putFailAt=Infinity}={}){
+async function scenario(existed,failAt,{invalidAt=Infinity,putFailAt=Infinity,httpFailAt=Infinity,redirectAt=Infinity}={}){
   const listeners=new Map();
   const stored=new Map(existed?[[cacheName,new Map([['sentinel','preserved'],[scope+'index.html','original-editor'],[scope+'molduras/original_01.webp','original-frame']])]]:[]);
   let requests=0,puts=0,deleted=false,skipWaiting=false;
@@ -29,13 +29,13 @@ async function scenario(existed,failAt,{invalidAt=Infinity,putFailAt=Infinity}={
         return {match:async url=>items.get(url),put:async(url,res)=>{puts++;if(puts===putFailAt)throw new Error('Falha simulada no cache.put');items.set(url,res)}}},
       delete:async name=>{deleted=true;return stored.delete(name)}
     },
-    fetch:async url=>{requests++;if(requests===failAt)throw new Error('Falha simulada');return requests===invalidAt?{...response(url),headers:{get:()=> 'text/html'}}:response(url)}
+    fetch:async url=>{requests++;if(requests===failAt)throw new Error('Falha simulada');return requests===invalidAt?{...response(url),headers:{get:()=> 'text/html'}}:requests===httpFailAt?{...response(url),status:503}:requests===redirectAt?{...response(url),redirected:true}:response(url)}
   });
   new vm.Script(source,{filename:'sw.js'}).runInContext(context);
   let pending;
   listeners.get('install')({waitUntil:p=>{pending=p}});
   assert.ok(pending,'install deve usar waitUntil');
-  if(failAt!==Infinity||invalidAt!==Infinity||putFailAt!==Infinity){
+  if(failAt!==Infinity||invalidAt!==Infinity||putFailAt!==Infinity||httpFailAt!==Infinity||redirectAt!==Infinity){
     await assert.rejects(pending, /Falha simulada|Recurso offline inválido|Falha simulada no cache\.put/);
   }else await pending;
   return {stored,deleted,skipWaiting,requests};
@@ -71,6 +71,19 @@ for(const existed of [false,true]){
   if(existed){
     assert.equal(invalid.stored.get(cacheName).get(scope+'index.html'),'original-editor');
     assert.equal(invalid.stored.get(cacheName).get(scope+'molduras/original_01.webp'),'original-frame');
+  }
+}
+// Um servidor pode responder erro HTTP ou redirecionar para uma página de login.
+// Nenhuma dessas respostas pode ativar o PWA ou destruir o editor já disponível offline.
+for(const [failure,options] of [['HTTP 503',{httpFailAt:7}],['redirecionamento',{redirectAt:7}]]){
+  for(const existed of [false,true]){
+    const failed=await scenario(existed,Infinity,options);
+    assert.equal(failed.skipWaiting,false,failure+' não deve ativar o worker');
+    assert.equal(failed.stored.has(cacheName),existed,failure+' deve preservar apenas cache anterior');
+    if(existed){
+      assert.equal(failed.stored.get(cacheName).get(scope+'index.html'),'original-editor');
+      assert.equal(failed.stored.get(cacheName).get(scope+'molduras/original_01.webp'),'original-frame');
+    }
   }
 }
 // Falha de escrita no CacheStorage deve rejeitar a instalação e preservar a versão anterior.
