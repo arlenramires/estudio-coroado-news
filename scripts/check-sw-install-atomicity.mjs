@@ -17,7 +17,7 @@ function response(url){
 }
 async function scenario(existed,failAt,{invalidAt=Infinity,putFailAt=Infinity}={}){
   const listeners=new Map();
-  const stored=new Map(existed?[[cacheName,new Map([['sentinel','preserved'],[scope+'index.html','original-editor']])]]:[]);
+  const stored=new Map(existed?[[cacheName,new Map([['sentinel','preserved'],[scope+'index.html','original-editor'],[scope+'molduras/original_01.webp','original-frame']])]]:[]);
   let requests=0,puts=0,deleted=false,skipWaiting=false;
   const context=vm.createContext({
     URL,Set,Array,console:{error:()=>{},warn:()=>{}},
@@ -43,6 +43,7 @@ async function scenario(existed,failAt,{invalidAt=Infinity,putFailAt=Infinity}={
 const old=await scenario(true,3);
 assert.equal(old.stored.get(cacheName)?.get('sentinel'),'preserved','Cache preexistente não pode ser apagado');
 assert.equal(old.stored.get(cacheName)?.get(scope+'index.html'),'original-editor','Instalação falha não pode sobrescrever HTML anterior');
+assert.equal(old.stored.get(cacheName)?.get(scope+'molduras/original_01.webp'),'original-frame','Falha não pode sobrescrever moldura anterior');
 assert.equal(old.deleted,false,'Instalação falha não deve apagar cache existente');
 assert.equal(old.skipWaiting,false,'Instalação falha não deve assumir controle');
 const fresh=await scenario(false,3);
@@ -54,20 +55,28 @@ for(const existed of [false,true]){
   const invalid=await scenario(existed,Infinity,{invalidAt:7});
   assert.equal(invalid.skipWaiting,false,'Resposta inválida não deve ativar o worker');
   assert.equal(invalid.stored.has(cacheName),existed,'Falha de MIME deve preservar apenas cache preexistente');
-  if(existed)assert.equal(invalid.stored.get(cacheName).get(scope+'index.html'),'original-editor');
+  if(existed){
+    assert.equal(invalid.stored.get(cacheName).get(scope+'index.html'),'original-editor');
+    assert.equal(invalid.stored.get(cacheName).get(scope+'molduras/original_01.webp'),'original-frame');
+  }
 }
 // Falha de escrita no CacheStorage deve rejeitar a instalação e preservar a versão anterior.
 for(const existed of [false,true]){
   const failedPut=await scenario(existed,Infinity,{putFailAt:2});
   assert.equal(failedPut.skipWaiting,false,'Falha no cache.put não deve ativar o worker');
   assert.equal(failedPut.stored.has(cacheName),existed,'Falha no cache.put deve preservar somente cache preexistente');
-  if(existed)assert.equal(failedPut.stored.get(cacheName).get(scope+'index.html'),'original-editor');
+  if(existed){
+    assert.equal(failedPut.stored.get(cacheName).get(scope+'index.html'),'original-editor');
+    assert.equal(failedPut.stored.get(cacheName).get(scope+'molduras/original_01.webp'),'original-frame');
+  }
 }
 const existingSuccess=await scenario(true,Infinity);
 assert.equal(existingSuccess.skipWaiting,true,'Cache existente completo deve permitir ativação');
 assert.equal(existingSuccess.deleted,false,'Instalação bem-sucedida não deve apagar cache existente');
 assert.equal(existingSuccess.stored.get(cacheName)?.get(scope+'index.html'),'original-editor',
   'Instalação bem-sucedida não deve sobrescrever HTML previamente armazenado');
+assert.equal(existingSuccess.stored.get(cacheName)?.get(scope+'molduras/original_01.webp'),'original-frame',
+  'Instalação bem-sucedida não deve sobrescrever moldura previamente armazenada');
 assert.equal(existingSuccess.stored.get(cacheName)?.size,29,
   'Cache existente deve manter sentinela, HTML original e completar os outros 27 recursos');
 const success=await scenario(false,Infinity);
