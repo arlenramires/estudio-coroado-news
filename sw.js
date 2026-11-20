@@ -1,6 +1,6 @@
 'use strict';
 // Somente arquivos públicos do próprio estúdio: mídia importada pelo usuário nunca é armazenada.
-const CACHE='estudio-coroado-offline-v49';
+const CACHE='estudio-coroado-offline-v50';
 const ASSETS=['./','./index.html','./manifest.webmanifest','./icons/studio.svg','./icons/studio-192.png','./icons/studio-512.png',
   ...Array.from({length:22},(_,i)=>'./molduras/original_'+String(i+1).padStart(2,'0')+'.webp')];
 // Somente arquivos declarados do aplicativo podem entrar no cache.
@@ -55,7 +55,7 @@ self.addEventListener('install',event=>{
         // Um cache pré-existente com resposta de erro/opaca não pode ser tratado como instalação válida.
         // Rejeitar a atualização sem sobrescrever o conteúdo antigo preserva a atomicidade.
         if(previous&&typeof previous==='object'&&(
-          previous.status!==200||previous.type!=='basic'||
+          previous.status!==200||previous.type!=='basic'||previous.redirected===true||previous.url!==url||
           (typeof previous.headers?.get==='function'&&
             !validTypeForCached(previous.headers.get('content-type')||'',expected))
         )){
