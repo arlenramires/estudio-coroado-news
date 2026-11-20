@@ -17,6 +17,11 @@ async function isEditorHtml(response){
     /<[^>]+\bid=["']editorial["'][^>]*>/.test(withoutComments)&&
     /<[^>]+\bid=["']savePNG["'][^>]*>/.test(withoutComments);
 }
+// Não reutilizar arquivos com MIME incorreto de instalações antigas.
+function validTypeForCached(type,expected){
+  if(expected==='application/manifest+json')return /^application\/(?:manifest\+json|json)(?:\s*;|\s*$)/i.test(type);
+  return new RegExp('^'+expected.replaceAll('+','\\+')+'(?:\\s*;|\\s*$)','i').test(type);
+}
 self.addEventListener('install',event=>{
   event.waitUntil((async()=>{
     // Uma atualização incompleta não deve assumir o controle nem apagar o cache da versão anterior.
@@ -49,7 +54,11 @@ self.addEventListener('install',event=>{
         const previous=cacheExisted?await cache.match(url):undefined;
         // Um cache pré-existente com resposta de erro/opaca não pode ser tratado como instalação válida.
         // Rejeitar a atualização sem sobrescrever o conteúdo antigo preserva a atomicidade.
-        if(previous&&typeof previous==='object'&&(previous.status!==200||previous.type!=='basic')){
+        if(previous&&typeof previous==='object'&&(
+          previous.status!==200||previous.type!=='basic'||
+          (typeof previous.headers?.get==='function'&&
+            !validTypeForCached(previous.headers.get('content-type')||'',expected))
+        )){
           throw new Error('Recurso offline já armazenado é inválido: '+asset);
         }
         if(!previous)await cache.put(url,response);
