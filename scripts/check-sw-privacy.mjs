@@ -66,3 +66,6 @@ assert.deepEqual(writes.sort(),[scope,scope+'index.html',scope+'molduras/origina
 assert.ok(reads.length>=2,'Os recursos autorizados devem consultar o cache');
 assert.equal(dispatch(scope+'index.html?segredo=1'),undefined,'Query string não pode ser interceptada');
 console.log('Privacidade PWA: URLs externas, mídia pessoal, consultas, POST e Range ignorados.');
+
+// Executar também os cenários de navegação online/offline no mesmo job de privacidade.
+await import('./check-sw-navigation.mjs');
