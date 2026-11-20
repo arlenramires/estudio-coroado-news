@@ -63,8 +63,7 @@ self.addEventListener('install',event=>{
         }
         // HTML em cache pode ter MIME correto e ainda ser uma página de erro.
         // Revalidar o conteúdo antes de reutilizá-lo, sem modificar o cache anterior.
-        if(previous&&(asset==='./'||asset==='./index.html')&&
-           typeof previous.clone==='function'&&typeof previous.text==='function'&&
+        if(previous&&typeof previous==='object'&&(asset==='./'||asset==='./index.html')&&
            !(await isEditorHtml(previous))){
           throw new Error('HTML offline já armazenado não contém o editor: '+asset);
         }
