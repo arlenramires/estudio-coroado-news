@@ -43,7 +43,7 @@ async function scenario(existed,failAt,{invalidAt=Infinity,putFailAt=Infinity,ht
   listeners.get('install')({waitUntil:p=>{pending=p}});
   assert.ok(pending,'install deve usar waitUntil');
   if(failAt!==Infinity||invalidAt!==Infinity||putFailAt!==Infinity||httpFailAt!==Infinity||redirectAt!==Infinity||urlMismatchAt!==Infinity||opaqueAt!==Infinity||invalidCached||cachedFault){
-    await assert.rejects(pending, /Falha simulada|Recurso offline inválido|Falha simulada no cache\.put/);
+    await assert.rejects(pending, /Falha simulada|Recurso offline inválido|Recurso offline já armazenado é inválido|Falha simulada no cache\.put/);
   }else await pending;
   return {stored,deleted,skipWaiting,requests};
 }
