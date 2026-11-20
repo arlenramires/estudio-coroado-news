@@ -88,8 +88,10 @@ for(const [failure,options] of [['HTTP 503',{httpFailAt:7}],['redirecionamento',
 }
 // Exercitar falhas de gravação em todas as posições do pré-cache, não só na segunda.
 // Se uma gravação falhar, o worker não pode assumir controle nem perder a versão anterior.
-for(let putFailAt=1;putFailAt<=28;putFailAt++){
-  for(const existed of [false,true]){
+// O cache preexistente já contém HTML e a primeira moldura: são apenas 26 gravações novas.
+// Testar 27/28 nessa situação não gera falha e produziria falso negativo na suíte.
+for(const existed of [false,true]){
+  for(let putFailAt=1;putFailAt<=(existed?26:28);putFailAt++){
     const failedPut=await scenario(existed,Infinity,{putFailAt});
     assert.equal(failedPut.skipWaiting,false,'Falha no cache.put '+putFailAt+' não deve ativar o worker');
     assert.equal(failedPut.stored.has(cacheName),existed,'Falha no cache.put '+putFailAt+' deve preservar somente cache preexistente');
