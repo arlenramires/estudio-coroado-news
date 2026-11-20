@@ -312,7 +312,7 @@ for(const failure of ['none','mime','network','cleanup']){
   const worker={registration:{scope:base},addEventListener:(type,fn)=>listeners.set(type,fn),
     skipWaiting:async()=>{operations.push('skipWaiting')}};
   const cache={put:async(url,response)=>{operations.push('put:'+new URL(url).pathname);if(failure==='cleanup'&&operations.filter(x=>x.startsWith('put:')).length===3)throw Error('falha simulada ao gravar cache')}};
-  const fakeCaches={open:async()=>cache,delete:async()=>{operations.push('delete');if(failure==='cleanup')throw Error('cleanup blocked');return true}};
+  const fakeCaches={keys:async()=>[],open:async()=>cache,delete:async()=>{operations.push('delete');if(failure==='cleanup')throw Error('cleanup blocked');return true}};
   let count=0;
   const fetch=async url=>{
     count++;
@@ -345,7 +345,7 @@ console.log('Pré-cache validado: 22 molduras, MIME inválido, rede interrompida
 
 
 // Cache privado não deve persistir redirecionamentos nem respostas de origem diferente.
-if((sw.match(/response\.status===200&&response\.type==='basic'&&response\.url===req\.url/g)||[]).length!==2)
+if((sw.match(/response\.status===200&&response\.type==='basic'&&response\.redirected!==true&&response\.url===req\.url/g)||[]).length!==2)
   throw new Error('Cache PWA deve rejeitar respostas redirecionadas ou de outra origem');
 
 
