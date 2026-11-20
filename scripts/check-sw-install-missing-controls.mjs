@@ -13,7 +13,7 @@ for(const missing of ['editorial','savePNG']){
   const context=vm.createContext({
     URL,console:{error(){},warn(){}},
     self:{registration:{scope},addEventListener:(name,fn)=>handlers.set(name,fn),skipWaiting:async()=>{activated=true}},
-    caches:{open:async()=>({put:async()=>{}}),delete:async()=>{deleted=true}},
+    caches:{keys:async()=>[],open:async()=>({put:async()=>{}}),delete:async()=>{deleted=true;return true}},
     fetch:async url=>{
       const pathname=new URL(url).pathname;
       const type=pathname.endsWith('.webp')?'image/webp':pathname.endsWith('.png')?'image/png':pathname.endsWith('.svg')?'image/svg+xml':pathname.endsWith('.webmanifest')?'application/manifest+json':'text/html';
@@ -37,7 +37,7 @@ for(const missing of ['editorial','savePNG']){
   const context=vm.createContext({
     URL,console:{error(){},warn(){}},
     self:{registration:{scope},addEventListener:(name,fn)=>handlers.set(name,fn),skipWaiting:async()=>{activated=true}},
-    caches:{open:async()=>({put:async()=>{}}),delete:async()=>{deleted=true}},
+    caches:{keys:async()=>[],open:async()=>({put:async()=>{}}),delete:async()=>{deleted=true;return true}},
     fetch:async url=>{
       const pathname=new URL(url).pathname;
       const type=pathname.endsWith('.webp')?'image/webp':pathname.endsWith('.png')?'image/png':pathname.endsWith('.svg')?'image/svg+xml':pathname.endsWith('.webmanifest')?'application/manifest+json':'text/html';
