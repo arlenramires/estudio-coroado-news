@@ -20,7 +20,8 @@ const context=vm.createContext({
     ok:true,status:200,type:'basic',url:req.url,
     headers:{get:name=>name.toLowerCase()==='content-type'
       ? (req.url.endsWith('.webp')?'image/webp':'text/html') : null},
-    clone(){return this}
+    clone(){return this},
+    async text(){return '<!doctype html><title>Estúdio Coroado News 24H</title><main id="editorial"></main><button id="savePNG">PNG</button>'}
   }),
   Response:{error:()=>({ok:false})}
 });
