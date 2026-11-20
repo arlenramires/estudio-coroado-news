@@ -15,12 +15,16 @@ function response(url){
   return {status:200,type:'basic',redirected:false,url,headers:{get:()=>mime},
     clone(){return this},async text(){return html}};
 }
-async function scenario(existed,failAt,{invalidAt=Infinity,putFailAt=Infinity,httpFailAt=Infinity,redirectAt=Infinity,urlMismatchAt=Infinity,opaqueAt=Infinity,invalidCached=false,cachedFault=null}={}){
+async function scenario(existed,failAt,{invalidAt=Infinity,putFailAt=Infinity,httpFailAt=Infinity,redirectAt=Infinity,urlMismatchAt=Infinity,opaqueAt=Infinity,invalidCached=false,cachedFault=null,cachedHtmlFault=false}={}){
   const listeners=new Map();
   const stored=new Map(existed?[[cacheName,new Map([['sentinel','preserved'],[scope+'index.html','original-editor'],[scope+'molduras/original_01.webp','original-frame']])]]:[]);
   if(existed&&invalidCached)stored.get(cacheName).set(scope+'molduras/original_01.webp',{
     ...response(scope+'molduras/original_01.webp'),headers:{get:()=> 'text/html'}
   });
+  if(existed&&cachedHtmlFault){
+    const url=scope+'index.html';
+    stored.get(cacheName).set(url,{...response(url),async text(){return '<title>Login</title>'}});
+  }
   if(existed&&cachedFault){
     const url=scope+'molduras/original_01.webp';
     stored.get(cacheName).set(url,{...response(url),...cachedFault});
@@ -42,7 +46,7 @@ async function scenario(existed,failAt,{invalidAt=Infinity,putFailAt=Infinity,ht
   let pending;
   listeners.get('install')({waitUntil:p=>{pending=p}});
   assert.ok(pending,'install deve usar waitUntil');
-  if(failAt!==Infinity||invalidAt!==Infinity||putFailAt!==Infinity||httpFailAt!==Infinity||redirectAt!==Infinity||urlMismatchAt!==Infinity||opaqueAt!==Infinity||invalidCached||cachedFault){
+  if(failAt!==Infinity||invalidAt!==Infinity||putFailAt!==Infinity||httpFailAt!==Infinity||redirectAt!==Infinity||urlMismatchAt!==Infinity||opaqueAt!==Infinity||invalidCached||cachedFault||cachedHtmlFault){
     await assert.rejects(pending, /Falha simulada|Recurso offline inválido|Recurso offline já armazenado é inválido|Falha simulada no cache\.put/);
   }else await pending;
   return {stored,deleted,skipWaiting,requests};
@@ -135,6 +139,9 @@ for(const [label,cachedFault] of [
   assert.equal(failed.deleted,false,label+' não deve apagar o cache anterior');
   assert.equal(failed.stored.get(cacheName).get('sentinel'),'preserved');
 }
+const invalidCachedHtml=await scenario(true,Infinity,{cachedHtmlFault:true});
+assert.equal(invalidCachedHtml.skipWaiting,false,'HTML antigo de login não pode ativar o PWA');
+assert.equal(invalidCachedHtml.deleted,false,'HTML antigo inválido não pode apagar cache anterior');
 const existingSuccess=await scenario(true,Infinity);
 assert.equal(existingSuccess.skipWaiting,true,'Cache existente completo deve permitir ativação');
 assert.equal(existingSuccess.deleted,false,'Instalação bem-sucedida não deve apagar cache existente');
