@@ -15,7 +15,7 @@ function response(url){
   return {status:200,type:'basic',redirected:false,url,headers:{get:()=>mime},
     clone(){return this},async text(){return html}};
 }
-async function scenario(existed,failAt,{invalidAt=Infinity,putFailAt=Infinity,httpFailAt=Infinity,redirectAt=Infinity,urlMismatchAt=Infinity,opaqueAt=Infinity,invalidCached=false,cachedFault=null,cachedHtmlFault=false,cachedHtmlUnreadable=false,networkHtmlFaultAt=Infinity}={}){
+async function scenario(existed,failAt,{invalidAt=Infinity,putFailAt=Infinity,httpFailAt=Infinity,redirectAt=Infinity,urlMismatchAt=Infinity,opaqueAt=Infinity,invalidCached=false,cachedFault=null,cachedHtmlFault=false,cachedHtmlUnreadable=false,networkHtmlFaultAt=Infinity,networkHtmlFaultBody='<title>Login</title><main>Entre na sua conta</main>'}={}){
   const listeners=new Map();
   const stored=new Map(existed?[[cacheName,new Map([['sentinel','preserved'],[scope+'index.html','original-editor'],[scope+'molduras/original_01.webp','original-frame']])]]:[]);
   if(existed&&invalidCached)stored.get(cacheName).set(scope+'molduras/original_01.webp',{
@@ -44,7 +44,7 @@ async function scenario(existed,failAt,{invalidAt=Infinity,putFailAt=Infinity,ht
         return {match:async url=>items.get(url),put:async(url,res)=>{puts++;if(puts===putFailAt)throw new Error('Falha simulada no cache.put');items.set(url,res)}}},
       delete:async name=>{deleted=true;return stored.delete(name)}
     },
-    fetch:async url=>{requests++;if(requests===failAt)throw new Error('Falha simulada');return requests===networkHtmlFaultAt?{...response(url),async text(){return '<title>Login</title><main>Entre na sua conta</main>'}}:requests===invalidAt?{...response(url),headers:{get:()=> 'text/html'}}:requests===httpFailAt?{...response(url),status:503}:requests===redirectAt?{...response(url),redirected:true}:requests===urlMismatchAt?{...response(url),url:scope+'login'}:requests===opaqueAt?{...response(url),type:'opaque'}:response(url)}
+    fetch:async url=>{requests++;if(requests===failAt)throw new Error('Falha simulada');return requests===networkHtmlFaultAt?{...response(url),async text(){return networkHtmlFaultBody}}:requests===invalidAt?{...response(url),headers:{get:()=> 'text/html'}}:requests===httpFailAt?{...response(url),status:503}:requests===redirectAt?{...response(url),redirected:true}:requests===urlMismatchAt?{...response(url),url:scope+'login'}:requests===opaqueAt?{...response(url),type:'opaque'}:response(url)}
   });
   new vm.Script(source,{filename:'sw.js'}).runInContext(context);
   let pending;
@@ -124,6 +124,21 @@ for(const networkHtmlFaultAt of [1,2]){
       assert.equal(failed.stored.get(cacheName).get('sentinel'),'preserved');
       assert.equal(failed.stored.get(cacheName).get(scope+'index.html'),'original-editor');
     }
+  }
+}
+// HTML de login pode tentar imitar o editor em comentários ou scripts.
+// Os marcadores devem existir como elementos reais, não apenas como texto inerte.
+for(const networkHtmlFaultBody of [
+  '<title>Estúdio Coroado News 24H</title><!-- <main id="editorial"><button id="savePNG"></button></main> -->',
+  '<title>Estúdio Coroado News 24H</title><script>const fake=\'<main id="editorial"><button id="savePNG"></button></main>\'</script>',
+  '<title>Estúdio Coroado News 24H</title><template><main id="editorial"><button id="savePNG"></button></main></template>',
+  '<title>Estúdio Coroado News 24H</title><main id="editorial"></main>'
+]){
+  for(const existed of [false,true]){
+    const failed=await scenario(existed,Infinity,{networkHtmlFaultAt:2,networkHtmlFaultBody});
+    assert.equal(failed.skipWaiting,false,'Marcadores falsos não devem ativar o PWA');
+    assert.equal(failed.stored.has(cacheName),existed,'HTML falso deve preservar somente o cache anterior');
+    if(existed)assert.equal(failed.stored.get(cacheName).get('sentinel'),'preserved');
   }
 }
 // Exercitar falhas de gravação em todas as posições do pré-cache, não só na segunda.
