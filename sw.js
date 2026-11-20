@@ -61,6 +61,13 @@ self.addEventListener('install',event=>{
         )){
           throw new Error('Recurso offline já armazenado é inválido: '+asset);
         }
+        // HTML em cache pode ter MIME correto e ainda ser uma página de erro.
+        // Revalidar o conteúdo antes de reutilizá-lo, sem modificar o cache anterior.
+        if(previous&&(asset==='./'||asset==='./index.html')&&
+           typeof previous.clone==='function'&&typeof previous.text==='function'&&
+           !(await isEditorHtml(previous))){
+          throw new Error('HTML offline já armazenado não contém o editor: '+asset);
+        }
         if(!previous)await cache.put(url,response);
       }
     }catch(error){
