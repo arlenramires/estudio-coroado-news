@@ -86,14 +86,18 @@ for(const [failure,options] of [['HTTP 503',{httpFailAt:7}],['redirecionamento',
     }
   }
 }
-// Falha de escrita no CacheStorage deve rejeitar a instalação e preservar a versão anterior.
-for(const existed of [false,true]){
-  const failedPut=await scenario(existed,Infinity,{putFailAt:2});
-  assert.equal(failedPut.skipWaiting,false,'Falha no cache.put não deve ativar o worker');
-  assert.equal(failedPut.stored.has(cacheName),existed,'Falha no cache.put deve preservar somente cache preexistente');
-  if(existed){
-    assert.equal(failedPut.stored.get(cacheName).get(scope+'index.html'),'original-editor');
-    assert.equal(failedPut.stored.get(cacheName).get(scope+'molduras/original_01.webp'),'original-frame');
+// Exercitar falhas de gravação em todas as posições do pré-cache, não só na segunda.
+// Se uma gravação falhar, o worker não pode assumir controle nem perder a versão anterior.
+for(let putFailAt=1;putFailAt<=28;putFailAt++){
+  for(const existed of [false,true]){
+    const failedPut=await scenario(existed,Infinity,{putFailAt});
+    assert.equal(failedPut.skipWaiting,false,'Falha no cache.put '+putFailAt+' não deve ativar o worker');
+    assert.equal(failedPut.stored.has(cacheName),existed,'Falha no cache.put '+putFailAt+' deve preservar somente cache preexistente');
+    if(existed){
+      assert.equal(failedPut.stored.get(cacheName).get(scope+'index.html'),'original-editor');
+      assert.equal(failedPut.stored.get(cacheName).get(scope+'molduras/original_01.webp'),'original-frame');
+      assert.equal(failedPut.stored.get(cacheName).get('sentinel'),'preserved');
+    }
   }
 }
 const existingSuccess=await scenario(true,Infinity);
