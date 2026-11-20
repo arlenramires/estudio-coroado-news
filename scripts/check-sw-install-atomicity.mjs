@@ -15,7 +15,7 @@ function response(url){
   return {status:200,type:'basic',redirected:false,url,headers:{get:()=>mime},
     clone(){return this},async text(){return html}};
 }
-async function scenario(existed,failAt,{invalidAt=Infinity,putFailAt=Infinity,httpFailAt=Infinity,redirectAt=Infinity,urlMismatchAt=Infinity,opaqueAt=Infinity,invalidCached=false,cachedFault=null,cachedHtmlFault=false,cachedHtmlUnreadable=false}={}){
+async function scenario(existed,failAt,{invalidAt=Infinity,putFailAt=Infinity,httpFailAt=Infinity,redirectAt=Infinity,urlMismatchAt=Infinity,opaqueAt=Infinity,invalidCached=false,cachedFault=null,cachedHtmlFault=false,cachedHtmlUnreadable=false,networkHtmlFaultAt=Infinity}={}){
   const listeners=new Map();
   const stored=new Map(existed?[[cacheName,new Map([['sentinel','preserved'],[scope+'index.html','original-editor'],[scope+'molduras/original_01.webp','original-frame']])]]:[]);
   if(existed&&invalidCached)stored.get(cacheName).set(scope+'molduras/original_01.webp',{
@@ -44,14 +44,14 @@ async function scenario(existed,failAt,{invalidAt=Infinity,putFailAt=Infinity,ht
         return {match:async url=>items.get(url),put:async(url,res)=>{puts++;if(puts===putFailAt)throw new Error('Falha simulada no cache.put');items.set(url,res)}}},
       delete:async name=>{deleted=true;return stored.delete(name)}
     },
-    fetch:async url=>{requests++;if(requests===failAt)throw new Error('Falha simulada');return requests===invalidAt?{...response(url),headers:{get:()=> 'text/html'}}:requests===httpFailAt?{...response(url),status:503}:requests===redirectAt?{...response(url),redirected:true}:requests===urlMismatchAt?{...response(url),url:scope+'login'}:requests===opaqueAt?{...response(url),type:'opaque'}:response(url)}
+    fetch:async url=>{requests++;if(requests===failAt)throw new Error('Falha simulada');return requests===networkHtmlFaultAt?{...response(url),async text(){return '<title>Login</title><main>Entre na sua conta</main>'}}:requests===invalidAt?{...response(url),headers:{get:()=> 'text/html'}}:requests===httpFailAt?{...response(url),status:503}:requests===redirectAt?{...response(url),redirected:true}:requests===urlMismatchAt?{...response(url),url:scope+'login'}:requests===opaqueAt?{...response(url),type:'opaque'}:response(url)}
   });
   new vm.Script(source,{filename:'sw.js'}).runInContext(context);
   let pending;
   listeners.get('install')({waitUntil:p=>{pending=p}});
   assert.ok(pending,'install deve usar waitUntil');
-  if(failAt!==Infinity||invalidAt!==Infinity||putFailAt!==Infinity||httpFailAt!==Infinity||redirectAt!==Infinity||urlMismatchAt!==Infinity||opaqueAt!==Infinity||invalidCached||cachedFault||cachedHtmlFault||cachedHtmlUnreadable){
-    await assert.rejects(pending, /Falha simulada|Recurso offline inválido|Recurso offline já armazenado é inválido|HTML offline já armazenado não contém o editor|Falha simulada no cache\.put/);
+  if(failAt!==Infinity||invalidAt!==Infinity||putFailAt!==Infinity||httpFailAt!==Infinity||redirectAt!==Infinity||urlMismatchAt!==Infinity||opaqueAt!==Infinity||networkHtmlFaultAt!==Infinity||invalidCached||cachedFault||cachedHtmlFault||cachedHtmlUnreadable){
+    await assert.rejects(pending, /Falha simulada|Recurso offline inválido|Recurso offline já armazenado é inválido|HTML offline já armazenado não contém o editor|HTML offline não contém o editor|Falha simulada no cache\.put/);
   }else await pending;
   return {stored,deleted,skipWaiting,requests};
 }
@@ -110,6 +110,19 @@ for(const [failure,options] of [['URL divergente',{urlMismatchAt:7}],['resposta 
     if(existed){
       assert.equal(failed.stored.get(cacheName).get(scope+'index.html'),'original-editor');
       assert.equal(failed.stored.get(cacheName).get(scope+'molduras/original_01.webp'),'original-frame');
+    }
+  }
+}
+// Resposta HTML 200 com MIME correto ainda pode ser uma página de login.
+// Cobrir tanto a raiz quanto index.html, preservando a instalação anterior.
+for(const networkHtmlFaultAt of [1,2]){
+  for(const existed of [false,true]){
+    const failed=await scenario(existed,Infinity,{networkHtmlFaultAt});
+    assert.equal(failed.skipWaiting,false,'Página de login na posição '+networkHtmlFaultAt+' não deve ativar o PWA');
+    assert.equal(failed.stored.has(cacheName),existed,'Página de login deve preservar somente o cache anterior');
+    if(existed){
+      assert.equal(failed.stored.get(cacheName).get('sentinel'),'preserved');
+      assert.equal(failed.stored.get(cacheName).get(scope+'index.html'),'original-editor');
     }
   }
 }
