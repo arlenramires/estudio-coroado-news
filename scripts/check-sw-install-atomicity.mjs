@@ -136,7 +136,9 @@ assert.equal(invalidCached.deleted,false,'Falha de integridade não pode apagar 
 // Uma instalação nova não pode confiar em cache HTTP 503 ou resposta opaca.
 for(const [label,cachedFault] of [
   ['HTTP 503',{status:503}],
-  ['resposta opaca',{type:'opaque'}]
+  ['resposta opaca',{type:'opaque'}],
+  ['redirecionamento em cache',{redirected:true}],
+  ['URL divergente em cache',{url:scope+'login'}]
 ]){
   const failed=await scenario(true,Infinity,{cachedFault});
   assert.equal(failed.skipWaiting,false,label+' armazenado não deve ativar o worker');
