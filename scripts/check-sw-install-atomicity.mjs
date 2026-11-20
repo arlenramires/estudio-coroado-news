@@ -15,9 +15,12 @@ function response(url){
   return {status:200,type:'basic',redirected:false,url,headers:{get:()=>mime},
     clone(){return this},async text(){return html}};
 }
-async function scenario(existed,failAt,{invalidAt=Infinity,putFailAt=Infinity,httpFailAt=Infinity,redirectAt=Infinity,urlMismatchAt=Infinity,opaqueAt=Infinity}={}){
+async function scenario(existed,failAt,{invalidAt=Infinity,putFailAt=Infinity,httpFailAt=Infinity,redirectAt=Infinity,urlMismatchAt=Infinity,opaqueAt=Infinity,invalidCached=false}={}){
   const listeners=new Map();
   const stored=new Map(existed?[[cacheName,new Map([['sentinel','preserved'],[scope+'index.html','original-editor'],[scope+'molduras/original_01.webp','original-frame']])]]:[]);
+  if(existed&&invalidCached)stored.get(cacheName).set(scope+'molduras/original_01.webp',{
+    ...response(scope+'molduras/original_01.webp'),headers:{get:()=> 'text/html'}
+  });
   let requests=0,puts=0,deleted=false,skipWaiting=false;
   const context=vm.createContext({
     URL,Set,Array,console:{error:()=>{},warn:()=>{}},
@@ -35,7 +38,7 @@ async function scenario(existed,failAt,{invalidAt=Infinity,putFailAt=Infinity,ht
   let pending;
   listeners.get('install')({waitUntil:p=>{pending=p}});
   assert.ok(pending,'install deve usar waitUntil');
-  if(failAt!==Infinity||invalidAt!==Infinity||putFailAt!==Infinity||httpFailAt!==Infinity||redirectAt!==Infinity||urlMismatchAt!==Infinity||opaqueAt!==Infinity){
+  if(failAt!==Infinity||invalidAt!==Infinity||putFailAt!==Infinity||httpFailAt!==Infinity||redirectAt!==Infinity||urlMismatchAt!==Infinity||opaqueAt!==Infinity||invalidCached){
     await assert.rejects(pending, /Falha simulada|Recurso offline inválido|Falha simulada no cache\.put/);
   }else await pending;
   return {stored,deleted,skipWaiting,requests};
@@ -114,6 +117,9 @@ for(const existed of [false,true]){
     }
   }
 }
+const invalidCached=await scenario(true,Infinity,{invalidCached:true});
+assert.equal(invalidCached.skipWaiting,false,'Moldura antiga com MIME inválido não pode ativar o worker');
+assert.equal(invalidCached.deleted,false,'Falha de integridade não pode apagar o cache preexistente');
 const existingSuccess=await scenario(true,Infinity);
 assert.equal(existingSuccess.skipWaiting,true,'Cache existente completo deve permitir ativação');
 assert.equal(existingSuccess.deleted,false,'Instalação bem-sucedida não deve apagar cache existente');
