@@ -15,12 +15,16 @@ function response(url){
   return {status:200,type:'basic',redirected:false,url,headers:{get:()=>mime},
     clone(){return this},async text(){return html}};
 }
-async function scenario(existed,failAt,{invalidAt=Infinity,putFailAt=Infinity,httpFailAt=Infinity,redirectAt=Infinity,urlMismatchAt=Infinity,opaqueAt=Infinity,invalidCached=false}={}){
+async function scenario(existed,failAt,{invalidAt=Infinity,putFailAt=Infinity,httpFailAt=Infinity,redirectAt=Infinity,urlMismatchAt=Infinity,opaqueAt=Infinity,invalidCached=false,cachedFault=null}={}){
   const listeners=new Map();
   const stored=new Map(existed?[[cacheName,new Map([['sentinel','preserved'],[scope+'index.html','original-editor'],[scope+'molduras/original_01.webp','original-frame']])]]:[]);
   if(existed&&invalidCached)stored.get(cacheName).set(scope+'molduras/original_01.webp',{
     ...response(scope+'molduras/original_01.webp'),headers:{get:()=> 'text/html'}
   });
+  if(existed&&cachedFault){
+    const url=scope+'molduras/original_01.webp';
+    stored.get(cacheName).set(url,{...response(url),...cachedFault});
+  }
   let requests=0,puts=0,deleted=false,skipWaiting=false;
   const context=vm.createContext({
     URL,Set,Array,console:{error:()=>{},warn:()=>{}},
@@ -38,7 +42,7 @@ async function scenario(existed,failAt,{invalidAt=Infinity,putFailAt=Infinity,ht
   let pending;
   listeners.get('install')({waitUntil:p=>{pending=p}});
   assert.ok(pending,'install deve usar waitUntil');
-  if(failAt!==Infinity||invalidAt!==Infinity||putFailAt!==Infinity||httpFailAt!==Infinity||redirectAt!==Infinity||urlMismatchAt!==Infinity||opaqueAt!==Infinity||invalidCached){
+  if(failAt!==Infinity||invalidAt!==Infinity||putFailAt!==Infinity||httpFailAt!==Infinity||redirectAt!==Infinity||urlMismatchAt!==Infinity||opaqueAt!==Infinity||invalidCached||cachedFault){
     await assert.rejects(pending, /Falha simulada|Recurso offline inválido|Falha simulada no cache\.put/);
   }else await pending;
   return {stored,deleted,skipWaiting,requests};
@@ -120,6 +124,17 @@ for(const existed of [false,true]){
 const invalidCached=await scenario(true,Infinity,{invalidCached:true});
 assert.equal(invalidCached.skipWaiting,false,'Moldura antiga com MIME inválido não pode ativar o worker');
 assert.equal(invalidCached.deleted,false,'Falha de integridade não pode apagar o cache preexistente');
+// Cobrir respostas previamente armazenadas com status ou tipo inválidos.
+// Uma instalação nova não pode confiar em cache HTTP 503 ou resposta opaca.
+for(const [label,cachedFault] of [
+  ['HTTP 503',{status:503}],
+  ['resposta opaca',{type:'opaque'}]
+]){
+  const failed=await scenario(true,Infinity,{cachedFault});
+  assert.equal(failed.skipWaiting,false,label+' armazenado não deve ativar o worker');
+  assert.equal(failed.deleted,false,label+' não deve apagar o cache anterior');
+  assert.equal(failed.stored.get(cacheName).get('sentinel'),'preserved');
+}
 const existingSuccess=await scenario(true,Infinity);
 assert.equal(existingSuccess.skipWaiting,true,'Cache existente completo deve permitir ativação');
 assert.equal(existingSuccess.deleted,false,'Instalação bem-sucedida não deve apagar cache existente');
