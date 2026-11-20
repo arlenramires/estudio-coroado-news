@@ -86,7 +86,19 @@ for(const [failure,options] of [['HTTP 503',{httpFailAt:7}],['redirecionamento',
     }
   }
 }
-// Uma resposta com URL trocada ou opaca não pode ser aceita como recurso offline.\nfor(const [failure,options] of [['URL divergente',{urlMismatchAt:7}],['resposta opaca',{opaqueAt:7}]]){\n  for(const existed of [false,true]){\n    const failed=await scenario(existed,Infinity,options);\n    assert.equal(failed.skipWaiting,false,failure+' não deve ativar o worker');\n    assert.equal(failed.stored.has(cacheName),existed,failure+' deve preservar o cache anterior');\n    if(existed){\n      assert.equal(failed.stored.get(cacheName).get(scope+'index.html'),'original-editor');\n      assert.equal(failed.stored.get(cacheName).get(scope+'molduras/original_01.webp'),'original-frame');\n    }\n  }\n}\n// Exercitar falhas de gravação em todas as posições do pré-cache, não só na segunda.
+// Uma resposta com URL trocada ou opaca não pode ser aceita como recurso offline.
+for(const [failure,options] of [['URL divergente',{urlMismatchAt:7}],['resposta opaca',{opaqueAt:7}]]){
+  for(const existed of [false,true]){
+    const failed=await scenario(existed,Infinity,options);
+    assert.equal(failed.skipWaiting,false,failure+' não deve ativar o worker');
+    assert.equal(failed.stored.has(cacheName),existed,failure+' deve preservar o cache anterior');
+    if(existed){
+      assert.equal(failed.stored.get(cacheName).get(scope+'index.html'),'original-editor');
+      assert.equal(failed.stored.get(cacheName).get(scope+'molduras/original_01.webp'),'original-frame');
+    }
+  }
+}
+// Exercitar falhas de gravação em todas as posições do pré-cache, não só na segunda.
 // Se uma gravação falhar, o worker não pode assumir controle nem perder a versão anterior.
 // O cache preexistente já contém HTML e a primeira moldura: são apenas 26 gravações novas.
 // Testar 27/28 nessa situação não gera falha e produziria falso negativo na suíte.
