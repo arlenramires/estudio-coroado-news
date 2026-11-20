@@ -15,7 +15,7 @@ function response(url){
   return {status:200,type:'basic',redirected:false,url,headers:{get:()=>mime},
     clone(){return this},async text(){return html}};
 }
-async function scenario(existed,failAt,{invalidAt=Infinity,putFailAt=Infinity,httpFailAt=Infinity,redirectAt=Infinity}={}){
+async function scenario(existed,failAt,{invalidAt=Infinity,putFailAt=Infinity,httpFailAt=Infinity,redirectAt=Infinity,urlMismatchAt=Infinity,opaqueAt=Infinity}={}){
   const listeners=new Map();
   const stored=new Map(existed?[[cacheName,new Map([['sentinel','preserved'],[scope+'index.html','original-editor'],[scope+'molduras/original_01.webp','original-frame']])]]:[]);
   let requests=0,puts=0,deleted=false,skipWaiting=false;
@@ -29,13 +29,13 @@ async function scenario(existed,failAt,{invalidAt=Infinity,putFailAt=Infinity,ht
         return {match:async url=>items.get(url),put:async(url,res)=>{puts++;if(puts===putFailAt)throw new Error('Falha simulada no cache.put');items.set(url,res)}}},
       delete:async name=>{deleted=true;return stored.delete(name)}
     },
-    fetch:async url=>{requests++;if(requests===failAt)throw new Error('Falha simulada');return requests===invalidAt?{...response(url),headers:{get:()=> 'text/html'}}:requests===httpFailAt?{...response(url),status:503}:requests===redirectAt?{...response(url),redirected:true}:response(url)}
+    fetch:async url=>{requests++;if(requests===failAt)throw new Error('Falha simulada');return requests===invalidAt?{...response(url),headers:{get:()=> 'text/html'}}:requests===httpFailAt?{...response(url),status:503}:requests===redirectAt?{...response(url),redirected:true}:requests===urlMismatchAt?{...response(url),url:scope+'login'}:requests===opaqueAt?{...response(url),type:'opaque'}:response(url)}
   });
   new vm.Script(source,{filename:'sw.js'}).runInContext(context);
   let pending;
   listeners.get('install')({waitUntil:p=>{pending=p}});
   assert.ok(pending,'install deve usar waitUntil');
-  if(failAt!==Infinity||invalidAt!==Infinity||putFailAt!==Infinity||httpFailAt!==Infinity||redirectAt!==Infinity){
+  if(failAt!==Infinity||invalidAt!==Infinity||putFailAt!==Infinity||httpFailAt!==Infinity||redirectAt!==Infinity||urlMismatchAt!==Infinity||opaqueAt!==Infinity){
     await assert.rejects(pending, /Falha simulada|Recurso offline inválido|Falha simulada no cache\.put/);
   }else await pending;
   return {stored,deleted,skipWaiting,requests};
@@ -86,7 +86,7 @@ for(const [failure,options] of [['HTTP 503',{httpFailAt:7}],['redirecionamento',
     }
   }
 }
-// Exercitar falhas de gravação em todas as posições do pré-cache, não só na segunda.
+// Uma resposta com URL trocada ou opaca não pode ser aceita como recurso offline.\nfor(const [failure,options] of [['URL divergente',{urlMismatchAt:7}],['resposta opaca',{opaqueAt:7}]]){\n  for(const existed of [false,true]){\n    const failed=await scenario(existed,Infinity,options);\n    assert.equal(failed.skipWaiting,false,failure+' não deve ativar o worker');\n    assert.equal(failed.stored.has(cacheName),existed,failure+' deve preservar o cache anterior');\n    if(existed){\n      assert.equal(failed.stored.get(cacheName).get(scope+'index.html'),'original-editor');\n      assert.equal(failed.stored.get(cacheName).get(scope+'molduras/original_01.webp'),'original-frame');\n    }\n  }\n}\n// Exercitar falhas de gravação em todas as posições do pré-cache, não só na segunda.
 // Se uma gravação falhar, o worker não pode assumir controle nem perder a versão anterior.
 // O cache preexistente já contém HTML e a primeira moldura: são apenas 26 gravações novas.
 // Testar 27/28 nessa situação não gera falha e produziria falso negativo na suíte.
