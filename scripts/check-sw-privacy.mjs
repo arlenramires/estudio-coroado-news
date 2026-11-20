@@ -56,10 +56,12 @@ assert.equal(reads.length,0,'Requisições privadas não podem consultar CacheSt
 assert.equal(writes.length,0,'Requisições privadas não podem gravar CacheStorage');
 const moldura=dispatch(scope+'molduras/original_01.webp');
 const editor=dispatch(scope+'index.html');
+const rootEditor=dispatch(scope,{mode:'navigate'});
 assert.ok(moldura,'Moldura autorizada não interceptada');
 assert.ok(editor,'Editor autorizado não interceptado');
-await Promise.all([moldura,editor]);
-assert.deepEqual(writes.sort(),[scope+'index.html',scope+'molduras/original_01.webp'].sort(),
+assert.ok(rootEditor,'Navegação na raiz não interceptada');
+await Promise.all([moldura,editor,rootEditor]);
+assert.deepEqual(writes.sort(),[scope,scope+'index.html',scope+'molduras/original_01.webp'].sort(),
   'Somente arquivos permitidos podem ser gravados no cache');
 assert.ok(reads.length>=2,'Os recursos autorizados devem consultar o cache');
 assert.equal(dispatch(scope+'index.html?segredo=1'),undefined,'Query string não pode ser interceptada');
