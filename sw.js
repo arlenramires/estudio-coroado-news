@@ -49,7 +49,7 @@ self.addEventListener('install',event=>{
         const previous=cacheExisted?await cache.match(url):undefined;
         // Um cache pré-existente com resposta de erro/opaca não pode ser tratado como instalação válida.
         // Rejeitar a atualização sem sobrescrever o conteúdo antigo preserva a atomicidade.
-        if(previous&&(previous.status!==200||previous.type!=='basic')){
+        if(previous&&typeof previous==='object'&&(previous.status!==200||previous.type!=='basic')){
           throw new Error('Recurso offline já armazenado é inválido: '+asset);
         }
         if(!previous)await cache.put(url,response);
