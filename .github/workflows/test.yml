@@ -28,6 +28,8 @@ jobs:
 
       - name: Verificar privacidade do cache PWA
         run: node scripts/check-sw-privacy.mjs
+      - name: Testar atomicidade do pré-cache e preservar versão offline anterior
+        run: node scripts/check-sw-install-atomicity.mjs
 
       - name: Testar ciclo de vida e isolamento do cache PWA
         run: node scripts/check-sw-lifecycle.mjs
