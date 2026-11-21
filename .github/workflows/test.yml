@@ -31,6 +31,9 @@ jobs:
       - name: Testar atomicidade do pré-cache e preservar versão offline anterior
         run: node scripts/check-sw-install-atomicity.mjs
 
+      - name: Testar navegação PWA e preservação de erros HTTP
+        run: node scripts/check-sw-navigation.mjs
+
       - name: Testar ciclo de vida e isolamento do cache PWA
         run: node scripts/check-sw-lifecycle.mjs
 
