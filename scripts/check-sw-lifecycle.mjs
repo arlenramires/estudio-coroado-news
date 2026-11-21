@@ -26,7 +26,8 @@ const fetchAsset=async url=>{
     url.endsWith('.png')?'image/png':
     url.endsWith('.svg')?'image/svg+xml':
     url.endsWith('.webmanifest')?'application/manifest+json':'text/html';
-  return {status:200,type:'basic',url,headers:{get:name=>name.toLowerCase()==='content-type'?type:null}};
+  return {status:200,type:'basic',url,headers:{get:name=>name.toLowerCase()==='content-type'?type:null},
+    ...(type==='text/html'?{clone:()=>({text:async()=>'<title>Estúdio Coroado News 24H</title><main id="editorial"></main><button id="savePNG"></button>'})}:{})};
 };
 const context=vm.createContext({
   URL,Set,Array,console,fetch:fetchAsset,
