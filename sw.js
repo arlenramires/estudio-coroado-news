@@ -79,6 +79,9 @@ self.addEventListener('install',event=>{
         writtenUrls.push(url);
         await cache.put(url,response);
       }
+      // Uma falha ao solicitar ativação também deve passar pelo rollback.
+      // Não deixar recursos recém-gravados fora do tratamento de erro.
+      await self.skipWaiting();
     }catch(error){
       console.error('Instalação offline incompleta; mantendo a versão anterior',error);
       // Desfazer recursos novos escritos em cache preexistente se uma gravação falhar.
@@ -95,7 +98,6 @@ self.addEventListener('install',event=>{
       try{if(!cacheExisted)await caches.delete(CACHE)}catch(cleanupError){console.warn('Limpeza do cache incompleto falhou',cleanupError)}
       throw error;
     }
-    await self.skipWaiting();
   })());
 });
 self.addEventListener('activate',event=>{
