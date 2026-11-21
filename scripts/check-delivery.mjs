@@ -46,6 +46,10 @@ if(embedded.length!==22)throw Error('HTML offline não incorpora exatamente 22 m
 for(const [index,match] of embedded.entries()){
   const encoded=match[1];
   const bytes=Buffer.from(encoded,'base64');
+  // Buffer.from tolera padding incorreto e codificações não canônicas.
+  // O pacote offline deve conter uma representação Base64 íntegra e reproduzível.
+  if(bytes.toString('base64')!==encoded)
+    throw Error('Base64 WebP não canônico ou truncado na moldura: '+(index+1));
   if(bytes.length<30||bytes.toString('ascii',0,4)!=='RIFF'||bytes.toString('ascii',8,12)!=='WEBP')
     throw Error('Moldura incorporada não é um WebP válido: '+(index+1));
   if(bytes.readUInt32LE(4)+8!==bytes.length)
