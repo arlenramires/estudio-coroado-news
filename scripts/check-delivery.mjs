@@ -52,6 +52,13 @@ for(const [index,match] of embedded.entries()){
     throw Error('Base64 WebP não canônico ou truncado na moldura: '+(index+1));
   if(bytes.length<30||bytes.toString('ascii',0,4)!=='RIFF'||bytes.toString('ascii',8,12)!=='WEBP')
     throw Error('Moldura incorporada não é um WebP válido: '+(index+1));
+  // A assinatura WebP isolada não prova que a moldura é a original correta.
+  // Conferir cada imagem incorporada contra o arquivo-fonte da mesma posição.
+  const source=path.join('molduras','original_'+String(index+1).padStart(2,'0')+'.webp');
+  if(!fs.existsSync(source))throw Error('Moldura original ausente: '+source);
+  const expectedImage=fs.readFileSync(source);
+  if(!bytes.equals(expectedImage))
+    throw Error('Moldura incorporada difere do original: '+(index+1));
   if(bytes.readUInt32LE(4)+8!==bytes.length)
     throw Error('Tamanho RIFF inconsistente na moldura: '+(index+1));
   if(!['VP8 ','VP8L','VP8X'].includes(bytes.toString('ascii',12,16)))
