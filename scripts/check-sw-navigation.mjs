@@ -45,6 +45,13 @@ const valid=await navigate(scope+'index.html');
 assert.equal(await valid.text(),validHtml);
 assert.equal(writes.length,1,'Editor válido deve atualizar cache');
 // HTTP 302/redirect e respostas opacas não podem substituir o editor offline.
+// Erros HTTP reais não devem ser mascarados por uma versão antiga do editor.
+for(const status of [401,403,404,429,500,503]){
+  networkStatus=status;
+  const errorResponse=await navigate(scope+'index.html');
+  assert.equal(errorResponse.status,status,'Erro HTTP '+status+' deve chegar ao navegador');
+  assert.equal(writes.length,1,'Erro HTTP '+status+' não pode alterar o cache');
+}
 networkStatus=302;
 const redirected=await navigate(scope);
 assert.equal(await redirected.text(),validHtml,'Redirecionamento não deve substituir editor offline');
