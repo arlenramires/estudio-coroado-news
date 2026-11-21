@@ -73,5 +73,26 @@ for(const [label, altered] of [
   } finally { fs.writeFileSync(sums,original); }
 }
 
+// Entradas repetidas não podem passar mesmo com hashes corretos.
+const firstLine=manifestText.split('\n').find(line=>line.endsWith('  '+first));
+if(!firstLine)throw Error('Moldura 01 não encontrada no manifesto');
+expectFailure('checksum duplicado',()=>{
+  fs.writeFileSync(sums,manifestText.trimEnd()+'\n'+firstLine+'\n');
+},()=>fs.writeFileSync(sums,original));
+try{
+  fs.writeFileSync(sums,manifestText.trimEnd()+'\n'+firstLine+'\n');
+  if(pythonVerify().status===0)throw Error('Verificador Python aceitou checksum duplicado');
+  console.log('Adulteração rejeitada pelo Python: checksum duplicado');
+}finally{fs.writeFileSync(sums,original)}
+
+// Diretórios vazios extras não aparecem em SHA256SUMS, mas também
+// precisam ser recusados pelo verificador entregue ao usuário.
+const extraDirectory=path.join(root,'diretorio-indevido');
+try{
+  fs.mkdirSync(extraDirectory);
+  if(pythonVerify().status===0)throw Error('Verificador Python aceitou diretório extra');
+  console.log('Adulteração rejeitada pelo Python: diretório extra');
+}finally{fs.rmdirSync(extraDirectory)}
+
 if(verify().status!==0)throw Error('Pacote não foi restaurado após testes negativos');
 console.log('Testes negativos de integridade concluídos.');
