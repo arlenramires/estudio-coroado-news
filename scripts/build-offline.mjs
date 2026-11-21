@@ -125,6 +125,9 @@ const networkChannels=[
   // O HTML único não deve abrir conexões via APIs alternativas ao fetch.
   /\b(?:new\s+)?XMLHttpRequest\s*\(/,
   /\b(?:new\s+)?(?:WebTransport|RTCPeerConnection|webkitRTCPeerConnection)\s*\(/,
+  // Workers e importScripts podem buscar código externo e contornar o isolamento.
+  /\b(?:new\s+)?(?:Worker|SharedWorker)\s*\(/,
+  /\bimportScripts\s*\(/,
   /\bfetch\s*\(\s*['"` ]\s*(?:https?:)?\/\//i,
   /\.open\s*\(\s*['"`](?:GET|POST|PUT|PATCH|DELETE)['"`]\s*,\s*['"`]\s*(?:https?:)?\/\//i
 ];
