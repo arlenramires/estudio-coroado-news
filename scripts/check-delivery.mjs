@@ -52,6 +52,17 @@ for(const [index,match] of embedded.entries()){
     throw Error('Tamanho RIFF inconsistente na moldura: '+(index+1));
   if(!['VP8 ','VP8L','VP8X'].includes(bytes.toString('ascii',12,16)))
     throw Error('Chunk WebP inválido na moldura: '+(index+1));
+  // RIFF inclui chunks com tamanho little-endian e padding para bytes ímpares.
+  // Não aceitar arquivos com cabeçalho WebP válido mas chunk truncado ou bytes soltos.
+  let offset=12;
+  while(offset<bytes.length){
+    if(offset+8>bytes.length)throw Error('Cabeçalho de chunk WebP truncado: '+(index+1));
+    const chunkSize=bytes.readUInt32LE(offset+4);
+    const next=offset+8+chunkSize+(chunkSize%2);
+    if(next>bytes.length)throw Error('Dados de chunk WebP truncados: '+(index+1));
+    offset=next;
+  }
+  if(offset!==bytes.length)throw Error('Chunks WebP inconsistentes: '+(index+1));
 }
 if(/"src":"molduras\/original_/.test(offline))throw Error('HTML offline depende de molduras externas');
 console.log('Entrega validada: '+files.length+' arquivos íntegros e 22 molduras incorporadas no HTML offline.');
