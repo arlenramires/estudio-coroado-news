@@ -167,12 +167,17 @@ if(!cacheVersion||!html.includes("name==='"+cacheVersion+"'"))
 const catalog=JSON.parse(fs.readFileSync('molduras/catalogo-22.json','utf8'));
 if(!Array.isArray(catalog.assets)||catalog.assets.length!==22)throw new Error('Catálogo deve conter exatamente 22 molduras');
 const catalogPaths=new Set();
+// Nomes duplicados confundem a seleção de editoria mesmo com arquivos distintos.
+const catalogNames=new Set();
 for(let i=1;i<=22;i++){
   const expected='molduras/original_'+String(i).padStart(2,'0')+'.webp';
   const asset=catalog.assets[i-1];
   if(!asset||asset.id!==String(i).padStart(2,'0')||asset.target!==expected)throw new Error('Catálogo fora de ordem ou caminho incorreto: '+expected);
   if(typeof asset.name!=='string'||!asset.name.trim()||!Number.isInteger(asset.width)||asset.width<=0||!Number.isInteger(asset.height)||asset.height<=0)throw new Error('Metadados inválidos: '+expected);
   if(asset.status!=='publicado'||catalogPaths.has(asset.target))throw new Error('Moldura duplicada ou não publicada: '+expected);
+  const normalizedName=asset.name.trim().normalize('NFC').toLocaleLowerCase('pt-BR');
+  if(catalogNames.has(normalizedName))throw new Error('Nome de moldura duplicado no catálogo: '+asset.name);
+  catalogNames.add(normalizedName);
   catalogPaths.add(asset.target);
   if(!fs.existsSync(expected))throw new Error('Moldura offline ausente: '+expected);
   // O validador não deve aceitar links simbólicos, mesmo que apontem para um WebP válido.
