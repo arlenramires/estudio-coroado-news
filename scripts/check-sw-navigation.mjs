@@ -8,9 +8,12 @@ const handlers=new Map();
 const writes=[];
 let networkHtml='<html><title>Login</title><main>Entre na conta</main></html>';
 let networkFails=false;
+let networkStatus=200;
+let networkRedirected=false;
+let networkType='basic';
 const validHtml='<!doctype html><title>Estúdio Coroado News 24H</title><main id="editorial"></main><button id="savePNG">PNG</button>';
 const response=(url,html)=>({
-  url,status:200,type:'basic',redirected:false,
+  url,status:networkStatus,type:networkType,redirected:networkRedirected,
   headers:{get:key=>key.toLowerCase()==='content-type'?'text/html':null},
   clone(){return response(url,html)},
   async text(){return html}
@@ -41,6 +44,22 @@ networkHtml=validHtml;
 const valid=await navigate(scope+'index.html');
 assert.equal(await valid.text(),validHtml);
 assert.equal(writes.length,1,'Editor válido deve atualizar cache');
+// HTTP 302/redirect e respostas opacas não podem substituir o editor offline.
+networkStatus=302;
+const redirected=await navigate(scope);
+assert.equal(await redirected.text(),validHtml,'Redirecionamento não deve substituir editor offline');
+assert.equal(writes.length,1,'Redirecionamento não deve gravar cache');
+networkStatus=200;
+networkRedirected=true;
+const redirected200=await navigate(scope);
+assert.equal(await redirected200.text(),validHtml,'Resposta redirecionada HTTP 200 deve cair no cache');
+assert.equal(writes.length,1,'Resposta redirecionada HTTP 200 não deve gravar cache');
+networkRedirected=false;
+networkType='opaque';
+const opaque=await navigate(scope);
+assert.equal(await opaque.text(),validHtml,'Resposta opaca deve cair no editor offline');
+assert.equal(writes.length,1,'Resposta opaca não deve gravar cache');
+networkType='basic';
 networkFails=true;
 const offline=await navigate(scope);
 assert.equal(await offline.text(),validHtml,'Navegação offline deve manter editor');
