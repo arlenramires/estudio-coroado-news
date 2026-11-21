@@ -28,6 +28,7 @@ self.addEventListener('install',event=>{
     // A rejeição da instalação mantém o service worker anterior ativo para uso offline.
     let cacheExisted=false;
     const pendingWrites=[];
+    const writtenUrls=[];
     try{
       // Nunca excluir um cache já existente ao falhar uma nova instalação.
       cacheExisted=(await caches.keys()).includes(CACHE);
@@ -72,9 +73,19 @@ self.addEventListener('install',event=>{
       }
       // Só iniciar gravações depois que TODOS os recursos passaram pela validação.
       // Assim uma resposta inválida no final da lista não modifica um cache existente.
-      for(const {url,response} of pendingWrites)await cache.put(url,response);
+      for(const {url,response} of pendingWrites){
+        await cache.put(url,response);
+        writtenUrls.push(url);
+      }
     }catch(error){
       console.error('Instalação offline incompleta; mantendo a versão anterior',error);
+      // Desfazer recursos novos escritos em cache preexistente se uma gravação falhar.
+      if(cacheExisted&&writtenUrls.length){
+        try{
+          const rollbackCache=await caches.open(CACHE);
+          for(const url of writtenUrls)await rollbackCache.delete(url);
+        }catch(rollbackError){console.warn('Rollback do pré-cache incompleto',rollbackError)}
+      }
       try{if(!cacheExisted)await caches.delete(CACHE)}catch(cleanupError){console.warn('Limpeza do cache incompleto falhou',cleanupError)}
       throw error;
     }
