@@ -74,8 +74,10 @@ self.addEventListener('install',event=>{
       // Só iniciar gravações depois que TODOS os recursos passaram pela validação.
       // Assim uma resposta inválida no final da lista não modifica um cache existente.
       for(const {url,response} of pendingWrites){
-        await cache.put(url,response);
+        // Registrar antes do put: uma implementação pode gravar e ainda rejeitar a promessa.
+        // Nesse caso, a própria URL que falhou também precisa ser revertida.
         writtenUrls.push(url);
+        await cache.put(url,response);
       }
     }catch(error){
       console.error('Instalação offline incompleta; mantendo a versão anterior',error);
