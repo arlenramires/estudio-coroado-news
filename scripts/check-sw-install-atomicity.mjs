@@ -15,7 +15,7 @@ function response(url){
   return {status:200,type:'basic',redirected:false,url,headers:{get:()=>mime},
     clone(){return this},async text(){return html}};
 }
-async function scenario(existed,failAt,{invalidAt=Infinity,putFailAt=Infinity,httpFailAt=Infinity,redirectAt=Infinity,urlMismatchAt=Infinity,opaqueAt=Infinity,invalidCached=false,cachedFault=null,cachedHtmlFault=false,cachedHtmlUnreadable=false,networkHtmlFaultAt=Infinity,networkHtmlFaultBody='<title>Login</title><main>Entre na sua conta</main>'}={}){
+async function scenario(existed,failAt,{invalidAt=Infinity,putFailAt=Infinity,putWriteThenFailAt=Infinity,httpFailAt=Infinity,redirectAt=Infinity,urlMismatchAt=Infinity,opaqueAt=Infinity,invalidCached=false,cachedFault=null,cachedHtmlFault=false,cachedHtmlUnreadable=false,networkHtmlFaultAt=Infinity,networkHtmlFaultBody='<title>Login</title><main>Entre na sua conta</main>'}={}){
   const listeners=new Map();
   const stored=new Map(existed?[[cacheName,new Map([['sentinel','preserved'],[scope+'index.html','original-editor'],[scope+'molduras/original_01.webp','original-frame']])]]:[]);
   if(existed&&invalidCached)stored.get(cacheName).set(scope+'molduras/original_01.webp',{
@@ -41,7 +41,7 @@ async function scenario(existed,failAt,{invalidAt=Infinity,putFailAt=Infinity,ht
     caches:{
       keys:async()=>[...stored.keys()],
       open:async name=>{if(!stored.has(name))stored.set(name,new Map());const items=stored.get(name);
-        return {match:async url=>items.get(url),put:async(url,res)=>{puts++;if(puts===putFailAt)throw new Error('Falha simulada no cache.put');items.set(url,res)},delete:async url=>items.delete(url)}},
+        return {match:async url=>items.get(url),put:async(url,res)=>{puts++;if(puts===putFailAt)throw new Error('Falha simulada no cache.put');items.set(url,res);if(puts===putWriteThenFailAt)throw new Error('Falha simulada após escrita no cache.put')},delete:async url=>items.delete(url)}},
       delete:async name=>{deleted=true;return stored.delete(name)}
     },
     fetch:async url=>{requests++;if(requests===failAt)throw new Error('Falha simulada');return requests===networkHtmlFaultAt?{...response(url),async text(){return networkHtmlFaultBody}}:requests===invalidAt?{...response(url),headers:{get:()=> 'text/html'}}:requests===httpFailAt?{...response(url),status:503}:requests===redirectAt?{...response(url),redirected:true}:requests===urlMismatchAt?{...response(url),url:scope+'login'}:requests===opaqueAt?{...response(url),type:'opaque'}:response(url)}
@@ -50,8 +50,8 @@ async function scenario(existed,failAt,{invalidAt=Infinity,putFailAt=Infinity,ht
   let pending;
   listeners.get('install')({waitUntil:p=>{pending=p}});
   assert.ok(pending,'install deve usar waitUntil');
-  if(failAt!==Infinity||invalidAt!==Infinity||putFailAt!==Infinity||httpFailAt!==Infinity||redirectAt!==Infinity||urlMismatchAt!==Infinity||opaqueAt!==Infinity||networkHtmlFaultAt!==Infinity||invalidCached||cachedFault||cachedHtmlFault||cachedHtmlUnreadable){
-    await assert.rejects(pending, /Falha simulada|Recurso offline inválido|Recurso offline já armazenado é inválido|HTML offline já armazenado não contém o editor|HTML offline não contém o editor|Falha simulada no cache\.put/);
+  if(failAt!==Infinity||invalidAt!==Infinity||putFailAt!==Infinity||putWriteThenFailAt!==Infinity||httpFailAt!==Infinity||redirectAt!==Infinity||urlMismatchAt!==Infinity||opaqueAt!==Infinity||networkHtmlFaultAt!==Infinity||invalidCached||cachedFault||cachedHtmlFault||cachedHtmlUnreadable){
+    await assert.rejects(pending, /Falha simulada|Recurso offline inválido|Recurso offline já armazenado é inválido|HTML offline já armazenado não contém o editor|HTML offline não contém o editor|Falha simulada no cache\.put|Falha simulada após escrita no cache\.put/);
   }else await pending;
   return {stored,deleted,skipWaiting,requests};
 }
@@ -156,6 +156,21 @@ for(const existed of [false,true]){
       assert.equal(failedPut.stored.get(cacheName).get('sentinel'),'preserved');
       assert.equal(failedPut.stored.get(cacheName).size,3,
         'Falha na gravação '+putFailAt+' deve desfazer todos os recursos novos');
+    }
+  }
+}
+// Alguns navegadores podem gravar o recurso e só depois rejeitar cache.put().
+// A URL da própria gravação rejeitada também precisa ser removida no rollback.
+for(const existed of [false,true]){
+  for(let putWriteThenFailAt=1;putWriteThenFailAt<=(existed?26:28);putWriteThenFailAt++){
+    const failed=await scenario(existed,Infinity,{putWriteThenFailAt});
+    assert.equal(failed.skipWaiting,false,'Escrita com rejeição tardia não pode ativar o worker');
+    assert.equal(failed.stored.has(cacheName),existed,'Rejeição tardia deve preservar somente cache anterior');
+    if(existed){
+      assert.equal(failed.stored.get(cacheName).size,3,'Rollback deve incluir a URL escrita antes da rejeição '+putWriteThenFailAt);
+      assert.equal(failed.stored.get(cacheName).get('sentinel'),'preserved');
+      assert.equal(failed.stored.get(cacheName).get(scope+'index.html'),'original-editor');
+      assert.equal(failed.stored.get(cacheName).get(scope+'molduras/original_01.webp'),'original-frame');
     }
   }
 }
