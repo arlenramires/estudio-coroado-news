@@ -15,12 +15,15 @@ const local=(value,label)=>{
 for(const field of ['id','start_url','scope'])local(manifest[field],field);
 if(manifest.display!=='standalone')throw new Error('PWA deve abrir em modo standalone');
 if(!Array.isArray(manifest.icons)||!manifest.icons.length)throw new Error('PWA sem ícones');
+if(!fs.lstatSync('icons',{throwIfNoEntry:false})?.isDirectory()||fs.lstatSync('icons').isSymbolicLink())
+  throw new Error('Diretório de ícones PWA ausente ou simbólico');
 for(const icon of manifest.icons){
   const target=local(icon.src,'Ícone PWA');
-  if(!fs.existsSync(target)||!fs.statSync(target).isFile())
+  if(!fs.lstatSync(target,{throwIfNoEntry:false})?.isFile())
     throw new Error('Ícone PWA ausente: '+target);
 }
 if(local(manifest.start_url,'start_url')!=='index.html')
   throw new Error('PWA deve iniciar no editor index.html');
-if(!fs.existsSync('sw.js'))throw new Error('Service worker ausente');
+if(!fs.lstatSync('sw.js',{throwIfNoEntry:false})?.isFile())
+  throw new Error('Service worker ausente ou simbólico');
 console.log('Manifesto PWA privado: caminhos locais, ícones presentes e início no editor.');
