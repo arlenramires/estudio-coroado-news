@@ -83,7 +83,11 @@ self.addEventListener('install',event=>{
       if(cacheExisted&&writtenUrls.length){
         try{
           const rollbackCache=await caches.open(CACHE);
-          for(const url of writtenUrls)await rollbackCache.delete(url);
+          for(const url of writtenUrls){
+            try{await rollbackCache.delete(url)}catch(deleteError){
+              console.warn('Falha ao reverter recurso offline: '+url,deleteError);
+            }
+          }
         }catch(rollbackError){console.warn('Rollback do pré-cache incompleto',rollbackError)}
       }
       try{if(!cacheExisted)await caches.delete(CACHE)}catch(cleanupError){console.warn('Limpeza do cache incompleto falhou',cleanupError)}
