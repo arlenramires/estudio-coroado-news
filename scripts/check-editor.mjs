@@ -224,11 +224,16 @@ let editorAssets;
 try{editorAssets=JSON.parse(dataMatch[1]);}catch{throw new Error('Catálogo DATA do editor inválido')}
 if(!Array.isArray(editorAssets)||editorAssets.length!==22)throw new Error('Editor deve oferecer exatamente 22 molduras');
 const editorPaths=new Set();
+// A seleção no editor também deve evitar nomes ambíguos, mesmo que o catálogo esteja correto.
+const editorNames=new Set();
 for(let i=0;i<22;i++){
   const asset=editorAssets[i];
   const expected='molduras/original_'+String(i+1).padStart(2,'0')+'.webp';
   if(!asset||asset.src!==expected||editorPaths.has(asset.src))throw new Error('Moldura ausente, duplicada ou fora de ordem no editor: '+expected);
   if(typeof asset.name!=='string'||!asset.name.trim())throw new Error('Nome ausente no editor: '+expected);
+  const editorName=asset.name.trim().normalize('NFC').toLocaleLowerCase('pt-BR');
+  if(editorNames.has(editorName))throw new Error('Nome duplicado no editor: '+asset.name);
+  editorNames.add(editorName);
   const catalogAsset=catalog.assets[i];
   if(asset.name!==catalogAsset.name||asset.w!==catalogAsset.width||asset.h!==catalogAsset.height)
     throw new Error('Editor e catálogo divergem em nome ou dimensões: '+expected);
