@@ -27,6 +27,7 @@ self.addEventListener('install',event=>{
     // Uma atualização incompleta não deve assumir o controle nem apagar o cache da versão anterior.
     // A rejeição da instalação mantém o service worker anterior ativo para uso offline.
     let cacheExisted=false;
+    const pendingWrites=[];
     try{
       // Nunca excluir um cache já existente ao falhar uma nova instalação.
       cacheExisted=(await caches.keys()).includes(CACHE);
@@ -67,8 +68,11 @@ self.addEventListener('install',event=>{
            !(await isEditorHtml(previous))){
           throw new Error('HTML offline já armazenado não contém o editor: '+asset);
         }
-        if(!previous)await cache.put(url,response);
+        if(!previous)pendingWrites.push({url,response});
       }
+      // Só iniciar gravações depois que TODOS os recursos passaram pela validação.
+      // Assim uma resposta inválida no final da lista não modifica um cache existente.
+      for(const {url,response} of pendingWrites)await cache.put(url,response);
     }catch(error){
       console.error('Instalação offline incompleta; mantendo a versão anterior',error);
       try{if(!cacheExisted)await caches.delete(CACHE)}catch(cleanupError){console.warn('Limpeza do cache incompleto falhou',cleanupError)}
