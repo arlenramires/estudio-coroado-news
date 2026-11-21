@@ -117,13 +117,13 @@ if(/<script\b[^>]*\bsrc\s*=/i.test(html))
 // O gerador isolado também deve rejeitar canais explícitos de envio remoto.
 // Não depender exclusivamente de check-editor: o HTML único pode ser gerado
 // diretamente pelo usuário, sem executar a suíte de validação.
-const inlineScripts=[...html.matchAll(/<script(?:\\s[^>]*)?>([\\s\\S]*?)<\\/script>/gi)]
-  .map(match=>match[1]).join('\\n');
+const inlineScripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)]
+  .map(match=>match[1]).join('\n');
 const networkChannels=[
-  /\\b(?:new\\s+)?(?:WebSocket|EventSource)\\s*\\(/,
-  /\\b(?:navigator\\.)?sendBeacon\\s*\\(/,
-  /\\bfetch\\s*\\(\\s*['"` ]\\s*(?:https?:)?\\/\\//i,
-  /\\.open\\s*\\(\\s*['"`](?:GET|POST|PUT|PATCH|DELETE)['"`]\\s*,\\s*['"`]\\s*(?:https?:)?\\/\\//i
+  /\b(?:new\s+)?(?:WebSocket|EventSource)\s*\(/,
+  /\b(?:navigator\.)?sendBeacon\s*\(/,
+  /\bfetch\s*\(\s*['"` ]\s*(?:https?:)?\/\//i,
+  /\.open\s*\(\s*['"`](?:GET|POST|PUT|PATCH|DELETE)['"`]\s*,\s*['"`]\s*(?:https?:)?\/\//i
 ];
 if(networkChannels.some(pattern=>pattern.test(inlineScripts)))
   throw Error('HTML offline contém canal explícito de comunicação remota');
