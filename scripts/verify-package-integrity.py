@@ -5,7 +5,11 @@ import hashlib
 import stat
 import sys
 
-root = Path(__file__).resolve().parent
+# Nao executar um verificador substituido por link simbolico.
+script_path = Path(__file__).absolute()
+if script_path.is_symlink():
+    sys.exit("ERRO: verificador de integridade nao pode ser link simbolico.")
+root = script_path.parent.resolve()
 manifest = root / "SHA256SUMS.txt"
 if manifest.is_symlink():
     sys.exit("ERRO: manifesto de integridade nao pode ser link simbolico.")
