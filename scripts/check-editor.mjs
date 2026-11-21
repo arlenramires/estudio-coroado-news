@@ -68,6 +68,8 @@ const forbiddenNetwork=[
   /\b(?:navigator\.)?sendBeacon\s*\(/,
   /\b(?:new\s+)?XMLHttpRequest\s*\(/,
   /\b(?:new\s+)?(?:WebTransport|RTCPeerConnection|webkitRTCPeerConnection)\s*\(/,
+  /\b(?:new\s+)?(?:Worker|SharedWorker)\s*\(/,
+  /\bimportScripts\s*\(/,
   /\bfetch\s*\(\s*['"`]\s*(?:https?:)?\/\//i,
   /\.open\s*\(\s*['"`](?:GET|POST|PUT|PATCH|DELETE)['"`]\s*,\s*['"`]\s*(?:https?:)?\/\//i
 ];
