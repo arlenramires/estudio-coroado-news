@@ -122,6 +122,9 @@ const inlineScripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/
 const networkChannels=[
   /\b(?:new\s+)?(?:WebSocket|EventSource)\s*\(/,
   /\b(?:navigator\.)?sendBeacon\s*\(/,
+  // O HTML único não deve abrir conexões via APIs alternativas ao fetch.
+  /\b(?:new\s+)?XMLHttpRequest\s*\(/,
+  /\b(?:new\s+)?(?:WebTransport|RTCPeerConnection|webkitRTCPeerConnection)\s*\(/,
   /\bfetch\s*\(\s*['"` ]\s*(?:https?:)?\/\//i,
   /\.open\s*\(\s*['"`](?:GET|POST|PUT|PATCH|DELETE)['"`]\s*,\s*['"`]\s*(?:https?:)?\/\//i
 ];
