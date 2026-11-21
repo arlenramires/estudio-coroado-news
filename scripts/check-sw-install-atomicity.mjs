@@ -41,7 +41,7 @@ async function scenario(existed,failAt,{invalidAt=Infinity,putFailAt=Infinity,ht
     caches:{
       keys:async()=>[...stored.keys()],
       open:async name=>{if(!stored.has(name))stored.set(name,new Map());const items=stored.get(name);
-        return {match:async url=>items.get(url),put:async(url,res)=>{puts++;if(puts===putFailAt)throw new Error('Falha simulada no cache.put');items.set(url,res)}}},
+        return {match:async url=>items.get(url),put:async(url,res)=>{puts++;if(puts===putFailAt)throw new Error('Falha simulada no cache.put');items.set(url,res)},delete:async url=>items.delete(url)}},
       delete:async name=>{deleted=true;return stored.delete(name)}
     },
     fetch:async url=>{requests++;if(requests===failAt)throw new Error('Falha simulada');return requests===networkHtmlFaultAt?{...response(url),async text(){return networkHtmlFaultBody}}:requests===invalidAt?{...response(url),headers:{get:()=> 'text/html'}}:requests===httpFailAt?{...response(url),status:503}:requests===redirectAt?{...response(url),redirected:true}:requests===urlMismatchAt?{...response(url),url:scope+'login'}:requests===opaqueAt?{...response(url),type:'opaque'}:response(url)}
@@ -154,6 +154,8 @@ for(const existed of [false,true]){
       assert.equal(failedPut.stored.get(cacheName).get(scope+'index.html'),'original-editor');
       assert.equal(failedPut.stored.get(cacheName).get(scope+'molduras/original_01.webp'),'original-frame');
       assert.equal(failedPut.stored.get(cacheName).get('sentinel'),'preserved');
+      assert.equal(failedPut.stored.get(cacheName).size,3,
+        'Falha na gravação '+putFailAt+' deve desfazer todos os recursos novos');
     }
   }
 }
