@@ -66,6 +66,8 @@ const inlineCode=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)
 const forbiddenNetwork=[
   /\b(?:new\s+)?(?:WebSocket|EventSource)\s*\(/,
   /\b(?:navigator\.)?sendBeacon\s*\(/,
+  /\b(?:new\s+)?XMLHttpRequest\s*\(/,
+  /\b(?:new\s+)?(?:WebTransport|RTCPeerConnection|webkitRTCPeerConnection)\s*\(/,
   /\bfetch\s*\(\s*['"`]\s*(?:https?:)?\/\//i,
   /\.open\s*\(\s*['"`](?:GET|POST|PUT|PATCH|DELETE)['"`]\s*,\s*['"`]\s*(?:https?:)?\/\//i
 ];
