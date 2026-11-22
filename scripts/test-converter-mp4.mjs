@@ -310,5 +310,16 @@ try{
  run('node',['scripts/converter-mp4.mjs',input,input],2);
  run('node',['scripts/converter-mp4.mjs',join(dir,'inexistente.webm'),join(dir,'ausente.mp4')],2);
  run('node',['scripts/converter-mp4.mjs',input,join(dir,'extensao.webm')],2);
+ // Uma gravação apenas de áudio sem MP4 anterior também não pode criar
+ // saída vazia ou temporários. A entrada deve continuar reutilizável.
+ const audioOnlyFreshOutput=join(dir,'som-sem-imagem-novo.mp4');
+ const audioOnlyFreshBefore=readFileSync(audioOnly);
+ run('node',['scripts/converter-mp4.mjs',audioOnly,audioOnlyFreshOutput],1);
+ if(existsSync(audioOnlyFreshOutput))
+   throw new Error('WebM apenas com áudio criou MP4 sem faixa de vídeo');
+ if(!readFileSync(audioOnly).equals(audioOnlyFreshBefore))
+   throw new Error('WebM apenas com áudio foi modificado sem saída prévia');
+ if(readdirSync(dir).some(name=>name.startsWith('.som-sem-imagem-novo.mp4.')))
+   throw new Error('WebM apenas com áudio deixou temporário sem saída prévia');
  console.log('OK: conversão H.264/AAC e rejeição de WebM sem áudio e argumentos inválidos');
 }finally{rmSync(dir,{recursive:true,force:true})}
