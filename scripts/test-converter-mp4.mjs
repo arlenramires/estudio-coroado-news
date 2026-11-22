@@ -231,6 +231,15 @@ try{
    throw new Error('WebM truncado no final substituiu MP4 anterior');
  if(readdirSync(dir).some(name=>name.startsWith('.truncado-no-final.mp4.')))
    throw new Error('WebM truncado no final deixou arquivo temporário');
+ // Argumentos extras não podem ser ignorados silenciosamente: um usuário
+ // pode arrastar vários vídeos por engano e acreditar que todos foram convertidos.
+ const extraOutput=join(dir,'argumentos-extras.mp4');
+ writeFileSync(extraOutput,'saida anterior protegida');
+ run('node',['scripts/converter-mp4.mjs',input,extraOutput,join(dir,'outro-video.webm')],2);
+ if(readFileSync(extraOutput,'utf8')!=='saida anterior protegida')
+   throw new Error('Conversor aceitou argumentos extras e alterou MP4 anterior');
+ if(readdirSync(dir).some(name=>name.startsWith('.argumentos-extras.mp4.')))
+   throw new Error('Argumentos extras deixaram temporario');
  // Recusar extensão de saída enganosa mesmo quando o destino já existe:
  // uma falha de argumentos não pode sobrescrever o arquivo anterior.
  const wrongExtension=join(dir,'exportacao-anterior.webm');
