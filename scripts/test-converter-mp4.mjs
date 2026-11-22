@@ -113,6 +113,18 @@ try{
    throw new Error('WebM apenas com áudio substituiu MP4 anterior');
  if(readdirSync(dir).some(name=>name.startsWith('.som-sem-imagem.mp4.')))
    throw new Error('WebM apenas com áudio deixou temporário');
+ // Regressão: uma faixa AAC presente não basta quando o áudio termina
+ // muito antes do vídeo. A saída antiga deve sobreviver à falha.
+ const shortAudio=join(dir,'audio-curto.webm'),shortAudioOutput=join(dir,'audio-curto.mp4');
+ run('ffmpeg',['-hide_banner','-loglevel','error','-f','lavfi','-i','color=c=black:s=160x120:r=12:d=2',
+   '-f','lavfi','-i','sine=frequency=440:duration=0.3','-c:v','libvpx','-b:v','150k',
+   '-c:a','libopus',shortAudio]);
+ writeFileSync(shortAudioOutput,'mp4 anterior com audio completo');
+ run('node',['scripts/converter-mp4.mjs',shortAudio,shortAudioOutput],1);
+ if(readFileSync(shortAudioOutput,'utf8')!=='mp4 anterior com audio completo')
+   throw new Error('Áudio curto substituiu exportação MP4 anterior');
+ if(readdirSync(dir).some(name=>name.startsWith('.audio-curto.mp4.')))
+   throw new Error('Falha de sincronização deixou arquivo temporário');
  const silent=join(dir,'sem-audio.webm');
  run('ffmpeg',['-hide_banner','-loglevel','error','-f','lavfi','-i','color=c=black:s=160x120:r=12:d=1','-c:v','libvpx',silent]);
  const invalid=join(dir,'invalido.mp4');
