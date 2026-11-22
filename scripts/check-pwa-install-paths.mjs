@@ -12,6 +12,8 @@ for(const entry of ['index.html','manifest.webmanifest']){
 }
 const manifest=JSON.parse(fs.readFileSync('manifest.webmanifest','utf8'));
 const local=(value,label)=>{
+  // A raiz relativa './' é válida para id e scope no Web App Manifest.
+  if(value==='./' && (label==='id'||label==='scope'))return '.';
   if(typeof value!=='string'||!value||value.startsWith('/')||value.startsWith('\\')||value.includes('\\')||/%[0-9a-f]{2}/i.test(value)||/[?#]/.test(value)||/^[a-z][a-z\d+.-]*:/i.test(value)||value.startsWith('//'))
     throw new Error(label+': caminho não local: '+value);
   // Rejeitar segmentos internos . e .. antes de normalizar: URLs podem ser
