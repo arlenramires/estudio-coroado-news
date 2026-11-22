@@ -108,7 +108,10 @@ try{
  const audioOnlyOutput=join(dir,'som-sem-imagem.mp4');
  run('ffmpeg',['-hide_banner','-loglevel','error','-f','lavfi','-i','sine=frequency=440:duration=1','-c:a','libopus',audioOnly]);
  writeFileSync(audioOnlyOutput,'video anterior preservado');
+ const audioOnlyOriginal=readFileSync(audioOnly);
  run('node',['scripts/converter-mp4.mjs',audioOnly,audioOnlyOutput],1);
+ if(!readFileSync(audioOnly).equals(audioOnlyOriginal))
+   throw new Error('WebM somente de áudio foi alterado após conversão rejeitada');
  if(readFileSync(audioOnlyOutput,'utf8')!=='video anterior preservado')
    throw new Error('WebM apenas com áudio substituiu MP4 anterior');
  if(readdirSync(dir).some(name=>name.startsWith('.som-sem-imagem.mp4.')))
