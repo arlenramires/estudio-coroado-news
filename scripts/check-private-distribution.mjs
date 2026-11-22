@@ -142,6 +142,20 @@ if(process.platform!=='win32'){
     assert.deepEqual(fs.readFileSync(log,'utf8').trim().split('\n'),[
       'Verificar-integridade.py','-m http.server 8765 --bind 127.0.0.1'
     ],'Iniciador Android não verificou integridade antes de servir somente localhost');
+    // Se a conferência SHA256 falhar, não pode iniciar servidor nem abrir o PWA.
+    // Simula falha de integridade sem alterar o pacote distribuído.
+    fs.writeFileSync(fake,'#!/bin/sh\n' +
+      'printf "%s\\n" "$*" >> "$ESTUDIO_TEST_LOG"\n' +
+      'if [ "$1" = "Verificar-integridade.py" ]; then exit 1; fi\n');
+    fs.chmodSync(fake,0o755);
+    fs.writeFileSync(log,'');
+    const rejected=spawnSync('sh',[path.join(app,'Iniciar-Android-Termux.sh')],{
+      cwd:tmp,encoding:'utf8',env:{...process.env,PATH:bin+path.delimiter+process.env.PATH,ESTUDIO_TEST_LOG:log}
+    });
+    assert.notEqual(rejected.status,0,'Iniciador Android aceitou falha de integridade');
+    assert.deepEqual(fs.readFileSync(log,'utf8').trim().split('\n'),['Verificar-integridade.py'],
+      'Iniciador Android tentou iniciar servidor após falha de integridade');
+    console.log('Iniciador Android bloqueia inicialização quando integridade falha.');
     console.log('Iniciador Android aprovado em execução simulada com espaços no caminho.');
   }finally{fs.rmSync(tmp,{recursive:true,force:true});}
 }
