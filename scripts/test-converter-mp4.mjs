@@ -125,6 +125,21 @@ try{
    throw new Error('Áudio curto substituiu exportação MP4 anterior');
  if(readdirSync(dir).some(name=>name.startsWith('.audio-curto.mp4.')))
    throw new Error('Falha de sincronização deixou arquivo temporário');
+ // Regressão simétrica: áudio que continua muito depois da imagem também
+ // não pode gerar uma publicação com tela congelada ou alterar MP4 anterior.
+ const longAudio=join(dir,'audio-longo.webm'),longAudioOutput=join(dir,'audio-longo.mp4');
+ run('ffmpeg',['-hide_banner','-loglevel','error','-f','lavfi','-i','color=c=black:s=160x120:r=12:d=0.4',
+   '-f','lavfi','-i','sine=frequency=440:duration=2','-c:v','libvpx','-b:v','150k',
+   '-c:a','libopus',longAudio]);
+ const longAudioOriginal=readFileSync(longAudio);
+ writeFileSync(longAudioOutput,'mp4 anterior com imagem completa');
+ run('node',['scripts/converter-mp4.mjs',longAudio,longAudioOutput],1);
+ if(readFileSync(longAudioOutput,'utf8')!=='mp4 anterior com imagem completa')
+   throw new Error('Áudio longo substituiu exportação MP4 anterior');
+ if(!readFileSync(longAudio).equals(longAudioOriginal))
+   throw new Error('Falha com áudio longo modificou WebM original');
+ if(readdirSync(dir).some(name=>name.startsWith('.audio-longo.mp4.')))
+   throw new Error('Áudio longo deixou arquivo temporário');
  const silent=join(dir,'sem-audio.webm');
  run('ffmpeg',['-hide_banner','-loglevel','error','-f','lavfi','-i','color=c=black:s=160x120:r=12:d=1','-c:v','libvpx',silent]);
  const invalid=join(dir,'invalido.mp4');
