@@ -142,6 +142,23 @@ if(!win.includes("('127.0.0.1',8765)") ||
   throw Error('Iniciador privado deve limitar o servidor a 127.0.0.1');
 if(/(?:0\.0\.0\.0|--bind\s+0\.0\.0\.0)/.test(win+'\n'+android))
   throw Error('Iniciador privado não pode expor o servidor em todas as interfaces');
+// Regressão: não permitir que um iniciador abra o servidor antes da
+// conferência SHA256, nem que continue depois de uma verificação falha.
+const windowsServer=win.indexOf('http.server.ThreadingHTTPServer');
+if(windowsServer<0||
+   win.indexOf('py -3 Verificar-integridade.py')<0||
+   win.indexOf('python Verificar-integridade.py')<0||
+   win.indexOf('py -3 Verificar-integridade.py')>windowsServer||
+   win.indexOf('python Verificar-integridade.py')>windowsServer||
+   !win.includes('if errorlevel 1 goto invalid')||
+   !win.includes(':invalid'))
+  throw Error('Iniciador Windows precisa validar SHA256 antes de servir o PWA');
+const androidServer=android.indexOf('exec python -m http.server');
+if(androidServer<0||
+   android.indexOf('if ! python Verificar-integridade.py; then')<0||
+   android.indexOf('if ! python Verificar-integridade.py; then')>androidServer||
+   !android.slice(android.indexOf('if ! python Verificar-integridade.py; then'),androidServer).includes('exit 1'))
+  throw Error('Iniciador Android precisa validar SHA256 antes de servir o PWA');
 fs.writeFileSync(path.join(dest,'Iniciar-PC-Windows.cmd'),win);
 fs.writeFileSync(path.join(dest,'Iniciar-Android-Termux.sh'),android,{mode:0o755});
 fs.writeFileSync(path.join(dest,'LEIA-ME-PRIMEIRO.txt'),String.raw`ESTUDIO COROADO NEWS 24H - PACOTE PRIVADO PC E ANDROID
