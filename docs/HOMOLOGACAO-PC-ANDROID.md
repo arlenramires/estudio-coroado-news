@@ -28,6 +28,17 @@ Este roteiro complementa os testes automatizados. **Não** considerar o PWA Andr
 ## Critério de aprovação
 Marcar cada etapa como **aprovada**, **reprovada** ou **não executada**; anexar nome do dispositivo, versões, arquivos exportados e descrição reproduzível da falha. A instalação Android e o MP4 H.264/AAC **não estão aprovados** até teste em aparelho real e inspeção dos arquivos. Não publicar GitHub Pages nem substituir testes reais por simulação.
 
-## Critério adicional de segurança do Service Worker (pendente)
+## Registro obrigatório de resultados
 
-O validador `isEditorHtml` em `sw.js` ainda contém um caminho de compatibilidade que aceita uma resposta clonada sem método `text()`. Isso é aceitável apenas como simulação antiga, **não como evidência de validação de HTML**. Antes da homologação, substituir essa aceitação por rejeição explícita, atualizar os mocks de instalação em `scripts/check-editor.mjs` para implementar `clone().text()` com HTML contendo `id="editorial"` e `id="savePNG"`, e executar todos os testes de regressão do Service Worker. Confirmar que HTML 200 incompleto nunca substitui a versão offline íntegra. Não declarar esse item aprovado até existir teste executado e commit de correção.
+Preencher uma linha por plataforma e por execução. Não anexar mídia pessoal.
+
+| Commit | Data | Dispositivo / SO | Navegador | 22 molduras | Editor | PNG Feed / Reels | Vídeo com áudio | MP4 H.264/AAC | PWA offline | Resultado |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| A preencher | A preencher | PC / Windows | Chrome ou Edge | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | PENDENTE |
+| A preencher | A preencher | Android físico / versão | Chrome / versão | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | NÃO EXECUTADO | PENDENTE |
+
+Em cada falha registrar o passo, resultado esperado, resultado observado, mensagem de erro, formato e tamanho do arquivo. **Não** preencher como aprovado por leitura de código ou testes em navegador simulado.
+
+## Verificação de segurança do Service Worker
+
+O validador `isEditorHtml` de `sw.js` exige `clone().text()` e marcas reais do editor. Confirmar nos testes automatizados que uma resposta HTTP 200 contendo HTML incompleto não substitui o editor íntegro do cache. Essa verificação de código **não** substitui a homologação offline no PC e Android.
