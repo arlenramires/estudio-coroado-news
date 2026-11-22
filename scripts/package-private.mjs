@@ -144,15 +144,22 @@ if(/(?:0\.0\.0\.0|--bind\s+0\.0\.0\.0)/.test(win+'\n'+android))
   throw Error('Iniciador privado não pode expor o servidor em todas as interfaces');
 // Regressão: não permitir que um iniciador abra o servidor antes da
 // conferência SHA256, nem que continue depois de uma verificação falha.
-const windowsServer=win.indexOf('http.server.ThreadingHTTPServer');
-if(windowsServer<0||
-   win.indexOf('py -3 Verificar-integridade.py')<0||
-   win.indexOf('python Verificar-integridade.py')<0||
-   win.indexOf('py -3 Verificar-integridade.py')>windowsServer||
-   win.indexOf('python Verificar-integridade.py')>windowsServer||
-   !win.includes('if errorlevel 1 goto invalid')||
-   !win.includes(':invalid'))
-  throw Error('Iniciador Windows precisa validar SHA256 antes de servir o PWA');
+// Cada ramo (py e python) tem seu próprio servidor: comparar a verificação
+// do segundo ramo com o primeiro servidor rejeitava indevidamente um CMD válido.
+for(const [label,sectionStart,sectionEnd,verify,server] of [
+  ['py',':py',':python','py -3 Verificar-integridade.py','py -3 -c "import http.server'],
+  ['python',':python',':invalid','python Verificar-integridade.py','python -c "import http.server']
+]){
+  const start=win.indexOf(sectionStart);
+  const end=win.indexOf(sectionEnd,start+sectionStart.length);
+  const section=win.slice(start,end);
+  const check=section.indexOf(verify), serve=section.indexOf(server);
+  if(start<0||end<0||check<0||serve<0||check>=serve||
+     !section.slice(check,serve).includes('if errorlevel 1 goto invalid'))
+    throw Error('Iniciador Windows ('+label+') precisa validar SHA256 antes de servir o PWA');
+}
+if(!win.includes(':invalid'))
+  throw Error('Iniciador Windows sem tratamento de integridade inválida');
 const androidServer=android.indexOf('exec python -m http.server');
 if(androidServer<0||
    android.indexOf('if ! python Verificar-integridade.py; then')<0||
