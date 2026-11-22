@@ -17,9 +17,9 @@ const local=(value,label)=>{
   // Rejeitar segmentos internos . e .. antes de normalizar: URLs podem ser
   // interpretadas de modo diferente pelo navegador e pelo filesystem.
   const segments=value.split('/');
-  if(segments.some((segment,index)=>segment==='..'||(segment==='.'&&index!==0)))
+  if(segments.some((segment,index)=>segment===''||segment==='..'||(segment==='.'&&index!==0)))
     throw new Error(label+': segmentos de caminho ambíguos: '+value);
-  const normalized=path.posix.normalize(value);
+  // Não permitir barras duplicadas ou finais: o navegador pode interpretar URLs\n  // de forma distinta do filesystem e mascarar caminhos de instalação.\n  const normalized=path.posix.normalize(value);
   if(normalized==='..'||normalized.startsWith('../'))
     throw new Error(label+': caminho fora do Estúdio: '+value);
   return normalized;
