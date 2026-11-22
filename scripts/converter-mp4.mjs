@@ -97,6 +97,22 @@ try{
    if(lastVideoEnd<=0||declaredDuration-lastVideoEnd>allowedGap)
      throw new Error('WebM incompleto: quadros de vídeo terminam antes da duração declarada ('+
        lastVideoEnd+'s / '+declaredDuration+'s)');
+   // Detectar também gravações cujo áudio acaba prematuramente, antes de
+   // iniciar a transcodificação. A validação final do MP4 continua obrigatória.
+   const audioTimeline=JSON.parse(run('ffprobe',['-v','error','-select_streams','a:0',
+     '-show_packets','-show_entries','packet=pts_time,duration_time','-of','json',input],
+     {maxBuffer:64*1024*1024}));
+   let lastAudioEnd=0;
+   for(const packet of audioTimeline.packets||[]){
+     const pts=Number(packet.pts_time);
+     const duration=packet.duration_time==null?0:Number(packet.duration_time);
+     if(Number.isFinite(pts)&&Number.isFinite(duration)&&duration>=0)
+       lastAudioEnd=Math.max(lastAudioEnd,pts+duration);
+   }
+   // A saída MP4 exige faixas com diferença máxima de 250 ms.
+   if(lastAudioEnd<=0||Math.abs(lastVideoEnd-lastAudioEnd)>0.25)
+     throw new Error('WebM com áudio e vídeo de durações incompatíveis: '+
+       lastVideoEnd+'s / '+lastAudioEnd+'s');
  }
  // Verifica o WebM original inteiro antes de codificar. Um cabeçalho e pacotes
  // presentes não garantem que o conteúdo esteja decodificável até o final.
