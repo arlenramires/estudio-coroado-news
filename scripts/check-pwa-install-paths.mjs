@@ -12,8 +12,13 @@ for(const entry of ['index.html','manifest.webmanifest']){
 }
 const manifest=JSON.parse(fs.readFileSync('manifest.webmanifest','utf8'));
 const local=(value,label)=>{
-  if(typeof value!=='string'||!value||value.startsWith('/')||value.startsWith('\\')||value.includes('\\')||/[?#]/.test(value)||/^[a-z][a-z\d+.-]*:/i.test(value)||value.startsWith('//'))
+  if(typeof value!=='string'||!value||value.startsWith('/')||value.startsWith('\\')||value.includes('\\')||/%[0-9a-f]{2}/i.test(value)||/[?#]/.test(value)||/^[a-z][a-z\d+.-]*:/i.test(value)||value.startsWith('//'))
     throw new Error(label+': caminho não local: '+value);
+  // Rejeitar segmentos internos . e .. antes de normalizar: URLs podem ser
+  // interpretadas de modo diferente pelo navegador e pelo filesystem.
+  const segments=value.split('/');
+  if(segments.some((segment,index)=>segment==='..'||(segment==='.'&&index!==0)))
+    throw new Error(label+': segmentos de caminho ambíguos: '+value);
   const normalized=path.posix.normalize(value);
   if(normalized==='..'||normalized.startsWith('../'))
     throw new Error(label+': caminho fora do Estúdio: '+value);
@@ -26,6 +31,7 @@ if(!fs.lstatSync('icons',{throwIfNoEntry:false})?.isDirectory()||fs.lstatSync('i
   throw new Error('Diretório de ícones PWA ausente ou simbólico');
 for(const icon of manifest.icons){
   const target=local(icon.src,'Ícone PWA');
+  if(!target.startsWith('icons/'))throw new Error('Ícone fora do diretório icons: '+target);
   const stat=fs.lstatSync(target,{throwIfNoEntry:false});
   if(!stat?.isFile()||stat.isSymbolicLink())
     throw new Error('Ícone PWA ausente, inválido ou simbólico: '+target);
