@@ -119,10 +119,13 @@ try{
  run('ffmpeg',['-hide_banner','-loglevel','error','-f','lavfi','-i','color=c=black:s=160x120:r=12:d=2',
    '-f','lavfi','-i','sine=frequency=440:duration=0.3','-c:v','libvpx','-b:v','150k',
    '-c:a','libopus',shortAudio]);
+ const shortAudioOriginal=readFileSync(shortAudio);
  writeFileSync(shortAudioOutput,'mp4 anterior com audio completo');
  run('node',['scripts/converter-mp4.mjs',shortAudio,shortAudioOutput],1);
  if(readFileSync(shortAudioOutput,'utf8')!=='mp4 anterior com audio completo')
    throw new Error('Áudio curto substituiu exportação MP4 anterior');
+ if(!readFileSync(shortAudio).equals(shortAudioOriginal))
+   throw new Error('Falha com áudio curto modificou WebM original');
  if(readdirSync(dir).some(name=>name.startsWith('.audio-curto.mp4.')))
    throw new Error('Falha de sincronização deixou arquivo temporário');
  // Regressão simétrica: áudio que continua muito depois da imagem também
