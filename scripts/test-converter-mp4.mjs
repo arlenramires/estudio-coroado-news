@@ -116,6 +116,25 @@ try{
    throw new Error('WebM apenas com áudio substituiu MP4 anterior');
  if(readdirSync(dir).some(name=>name.startsWith('.som-sem-imagem.mp4.')))
    throw new Error('WebM apenas com áudio deixou temporário');
+ // Uma gravação WebM com vídeo, mas sem áudio, não pode ser anunciada
+ // como MP4 com som nem substituir um arquivo previamente exportado.
+ const silentInput=join(dir,'video-sem-faixa-audio.webm');
+ const silentOutput=join(dir,'video-sem-faixa-audio.mp4');
+ run('ffmpeg',['-hide_banner','-loglevel','error','-f','lavfi','-i','color=c=black:s=160x120:r=12:d=1',
+   '-c:v','libvpx','-b:v','150k',silentInput]);
+ const silentOriginal=readFileSync(silentInput);
+ writeFileSync(silentOutput,'mp4 anterior com audio');
+ run('node',['scripts/converter-mp4.mjs',silentInput,silentOutput],1);
+ if(readFileSync(silentOutput,'utf8')!=='mp4 anterior com audio')
+   throw new Error('WebM sem faixa de áudio substituiu MP4 anterior');
+ if(!readFileSync(silentInput).equals(silentOriginal))
+   throw new Error('WebM sem faixa de áudio foi alterado');
+ if(readdirSync(dir).some(name=>name.startsWith('.video-sem-faixa-audio.mp4.')))
+   throw new Error('WebM sem faixa de áudio deixou temporário');
+ const silentFresh=join(dir,'video-sem-faixa-audio-novo.mp4');
+ run('node',['scripts/converter-mp4.mjs',silentInput,silentFresh],1);
+ if(existsSync(silentFresh)||readdirSync(dir).some(name=>name.startsWith('.video-sem-faixa-audio-novo.mp4.')))
+   throw new Error('WebM sem áudio criou MP4 inválido ou temporário sem saída anterior');
  // Regressão: uma faixa AAC presente não basta quando o áudio termina
  // muito antes do vídeo. A saída antiga deve sobreviver à falha.
  const shortAudio=join(dir,'audio-curto.webm'),shortAudioOutput=join(dir,'audio-curto.mp4');
