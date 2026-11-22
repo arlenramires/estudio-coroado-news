@@ -94,6 +94,8 @@ jobs:
         run: node scripts/check-delivery.mjs
       - name: Testar verificador Python contra corrupção e caminhos inseguros
         run: python3 scripts/test-package-integrity.py
+      - name: Testar regressões isoladas do verificador SHA256
+        run: python3 scripts/test-package-integrity-regression.py
       - name: Testar rejeição de adulterações no pacote privado
         run: node scripts/test-package-tampering.mjs
       - name: Validar pacote instalável em localhost, offline e tela móvel
