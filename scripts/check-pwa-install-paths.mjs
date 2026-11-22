@@ -3,6 +3,13 @@ import path from 'node:path';
 
 // Regressão de instalação: o manifesto só pode apontar para arquivos locais
 // existentes, dentro da pasta do Estúdio (sem fuga por ../ ou URL remota).
+// Os arquivos de entrada também precisam ser arquivos regulares, não atalhos
+// para conteúdo externo ao pacote privado.
+for(const entry of ['index.html','manifest.webmanifest']){
+  const stat=fs.lstatSync(entry,{throwIfNoEntry:false});
+  if(!stat?.isFile()||stat.isSymbolicLink())
+    throw new Error('Arquivo de entrada PWA ausente ou simbólico: '+entry);
+}
 const manifest=JSON.parse(fs.readFileSync('manifest.webmanifest','utf8'));
 const local=(value,label)=>{
   if(typeof value!=='string'||!value||value.startsWith('/')||value.startsWith('\\')||value.includes('\\')||/[?#]/.test(value)||/^[a-z][a-z\d+.-]*:/i.test(value)||value.startsWith('//'))
