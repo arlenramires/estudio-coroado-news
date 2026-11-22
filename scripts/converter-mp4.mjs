@@ -5,8 +5,10 @@ import {spawnSync} from 'node:child_process';
 import {existsSync,statSync,lstatSync,renameSync,rmSync,realpathSync,openSync,readSync,closeSync} from 'node:fs';
 import {resolve,extname,dirname,basename,join} from 'node:path';
 import {randomUUID} from 'node:crypto';
-const [inputArg,outputArg]=process.argv.slice(2);
-if(!inputArg||!outputArg){console.error('Uso: node scripts/converter-mp4.mjs entrada.webm saida.mp4 (requer FFmpeg e FFprobe)');process.exit(2)}
+const argumentsList=process.argv.slice(2);
+const [inputArg,outputArg]=argumentsList;
+// Recusar argumentos extras: não ignorar arquivos adicionais passados por engano.
+if(argumentsList.length!==2||!inputArg||!outputArg){console.error('Uso: node scripts/converter-mp4.mjs entrada.webm saida.mp4 (requer FFmpeg e FFprobe)');process.exit(2)}
 const input=resolve(inputArg),output=resolve(outputArg);
 // Verificar toda a cadeia do destino: um ancestral simbólico também pode
 // redirecionar a gravação, mesmo quando a pasta final é um diretório real.
