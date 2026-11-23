@@ -200,6 +200,16 @@ Arraste o WebM com video e audio sobre Converter-MP4-Windows.cmd.
 O MP4 H.264/AAC sera salvo ao lado do original com sufixo _convertido.mp4.
 Confira o som e a imagem antes de publicar. O WebM original e preservado.
 
+CONVERTER WEBM COM AUDIO PARA MP4 NO ANDROID (TERMUX):
+Instale as dependencias: pkg install nodejs ffmpeg
+Autorize acesso aos Downloads: termux-setup-storage
+Entre na pasta extraida do Estudio no Termux.
+Use caminhos reais (o conversor recusa diretorios simbolicos):
+node scripts/converter-mp4.mjs "$(realpath ~/storage/downloads/entrada.webm)" "$(realpath ~/storage/downloads)/saida.mp4"
+Substitua entrada.webm e saida.mp4 pelos nomes desejados.
+Confira o MP4 no celular. O WebM original permanece intacto.
+Este procedimento ainda requer homologacao em Android fisico.
+
 VERIFICAR ARQUIVOS EXTRAIDOS (OPCIONAL):
 Execute python Verificar-integridade.py na pasta extraida.
 O resultado OK confirma que os arquivos conferem com SHA256SUMS.txt.
