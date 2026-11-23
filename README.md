@@ -61,7 +61,17 @@ Se o navegador salvar `.webm`, **não renomeie a extensão**. O repositório inc
 2. Na pasta extraída do projeto, execute `node scripts/converter-mp4.mjs "caminho/entrada.webm" "caminho/saida.mp4"` (no Windows, use os caminhos Windows entre aspas).
 3. Abra o MP4 gerado, confira imagem, som, duração e sincronização antes de publicar. Para validar automaticamente a conversão com áudio de teste, execute `node scripts/test-converter-mp4.mjs`.
 
-**Limites:** a conversão não recupera áudio que não foi gravado, requer FFmpeg/FFprobe no computador e não roda diretamente no HTML offline ou no PWA Android. Para o celular, transfira o WebM ao PC para converter, ou use um editor local confiável que exporte H.264/AAC. O conversor não garante que o áudio original seja audível: confira a prévia e o arquivo final. Não há upload do vídeo para servidor nesse fluxo.
+**Limites:** a conversão não recupera áudio que não foi gravado, requer FFmpeg/FFprobe no computador e não roda diretamente no HTML offline ou no PWA Android. Para o celular, use o conversor via Termux conforme a seção abaixo, ou transfira o WebM ao PC. O conversor não garante que o áudio original seja audível: confira a prévia e o arquivo final. Não há upload do vídeo para servidor nesse fluxo.
+
+## Conversão local no Android (Termux)
+
+O pacote privado inclui o mesmo conversor H.264/AAC utilizado no PC. No Termux, instale as dependências com `pkg install nodejs ffmpeg`, execute `termux-setup-storage` e autorize o acesso aos Downloads. Entre na pasta extraída do Estúdio e execute:
+
+```sh
+node scripts/converter-mp4.mjs "$(realpath ~/storage/downloads/entrada.webm)" "$(realpath ~/storage/downloads)/saida.mp4"
+```
+
+Substitua os nomes pelos arquivos desejados. Os caminhos reais evitam os links simbólicos do armazenamento do Termux. O vídeo original é preservado. Confira o áudio e a imagem no MP4 resultante. Este fluxo é externo ao PWA e ainda precisa de homologação em Android físico.
 
 ## Homologação final em aparelhos físicos (ainda pendente)
 A aprovação do GitHub Actions cobre navegadores automatizados, inclusive viewport móvel simulada; **não comprova** instalação nem áudio em um Android real. Para aceitar uma instalação, registre aparelho, versão do sistema, navegador, resultado e nome do arquivo exportado.
@@ -70,7 +80,7 @@ A aprovação do GitHub Actions cobre navegadores automatizados, inclusive viewp
 2. **Android:** execute o iniciador pelo Termux no próprio telefone, abra `127.0.0.1:8765` no Chrome, aguarde o cache e instale quando o navegador oferecer. Desative a rede, reabra o atalho e confirme as 22 molduras; se o navegador não permitir instalação, registre a limitação e use o HTML offline.
 3. **Editor:** teste troca de moldura, inserção de foto, vídeo, ajuste de texto, zoom e posicionamento. Confira se o Coroadinho original não foi deformado.
 4. **PNG:** exporte Feed 1080 × 1350 e Story/Reels 1080 × 1920, abra os arquivos em tamanho real e confira legibilidade, proporções e ausência de cortes inesperados.
-5. **Vídeo com áudio:** grave uma amostra com som identificável, exporte, reproduza o arquivo baixado e confira imagem, duração, som e sincronização. Se sair WebM, converta no PC com o utilitário incluído e confira o MP4 H.264/AAC resultante. Não considere MP4 nativo aprovado no Android sem um arquivo MP4 real reproduzível.
+5. **Vídeo com áudio:** grave uma amostra com som identificável, exporte, reproduza o arquivo baixado e confira imagem, duração, som e sincronização. Se sair WebM, converta no PC ou no Termux com o utilitário incluído e confira o MP4 H.264/AAC resultante. Não considere MP4 nativo aprovado no Android sem um arquivo MP4 real reproduzível.
 6. **Privacidade:** confirme que o servidor escuta somente em `127.0.0.1` e que nenhum GitHub Pages foi ativado. O repositório público não torna o PWA hospedado, mas expõe seu código-fonte.
 
 Se alguma etapa falhar, registre os passos para reproduzir, versão do navegador e mensagem de erro antes de considerar a entrega concluída. Não publique material de teste nem dados pessoais em issues públicas.
