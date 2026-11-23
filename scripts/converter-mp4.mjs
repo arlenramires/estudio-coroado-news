@@ -136,6 +136,7 @@ try{
    // Não espalhar todos os timestamps em Math.max(...array): gravações
    // longas podem conter centenas de milhares de pacotes e estourar a pilha.
    const allowedIndexes=new Set(streamIndexes);
+   const trackEnds=new Map();
    let latest=NaN;
    for(const packet of packetData.packets||[]){
      if(!allowedIndexes.has(packet.stream_index))continue;
@@ -143,8 +144,14 @@ try{
      const duration=packet.duration_time==null?0:Number(packet.duration_time);
      if(!Number.isFinite(pts)||!Number.isFinite(duration)||duration<0)continue;
      const end=pts+duration;
-     if(Number.isFinite(end)&&end>=0&&(Number.isNaN(latest)||end>latest))latest=end;
+     if(Number.isFinite(end)&&end>=0){
+       trackEnds.set(packet.stream_index,Math.max(trackEnds.get(packet.stream_index)??0,end));
+       if(Number.isNaN(latest)||end>latest)latest=end;
+     }
    }
+   const [videoEnd,audioEnd]=streamIndexes.map(index=>trackEnds.get(index));
+   if(!(videoEnd>0&&audioEnd>0)||Math.abs(videoEnd-audioEnd)>0.25)
+     throw new Error('WebM sem duração declarada com áudio e vídeo de durações incompatíveis: '+videoEnd+'s / '+audioEnd+'s');
    sourceDuration=latest;
  }
  if(!Number.isFinite(sourceDuration)||sourceDuration<=0)
