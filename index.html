@@ -320,7 +320,7 @@ $('saveVideo').onclick=async()=>{if(!framesReady()||!frames[selected]){status('A
     // Corrigir também o Blob (não apenas a extensão) para a prévia e o download.
     const verifiedBlob=new Blob(chunks,{type:mp4?'video/mp4':'video/webm'});
     deliver(verifiedBlob,'Coroado_'+(selected+1)+'_video.'+ext);
-    if(!mp4)status('Vídeo WebM gerado com extensão correta. Para MP4, use um navegador com gravação MP4 nativa.');
+    if(!mp4)status('Vídeo WebM gerado com extensão correta. Para MP4 H.264/AAC, use o conversor local incluído no pacote privado (Windows ou Android/Termux). Não renomeie a extensão.');
   }catch(err){
     status('Falha ao finalizar vídeo: '+err.message+'. Nenhum arquivo parcial foi entregue.');
   }finally{
