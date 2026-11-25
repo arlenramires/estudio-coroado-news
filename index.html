@@ -66,11 +66,11 @@ function overlayFor(f){if(f.overlay)return f.overlay;const t=document.createElem
 let coverImage=null,coverImageURL=null,coverDrag=false;
 function drawCover(b){if(!$('coverEnabled').checked)return;const t=video?.currentTime||0,start=+$('coverStart').value||0,end=+$('coverEnd').value||0;if(video&&(t<start||(end>0&&t>end)))return;const w=b.w*(+$('coverW').value/100),h=b.h*(+$('coverH').value/100),x=b.x+b.w*(+$('coverX').value/100),y=b.y+b.h*(+$('coverY').value/100);ctx.save();ctx.globalAlpha=(+$('coverOpacity').value)/100;const mode=$('coverMode').value;if(mode==='image'&&coverImage?.complete&&coverImage.naturalWidth){ctx.drawImage(coverImage,x-w/2,y-h/2,w,h)}else if(mode==='emoji'){ctx.textAlign='center';ctx.textBaseline='middle';ctx.font=Math.max(12,h)+'px Arial';ctx.fillText($('coverEmoji').value||'🚨',x,y,w)}else if(mode==='solid'){ctx.fillStyle=$('coverColor').value;ctx.fillRect(x-w/2,y-h/2,w,h)}ctx.restore()}
 for(const id of ['coverEnabled','coverMode','coverEmoji','coverColor','coverX','coverY','coverW','coverH','coverOpacity','coverStart','coverEnd'])$(id).addEventListener('input',()=>{invalidateDownload();draw()});
-$('coverFile').addEventListener('change',e=>{const file=e.target.files?.[0];if(!file)return;if(coverImageURL)URL.revokeObjectURL(coverImageURL);coverImageURL=URL.createObjectURL(file);const img=new Image();img.onload=()=>{coverImage=img;$('coverMode').value='image';$('coverEnabled').checked=true;invalidateDownload();draw()};img.src=coverImageURL});
+$('coverFile').addEventListener('change',e=>{const file=e.target.files?.[0];if(!file)return;if(coverImageURL)URL.revokeObjectURL(coverImageURL);coverImageURL=URL.createObjectURL(file);const img=new Image();img.onload=()=>{if(recording||img.src!==coverImageURL)return;coverImage=img;$('coverMode').value='image';$('coverEnabled').checked=true;invalidateDownload();draw()};img.src=coverImageURL});
 $('coverRemove').onclick=()=>{$('coverEnabled').checked=false;coverImage=null;$('coverFile').value='';if(coverImageURL)URL.revokeObjectURL(coverImageURL);coverImageURL=null;invalidateDownload();draw()};
 function coverPointer(e){const f=frames[selected];if(!f)return null;const [W,H]=canvasFormat(),r=canvas.getBoundingClientRect(),x=(e.clientX-r.left)/r.width*W,y=(e.clientY-r.top)/r.height*H,sc=Math.min(W/f.w,H/f.h);return {x:(x-(W-f.w*sc)/2)/sc,y:(y-(H-f.h*sc)/2)/sc,f}}
-canvas.addEventListener('pointerdown',e=>{if(!$('coverEnabled').checked)return;const p=coverPointer(e);if(!p)return;const b=p.f.box;if(p.x<b[0]||p.x>b[0]+b[2]||p.y<b[1]||p.y>b[1]+b[3])return;coverDrag=true;canvas.setPointerCapture(e.pointerId);moveCover(e)});
-function moveCover(e){if(!coverDrag)return;const p=coverPointer(e);if(!p)return;const b=p.f.box;$('coverX').value=Math.round(Math.max(0,Math.min(100,(p.x-b[0])/b[2]*100)));$('coverY').value=Math.round(Math.max(0,Math.min(100,(p.y-b[1])/b[3]*100)));invalidateDownload();draw()}
+canvas.addEventListener('pointerdown',e=>{if(recording||!$('coverEnabled').checked)return;const p=coverPointer(e);if(!p)return;const b=p.f.box;if(p.x<b[0]||p.x>b[0]+b[2]||p.y<b[1]||p.y>b[1]+b[3])return;coverDrag=true;canvas.setPointerCapture(e.pointerId);moveCover(e)});
+function moveCover(e){if(recording||!coverDrag)return;const p=coverPointer(e);if(!p)return;const b=p.f.box;$('coverX').value=Math.round(Math.max(0,Math.min(100,(p.x-b[0])/b[2]*100)));$('coverY').value=Math.round(Math.max(0,Math.min(100,(p.y-b[1])/b[3]*100)));invalidateDownload();draw()}
 canvas.addEventListener('pointermove',moveCover);canvas.addEventListener('pointerup',()=>coverDrag=false);canvas.addEventListener('pointercancel',()=>coverDrag=false);
 function draw(){const f=frames[selected];if(!f)return;const [W,H]=canvasFormat();if(canvas.width!==W||canvas.height!==H){canvas.width=W;canvas.height=H}ctx.fillStyle='#061229';ctx.fillRect(0,0,W,H);const scale=Math.min(W/f.w,H/f.h),dw=f.w*scale,dh=f.h*scale,dx=(W-dw)/2,dy=(H-dh)/2;
  if(Math.abs(W/H-f.w/f.h)>.01){ctx.save();ctx.filter='blur(35px) brightness(.35)';const bg=Math.max(W/f.w,H/f.h);ctx.drawImage(f.img,(W-f.w*bg)/2,(H-f.h*bg)/2,f.w*bg,f.h*bg);ctx.restore()}
@@ -103,8 +103,8 @@ $('play').onclick=async()=>{if(!video)return;await audioCtx?.resume();video.curr
 // Evita trocar mídia, moldura ou dimensões durante a captura de vídeo.
 function setExportBusy(busy){
  // Uma exportação PNG ainda em toBlob não pode ser entregue durante a gravação de vídeo.
- if(busy)pngGeneration++;
- for(const id of ['editorial','media','headline','format','fit','font','color','size','zoom','px','py','trimStart','trimEnd','audio','play','savePNG','saveVideo'])$(id).disabled=busy;
+ if(busy){pngGeneration++;coverDrag=false;}
+ for(const id of ['editorial','media','headline','format','fit','font','color','size','zoom','px','py','trimStart','trimEnd','audio','play','savePNG','saveVideo','coverEnabled','coverMode','coverFile','coverEmoji','coverColor','coverX','coverY','coverW','coverH','coverOpacity','coverStart','coverEnd','coverRemove'])$(id).disabled=busy;
  document.querySelectorAll('#gallery .tile').forEach(button=>button.disabled=busy);
  $('stopVideo').style.display=busy?'block':'none';
 }
